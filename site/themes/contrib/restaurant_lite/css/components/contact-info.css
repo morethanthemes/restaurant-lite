@@ -1,0 +1,122 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s contact info block.
+ */
+.contact-info .icon {
+  width: 70px;
+  height: 70px;
+  -webkit-border-radius: 100%;
+  -moz-border-radius: 100%;
+  border-radius: 100%;
+  margin: 9px auto 30px;
+  text-align: center;
+  display: block;
+  color: #ffffff;
+}
+.contact-info .icon i {
+  font-size: 24px;
+  width: 100%;
+  height: 100%;
+  line-height: 70px;
+}
+.contact-info ul,
+ul.contact-info {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+}
+.contact-info li {
+  padding: 0 0 10px 40px;
+  position: relative;
+  overflow-wrap: break-word;
+}
+.contact-info li > i {
+  position: absolute;
+  left: 0;
+  top: 5px;
+  display: block;
+  font-size: 15px;
+  line-height: 1;
+  color: #2d2d2d;
+}
+.slideout__section .contact-info li {
+  padding: 0 0 25px 25px;
+  min-height: 0;
+  position: relative;
+}
+.slideout__section .contact-info li > i {
+  top: 5px;
+  font-size: 15px;
+  line-height: 1;
+  width: 20px;
+  height: auto;
+  text-align: left;
+  color: #707070;
+  background-color: transparent;
+}
+
+/*colored regions*/
+.region--light-typography .contact-info .icon {
+  background-color: #ffffff;
+  color: #2d2d2d;
+}
+.region--light-typography .contact-info li i {
+  color: #ffffff;
+}
+.region--light-typography .slideout__section .contact-info li i {
+  background-color: transparent;
+}
+.region--light-typography.region--dark-background .slideout__section .contact-info li i,
+.region--light-typography.region--black-background .slideout__section .contact-info li i,
+.region--light-typography.region--colored-background .slideout__section .contact-info li i {
+  color: #ffffff;
+}
+
+/*contact info items grid*/
+.contact-info-items-grid .contact-info-item.contact-info-item--bordered {
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #eaeaea;
+}
+@media (max-width: 767px) {
+  .contact-info-items-grid .contact-info-item {
+    margin-bottom: 20px;
+  }
+}
+.contact-info-items-grid .contact-info-item__icon {
+  font-size: 24px;
+  width: 70px;
+  height: 70px;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 100%;
+  line-height: 70px;
+  text-align: center;
+  float: left;
+  color: #606060;
+  border-color: #606060;
+}
+.contact-info-items-grid .contact-info-item__text {
+  font-size: 15px;
+  padding-top: 15px;
+  margin-left: 100px;
+}
+@media (max-width: 1199px) {
+  .contact-info-items-grid .contact-info-item__icon {
+    float: none;
+    display: block;
+    margin: 0 auto;
+  }
+  .contact-info-items-grid .contact-info-item__text {
+    margin-left: 0px;
+    text-align: center;
+  }
+}
+.region--colored-background .contact-info-items-grid .contact-info-item__icon,
+.region--dark-background .contact-info-items-grid .contact-info-item__icon {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+.region--light-typography .contact-info-items-grid .contact-info-item.contact-info-item--bordered {
+  border-color: rgba(255, 255, 255, 0.10);
+}

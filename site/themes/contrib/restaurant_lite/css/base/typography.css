@@ -1,0 +1,835 @@
+/**
+ * @file
+ * Font Families.
+ */
+
+/*body*/
+body.pff-01 {
+  font-family: 'Merriweather', Georgia, Times New Roman, Serif;
+}
+body.pff-02 {
+  font-family: 'Source Sans Pro', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-03 {
+  font-family: 'Ubuntu', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-04 {
+  font-family: 'PT Sans', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-05 {
+  font-family: 'Roboto', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-06 {
+  font-family: 'Open Sans', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-07 {
+  font-family: 'Lato', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-08 {
+  font-family: 'Roboto Condensed', Arial Narrow, Arial, Sans-serif;
+}
+body.pff-09 {
+  font-family: 'Exo', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-10 {
+  font-family: 'Roboto Slab', Trebuchet MS, Sans-serif;
+}
+body.pff-11 {
+  font-family: 'Raleway', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-12 {
+  font-family: 'Josefin Sans', Georgia, Times New Roman, Serif;
+}
+body.pff-13 {
+  font-family: Georgia, Times New Roman, Serif;
+}
+body.pff-14 {
+  font-family: 'Playfair Display', Times New Roman, Serif;
+}
+body.pff-15 {
+  font-family: 'Philosopher', Georgia, Times New Roman, Serif;
+}
+body.pff-17 {
+  font-family: 'Oswald', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-18 {
+  font-family: 'Playfair Display SC', Georgia, Times New Roman, Serif;
+}
+body.pff-19 {
+  font-family: 'Cabin', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-20 {
+  font-family: 'Noto Sans', Arial, Helvetica Neue, Sans-serif;
+}
+body.pff-21 {
+  font-family: Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-22 {
+  font-family: 'Droid Serif', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-23 {
+  font-family: 'PT Serif', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-24 {
+  font-family: 'Vollkorn', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-25 {
+  font-family: 'Alegreya', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-26 {
+  font-family: 'Noto Serif', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-27 {
+  font-family: 'Crimson Text', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-28 {
+  font-family: 'Gentium Book Basic', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-29 {
+  font-family: 'Volkhov', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-30 {
+  font-family: Times, Times New Roman, Serif;
+}
+body.pff-33 {
+  font-family: 'Fira Sans', Helvetica Neue, Arial, Sans-serif;
+}
+body.pff-34 {
+  font-family: 'Lora', Georgia, Times, Times New Roman, Serif;
+}
+body.pff-35 {
+  font-family: 'Quattrocento Sans', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-37 {
+  font-family: 'Work Sans', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-38 {
+  font-family: 'Open Sans Condensed', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-39 {
+  font-family: 'PT Sans Narrow', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-40 {
+  font-family: 'Archivo Narrow', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-41 {
+  font-family: 'Ubuntu Condensed', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-42 {
+  font-family: 'Arimo', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-43 {
+  font-family: 'Libre Franklin', Helvetica Neue, Arial, sans-serif;
+}
+body.pff-44 {
+  font-family: 'Taviraj', Georgia, Times, Times New Roman, Serif;
+}
+
+/*headings*/
+.hff-01 h1,
+.hff-01 h2,
+.hff-01 h3,
+.hff-01 h4,
+.hff-01 h5,
+.hff-01 h6,
+.hff-01 .tp-caption__title,
+.hff-01 .tp-caption__subtitle,
+.hff-01 table tr th,
+.hff-01 .view-dishes-grid .views-field-field-mt-price,
+.hff-01 .view-dishes .views-field-field-mt-price,
+.sff-01 .site-name,
+.slff-01 .site-slogan,
+.hff-01 .nav-tab__title {
+  font-family: 'Merriweather', Georgia, Times New Roman, Serif;
+}
+
+.hff-02 h1,
+.hff-02 h2,
+.hff-02 h3,
+.hff-02 h4,
+.hff-02 h5,
+.hff-02 h6,
+.hff-02 .tp-caption__title,
+.hff-02 .tp-caption__subtitle,
+.hff-02 table tr th,
+.hff-02 .view-dishes-grid .views-field-field-mt-price,
+.hff-02 .view-dishes .views-field-field-mt-price,
+.sff-02 .site-name,
+.slff-02 .site-slogan,
+.hff-02 .nav-tab__title {
+  font-family: 'Source Sans Pro', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-03 h1,
+.hff-03 h2,
+.hff-03 h3,
+.hff-03 h4,
+.hff-03 h5,
+.hff-03 h6,
+.hff-03 .tp-caption__title,
+.hff-03 .tp-caption__subtitle,
+.hff-03 table tr th,
+.hff-03 .view-dishes-grid .views-field-field-mt-price,
+.hff-03 .view-dishes .views-field-field-mt-price,
+.sff-03 .site-name,
+.slff-03 .site-slogan,
+.hff-03 .nav-tab__title {
+  font-family: 'Ubuntu', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-04 h1,
+.hff-04 h2,
+.hff-04 h3,
+.hff-04 h4,
+.hff-04 h5,
+.hff-04 h6,
+.hff-04 .tp-caption__title,
+.hff-04 .tp-caption__subtitle,
+.hff-04 table tr th,
+.hff-04 .view-dishes-grid .views-field-field-mt-price,
+.hff-04 .view-dishes .views-field-field-mt-price,
+.sff-04 .site-name,
+.slff-04 .site-slogan,
+.hff-04 .nav-tab__title {
+  font-family: 'PT Sans', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-05 h1,
+.hff-05 h2,
+.hff-05 h3,
+.hff-05 h4,
+.hff-05 h5,
+.hff-05 h6,
+.hff-05 .tp-caption__title,
+.hff-05 .tp-caption__subtitle,
+.hff-05 table tr th,
+.hff-05 .view-dishes-grid .views-field-field-mt-price,
+.hff-05 .view-dishes .views-field-field-mt-price,
+.sff-05 .site-name,
+.slff-05 .site-slogan,
+.hff-05 .nav-tab__title {
+  font-family: 'Roboto', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-06 h1,
+.hff-06 h2,
+.hff-06 h3,
+.hff-06 h4,
+.hff-06 h5,
+.hff-06 h6,
+.hff-06 .tp-caption__title,
+.hff-06 .tp-caption__subtitle,
+.hff-06 table tr th,
+.hff-06 .view-dishes-grid .views-field-field-mt-price,
+.hff-06 .view-dishes .views-field-field-mt-price,
+.sff-06 .site-name,
+.slff-06 .site-slogan,
+.hff-06 .nav-tab__title {
+  font-family: 'Open Sans', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-07 h1,
+.hff-07 h2,
+.hff-07 h3,
+.hff-07 h4,
+.hff-07 h5,
+.hff-07 h6,
+.hff-07 .tp-caption__title,
+.hff-07 .tp-caption__subtitle,
+.hff-07 table tr th,
+.hff-07 .view-dishes-grid .views-field-field-mt-price,
+.hff-07 .view-dishes .views-field-field-mt-price,
+.sff-07 .site-name,
+.slff-07 .site-slogan,
+.hff-07 .nav-tab__title {
+  font-family: 'Lato', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-08 h1,
+.hff-08 h2,
+.hff-08 h3,
+.hff-08 h4,
+.hff-08 h5,
+.hff-08 h6,
+.hff-08 .tp-caption__title,
+.hff-08 .tp-caption__subtitle,
+.hff-08 table tr th,
+.hff-08 .view-dishes-grid .views-field-field-mt-price,
+.hff-08 .view-dishes .views-field-field-mt-price,
+.sff-08 .site-name,
+.slff-08 .site-slogan,
+.hff-08 .nav-tab__title {
+  font-family: 'Roboto Condensed', Arial Narrow, Arial, Sans-serif;
+}
+.hff-09 h1,
+.hff-09 h2,
+.hff-09 h3,
+.hff-09 h4,
+.hff-09 h5,
+.hff-09 h6,
+.hff-09 .tp-caption__title,
+.hff-09 .tp-caption__subtitle,
+.hff-09 table tr th,
+.hff-09 .view-dishes-grid .views-field-field-mt-price,
+.hff-09 .view-dishes .views-field-field-mt-price,
+.sff-09 .site-name,
+.slff-09 .site-slogan,
+.hff-09 .nav-tab__title {
+  font-family: 'Exo', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-10 h1,
+.hff-10 h2,
+.hff-10 h3,
+.hff-10 h4,
+.hff-10 h5,
+.hff-10 h6,
+.hff-10 .tp-caption__title,
+.hff-10 .tp-caption__subtitle,
+.hff-10 table tr th,
+.hff-10 .view-dishes-grid .views-field-field-mt-price,
+.hff-10 .view-dishes .views-field-field-mt-price,
+.sff-10 .site-name,
+.slff-10 .site-slogan,
+.hff-10 .nav-tab__title {
+  font-family: 'Roboto Slab', Trebuchet MS, Sans-serif;
+}
+.hff-11 h1,
+.hff-11 h2,
+.hff-11 h3,
+.hff-11 h4,
+.hff-11 h5,
+.hff-11 h6,
+.hff-11 .tp-caption__title,
+.hff-11 .tp-caption__subtitle,
+.hff-11 table tr th,
+.hff-11 .view-dishes-grid .views-field-field-mt-price,
+.hff-11 .view-dishes .views-field-field-mt-price,
+.sff-11 .site-name,
+.slff-11 .site-slogan,
+.hff-11 .nav-tab__title {
+  font-family: 'Raleway', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-12 h1,
+.hff-12 h2,
+.hff-12 h3,
+.hff-12 h4,
+.hff-12 h5,
+.hff-12 h6,
+.hff-12 .tp-caption__title,
+.hff-12 .tp-caption__subtitle,
+.hff-12 table tr th,
+.hff-12 .view-dishes-grid .views-field-field-mt-price,
+.hff-12 .view-dishes .views-field-field-mt-price,
+.sff-12 .site-name,
+.slff-12 .site-slogan,
+.hff-12 .nav-tab__title {
+  font-family: 'Josefin Sans', Georgia, Times New Roman, Serif;
+}
+.hff-13 h1,
+.hff-13 h2,
+.hff-13 h3,
+.hff-13 h4,
+.hff-13 h5,
+.hff-13 h6,
+.hff-13 .tp-caption__title,
+.hff-13 .tp-caption__subtitle,
+.hff-13 table tr th,
+.hff-13 .view-dishes-grid .views-field-field-mt-price,
+.hff-13 .view-dishes .views-field-field-mt-price,
+.sff-13 .site-name,
+.slff-13 .site-slogan,
+.hff-13 .nav-tab__title {
+  font-family: Georgia, Times New Roman, Serif;
+}
+.hff-14 h1,
+.hff-14 h2,
+.hff-14 h3,
+.hff-14 h4,
+.hff-14 h5,
+.hff-14 h6,
+.hff-14 .tp-caption__title,
+.hff-14 .tp-caption__subtitle,
+.hff-14 table tr th,
+.hff-14 .view-dishes-grid .views-field-field-mt-price,
+.hff-14 .view-dishes .views-field-field-mt-price,
+.sff-14 .site-name,
+.slff-14 .site-slogan,
+.hff-14 .nav-tab__title {
+  font-family: 'Playfair Display', Times New Roman, Serif;
+}
+.hff-15 h1,
+.hff-15 h2,
+.hff-15 h3,
+.hff-15 h4,
+.hff-15 h5,
+.hff-15 h6,
+.hff-15 .tp-caption__title,
+.hff-15 .tp-caption__subtitle,
+.hff-15 table tr th,
+.hff-15 .view-dishes-grid .views-field-field-mt-price,
+.hff-15 .view-dishes .views-field-field-mt-price,
+.sff-15 .site-name,
+.slff-15 .site-slogan,
+.hff-15 .nav-tab__title {
+  font-family: 'Philosopher', Georgia, Times New Roman, Serif;
+}
+.hff-16 h1,
+.hff-16 h2,
+.hff-16 h3,
+.hff-16 h4,
+.hff-16 h5,
+.hff-16 h6,
+.hff-16 .tp-caption__title,
+.hff-16 .tp-caption__subtitle,
+.hff-16 table tr th,
+.hff-16 .view-dishes-grid .views-field-field-mt-price,
+.hff-16 .view-dishes .views-field-field-mt-price,
+.sff-16 .site-name,
+.slff-16 .site-slogan,
+.hff-16 .nav-tab__title {
+  font-family: 'Cinzel', Georgia, Times New Roman, Serif;
+}
+.hff-17 h1,
+.hff-17 h2,
+.hff-17 h3,
+.hff-17 h4,
+.hff-17 h5,
+.hff-17 h6,
+.hff-17 .tp-caption__title,
+.hff-17 .tp-caption__subtitle,
+.hff-17 table tr th,
+.hff-17 .view-dishes-grid .views-field-field-mt-price,
+.hff-17 .view-dishes .views-field-field-mt-price,
+.sff-17 .site-name,
+.slff-17 .site-slogan,
+.hff-17 .nav-tab__title {
+  font-family: 'Oswald', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-18 h1,
+.hff-18 h2,
+.hff-18 h3,
+.hff-18 h4,
+.hff-18 h5,
+.hff-18 h6,
+.hff-18 .tp-caption__title,
+.hff-18 .tp-caption__subtitle,
+.hff-18 table tr th,
+.hff-18 .view-dishes-grid .views-field-field-mt-price,
+.hff-18 .view-dishes .views-field-field-mt-price,
+.sff-18 .site-name,
+.slff-18 .site-slogan,
+.hff-18 .nav-tab__title {
+  font-family: 'Playfair Display SC', Georgia, Times New Roman, Serif;
+}
+.hff-19 h1,
+.hff-19 h2,
+.hff-19 h3,
+.hff-19 h4,
+.hff-19 h5,
+.hff-19 h6,
+.hff-19 .tp-caption__title,
+.hff-19 .tp-caption__subtitle,
+.hff-19 table tr th,
+.hff-19 .view-dishes-grid .views-field-field-mt-price,
+.hff-19 .view-dishes .views-field-field-mt-price,
+.sff-19 .site-name,
+.slff-19 .site-slogan,
+.hff-19 .nav-tab__title {
+  font-family: 'Cabin', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-20 h1,
+.hff-20 h2,
+.hff-20 h3,
+.hff-20 h4,
+.hff-20 h5,
+.hff-20 h6,
+.hff-20 .tp-caption__title,
+.hff-20 .tp-caption__subtitle,
+.hff-20 table tr th,
+.hff-20 .view-dishes-grid .views-field-field-mt-price,
+.hff-20 .view-dishes .views-field-field-mt-price,
+.sff-20 .site-name,
+.slff-20 .site-slogan,
+.hff-20 .nav-tab__title {
+  font-family: 'Noto Sans', Arial, Helvetica Neue, Sans-serif;
+}
+.hff-21 h1,
+.hff-21 h2,
+.hff-21 h3,
+.hff-21 h4,
+.hff-21 h5,
+.hff-21 h6,
+.hff-21 .tp-caption__title,
+.hff-21 .tp-caption__subtitle,
+.hff-21 table tr th,
+.hff-21 .view-dishes-grid .views-field-field-mt-price,
+.hff-21 .view-dishes .views-field-field-mt-price,
+.sff-21 .site-name,
+.slff-21 .site-slogan,
+.hff-21 .nav-tab__title {
+  font-family: Helvetica Neue, Arial, Sans-serif;
+}
+.hff-22 h1,
+.hff-22 h2,
+.hff-22 h3,
+.hff-22 h4,
+.hff-22 h5,
+.hff-22 h6,
+.hff-22 .tp-caption__title,
+.hff-22 .tp-caption__subtitle,
+.hff-22 table tr th,
+.hff-22 .view-dishes-grid .views-field-field-mt-price,
+.hff-22 .view-dishes .views-field-field-mt-price,
+.sff-22 .site-name,
+.slff-22 .site-slogan,
+.hff-22 .nav-tab__title {
+  font-family: 'Droid Serif', Georgia, Times, Times New Roman, Serif;
+}
+.hff-23 h1,
+.hff-23 h2,
+.hff-23 h3,
+.hff-23 h4,
+.hff-23 h5,
+.hff-23 h6,
+.hff-23 .tp-caption__title,
+.hff-23 .tp-caption__subtitle,
+.hff-23 table tr th,
+.hff-23 .view-dishes-grid .views-field-field-mt-price,
+.hff-23 .view-dishes .views-field-field-mt-price,
+.sff-23 .site-name,
+.slff-23 .site-slogan,
+.hff-23 .nav-tab__title {
+  font-family: 'PT Serif', Georgia, Times, Times New Roman, Serif;
+}
+.hff-24 h1,
+.hff-24 h2,
+.hff-24 h3,
+.hff-24 h4,
+.hff-24 h5,
+.hff-24 h6,
+.hff-24 .tp-caption__title,
+.hff-24 .tp-caption__subtitle,
+.hff-24 table tr th,
+.hff-24 .view-dishes-grid .views-field-field-mt-price,
+.hff-24 .view-dishes .views-field-field-mt-price,
+.sff-24 .site-name,
+.slff-24 .site-slogan,
+.hff-24 .nav-tab__title {
+  font-family: 'Vollkorn', Georgia, Times, Times New Roman, Serif;
+}
+.hff-25 h1,
+.hff-25 h2,
+.hff-25 h3,
+.hff-25 h4,
+.hff-25 h5,
+.hff-25 h6,
+.hff-25 .tp-caption__title,
+.hff-25 .tp-caption__subtitle,
+.hff-25 table tr th,
+.hff-25 .view-dishes-grid .views-field-field-mt-price,
+.hff-25 .view-dishes .views-field-field-mt-price,
+.sff-25 .site-name,
+.slff-25 .site-slogan,
+.hff-25 .nav-tab__title {
+  font-family: 'Alegreya', Georgia, Times, Times New Roman, Serif;
+}
+.hff-26 h1,
+.hff-26 h2,
+.hff-26 h3,
+.hff-26 h4,
+.hff-26 h5,
+.hff-26 h6,
+.hff-26 .tp-caption__title,
+.hff-26 .tp-caption__subtitle,
+.hff-26 table tr th,
+.hff-26 .view-dishes-grid .views-field-field-mt-price,
+.hff-26 .view-dishes .views-field-field-mt-price,
+.sff-26 .site-name,
+.slff-26 .site-slogan,
+.hff-26 .nav-tab__title {
+  font-family: 'Noto Serif', Georgia, Times, Times New Roman, Serif;
+}
+.hff-27 h1,
+.hff-27 h2,
+.hff-27 h3,
+.hff-27 h4,
+.hff-27 h5,
+.hff-27 h6,
+.hff-27 .tp-caption__title,
+.hff-27 .tp-caption__subtitle,
+.hff-27 table tr th,
+.hff-27 .view-dishes-grid .views-field-field-mt-price,
+.hff-27 .view-dishes .views-field-field-mt-price,
+.sff-27 .site-name,
+.slff-27 .site-slogan,
+.hff-27 .nav-tab__title {
+  font-family: 'Crimson Text', Georgia, Times, Times New Roman, Serif;
+}
+.hff-28 h1,
+.hff-28 h2,
+.hff-28 h3,
+.hff-28 h4,
+.hff-28 h5,
+.hff-28 h6,
+.hff-28 .tp-caption__title,
+.hff-28 .tp-caption__subtitle,
+.hff-28 table tr th,
+.hff-28 .view-dishes-grid .views-field-field-mt-price,
+.hff-28 .view-dishes .views-field-field-mt-price,
+.sff-28 .site-name,
+.slff-28 .site-slogan,
+.hff-28 .nav-tab__title {
+  font-family: 'Gentium Book Basic', Georgia, Times, Times New Roman, Serif;
+}
+.hff-29 h1,
+.hff-29 h2,
+.hff-29 h3,
+.hff-29 h4,
+.hff-29 h5,
+.hff-29 h6,
+.hff-29 .tp-caption__title,
+.hff-29 .tp-caption__subtitle,
+.hff-29 table tr th,
+.hff-29 .view-dishes-grid .views-field-field-mt-price,
+.hff-29 .view-dishes .views-field-field-mt-price,
+.sff-29 .site-name,
+.slff-29 .site-slogan,
+.hff-29 .nav-tab__title {
+  font-family: 'Volkhov', Georgia, Times, Times New Roman, Serif;
+}
+.hff-30 h1,
+.hff-30 h2,
+.hff-30 h3,
+.hff-30 h4,
+.hff-30 h5,
+.hff-30 h6,
+.hff-30 .tp-caption__title,
+.hff-30 .tp-caption__subtitle,
+.hff-30 table tr th,
+.hff-30 .view-dishes-grid .views-field-field-mt-price,
+.hff-30 .view-dishes .views-field-field-mt-price,
+.sff-30 .site-name,
+.slff-30 .site-slogan,
+.hff-30 .nav-tab__title {
+  font-family: Times, Times New Roman, Serif;
+}
+.hff-31 h1,
+.hff-31 h2,
+.hff-31 h3,
+.hff-31 h4,
+.hff-31 h5,
+.hff-31 h6,
+.hff-31 .tp-caption__title,
+.hff-31 .tp-caption__subtitle,
+.hff-31 table tr th,
+.hff-31 .view-dishes-grid .views-field-field-mt-price,
+.hff-31 .view-dishes .views-field-field-mt-price,
+.sff-31 .site-name,
+.slff-31 .site-slogan,
+.hff-31 .nav-tab__title {
+  font-family: 'Alegreya SC', Georgia, Times, Times New Roman, Serif;
+}
+.hff-32 h1,
+.hff-32 h2,
+.hff-32 h3,
+.hff-32 h4,
+.hff-32 h5,
+.hff-32 h6,
+.hff-32 .tp-caption__title,
+.hff-32 .tp-caption__subtitle,
+.hff-32 table tr th,
+.hff-32 .view-dishes-grid .views-field-field-mt-price,
+.hff-32 .view-dishes .views-field-field-mt-price,
+.sff-32 .site-name,
+.slff-32 .site-slogan,
+.hff-32 .nav-tab__title {
+  font-family: 'Montserrat', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-33 h1,
+.hff-33 h2,
+.hff-33 h3,
+.hff-33 h4,
+.hff-33 h5,
+.hff-33 h6,
+.hff-33 .tp-caption__title,
+.hff-33 .tp-caption__subtitle,
+.hff-33 table tr th,
+.hff-33 .view-dishes-grid .views-field-field-mt-price,
+.hff-33 .view-dishes .views-field-field-mt-price,
+.sff-33 .site-name,
+.slff-33 .site-slogan,
+.hff-33 .nav-tab__title {
+  font-family: 'Fira Sans', Helvetica Neue, Arial, Sans-serif;
+}
+.hff-34 h1,
+.hff-34 h2,
+.hff-34 h3,
+.hff-34 h4,
+.hff-34 h5,
+.hff-34 h6,
+.hff-34 .tp-caption__title,
+.hff-34 .tp-caption__subtitle,
+.hff-34 table tr th,
+.hff-34 .view-dishes-grid .views-field-field-mt-price,
+.hff-34 .view-dishes .views-field-field-mt-price,
+.sff-34 .site-name,
+.slff-34 .site-slogan,
+.hff-34 .nav-tab__title {
+  font-family: 'Lora', Georgia, Times, Times New Roman, Serif;
+}
+.hff-35 h1,
+.hff-35 h2,
+.hff-35 h3,
+.hff-35 h4,
+.hff-35 h5,
+.hff-35 h6,
+.hff-35 .tp-caption__title,
+.hff-35 .tp-caption__subtitle,
+.hff-35 table tr th,
+.hff-35 .view-dishes-grid .views-field-field-mt-price,
+.hff-35 .view-dishes .views-field-field-mt-price,
+.sff-35 .site-name,
+.slff-35 .site-slogan,
+.hff-35 .nav-tab__title {
+  font-family: 'Quattrocento Sans', Helvetica Neue, Arial, sans-serif;
+}
+.hff-36 h1,
+.hff-36 h2,
+.hff-36 h3,
+.hff-36 h4,
+.hff-36 h5,
+.hff-36 h6,
+.hff-36 .tp-caption__title,
+.hff-36 .tp-caption__subtitle,
+.hff-36 table tr th,
+.hff-36 .view-dishes-grid .views-field-field-mt-price,
+.hff-36 .view-dishes .views-field-field-mt-price,
+.sff-36 .site-name,
+.slff-36 .site-slogan,
+.hff-36 .nav-tab__title {
+  font-family: 'Julius Sans One', Helvetica Neue, Arial, sans-serif;
+}
+.hff-37 h1,
+.hff-37 h2,
+.hff-37 h3,
+.hff-37 h4,
+.hff-37 h5,
+.hff-37 h6,
+.hff-37 .tp-caption__title,
+.hff-37 .tp-caption__subtitle,
+.hff-37 table tr th,
+.hff-37 .view-dishes-grid .views-field-field-mt-price,
+.hff-37 .view-dishes .views-field-field-mt-price,
+.sff-37 .site-name,
+.slff-37 .site-slogan,
+.hff-37 .nav-tab__title {
+  font-family: 'Work Sans', Helvetica Neue, Arial, sans-serif;
+}
+.hff-38 h1,
+.hff-38 h2,
+.hff-38 h3,
+.hff-38 h4,
+.hff-38 h5,
+.hff-38 h6,
+.hff-38 .tp-caption__title,
+.hff-38 .tp-caption__subtitle,
+.hff-38 table tr th,
+.hff-38 .view-dishes-grid .views-field-field-mt-price,
+.hff-38 .view-dishes .views-field-field-mt-price,
+.sff-38 .site-name,
+.slff-38 .site-slogan,
+.hff-38 .nav-tab__title {
+  font-family: 'Open Sans Condensed', Helvetica Neue, Arial, sans-serif;
+}
+.hff-39 h1,
+.hff-39 h2,
+.hff-39 h3,
+.hff-39 h4,
+.hff-39 h5,
+.hff-39 h6,
+.hff-39 .tp-caption__title,
+.hff-39 .tp-caption__subtitle,
+.hff-39 table tr th,
+.hff-39 .view-dishes-grid .views-field-field-mt-price,
+.hff-39 .view-dishes .views-field-field-mt-price,
+.sff-39 .site-name,
+.slff-39 .site-slogan,
+.hff-39 .nav-tab__title {
+  font-family: 'PT Sans Narrow', Helvetica Neue, Arial, sans-serif;
+}
+.hff-40 h1,
+.hff-40 h2,
+.hff-40 h3,
+.hff-40 h4,
+.hff-40 h5,
+.hff-40 h6,
+.hff-40 .tp-caption__title,
+.hff-40 .tp-caption__subtitle,
+.hff-40 table tr th,
+.hff-40 .view-dishes-grid .views-field-field-mt-price,
+.hff-40 .view-dishes .views-field-field-mt-price,
+.sff-40 .site-name,
+.slff-40 .site-slogan,
+.hff-40 .nav-tab__title {
+  font-family: 'Archivo Narrow', Helvetica Neue, Arial, sans-serif;
+}
+.hff-41 h1,
+.hff-41 h2,
+.hff-41 h3,
+.hff-41 h4,
+.hff-41 h5,
+.hff-41 h6,
+.hff-41 .tp-caption__title,
+.hff-41 .tp-caption__subtitle,
+.hff-41 table tr th,
+.hff-41 .view-dishes-grid .views-field-field-mt-price,
+.hff-41 .view-dishes .views-field-field-mt-price,
+.sff-41 .site-name,
+.slff-41 .site-slogan,
+.hff-41 .nav-tab__title {
+  font-family: 'Ubuntu Condensed', Helvetica Neue, Arial, sans-serif;
+}
+.hff-42 h1,
+.hff-42 h2,
+.hff-42 h3,
+.hff-42 h4,
+.hff-42 h5,
+.hff-42 h6,
+.hff-42 .tp-caption__title,
+.hff-42 .tp-caption__subtitle,
+.hff-42 table tr th,
+.hff-42 .view-dishes-grid .views-field-field-mt-price,
+.hff-42 .view-dishes .views-field-field-mt-price,
+.sff-42 .site-name,
+.slff-42 .site-slogan,
+.hff-42 .nav-tab__title {
+  font-family: 'Arimo', Helvetica Neue, Arial, sans-serif;
+}
+.hff-43 h1,
+.hff-43 h2,
+.hff-43 h3,
+.hff-43 h4,
+.hff-43 h5,
+.hff-43 h6,
+.hff-43 .tp-caption__title,
+.hff-43 .tp-caption__subtitle,
+.hff-43 table tr th,
+.hff-43 .view-dishes-grid .views-field-field-mt-price,
+.hff-43 .view-dishes .views-field-field-mt-price,
+.sff-43 .site-name,
+.slff-43 .site-slogan,
+.hff-43 .nav-tab__title {
+  font-family: 'Libre Franklin', Helvetica Neue, Arial, sans-serif;
+}
+.hff-44 h1,
+.hff-44 h2,
+.hff-44 h3,
+.hff-44 h4,
+.hff-44 h5,
+.hff-44 h6,
+.hff-44 .tp-caption__title,
+.hff-44 .tp-caption__subtitle,
+.hff-44 table tr th,
+.hff-44 .view-dishes-grid .views-field-field-mt-price,
+.hff-44 .view-dishes .views-field-field-mt-price,
+.sff-44 .site-name,
+.slff-44 .site-slogan,
+.hff-44 .nav-tab__title {
+  font-family: 'Taviraj', Georgia, Times, Times New Roman, Serif;
+}
+
+

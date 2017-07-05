@@ -1,0 +1,75 @@
+/**
+ * @file
+ * Styles for Restaurant+'s mini pager.
+ */
+
+/* Using .pager selector on the first one to override .region-content ul. */
+.pager__items {
+  margin: 30px 0;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #eaeaea;
+  font-size: 0;
+  padding: 20px 0;
+}
+li.pager__item {
+  padding: 0;
+  margin: 0 0 -1px 0;
+  display: inline-block;
+}
+li.pager__item > a,
+li.pager__item.is-active {
+  font-size: 14px;
+  height: 40px;
+  padding: 0 20px;
+  -webkit-border-radius: 50px;
+  -moz-border-radius: 50px;
+  border-radius: 50px;
+  line-height: 40px;
+  margin: 0 5px;
+  border-width: 0;
+  color: #3b3b3b;
+  background-color: #f4f4f4;
+  line-height: 40px;
+  text-decoration: none;
+}
+li.pager__item.is-active,
+li.pager__item a:hover,
+li.pager__item a:focus {
+  background-color: #3b3b3b;
+  color: #ffffff;
+}
+
+/*mini pager @colored regions*/
+.region--gray-background li.pager__item > a {
+  background-color: #ffffff;
+}
+.region--gray-background li.pager__item.is-active,
+.region--gray-background li.pager__item a:hover,
+.region--gray-background li.pager__item a:focus {
+  background-color: #3b3b3b;
+  color: #ffffff;
+}
+.region--light-typography .pager__items {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.region--light-typography li.pager__item > a {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.region--light-typography li.pager__item.is-active,
+.region--light-typography li.pager__item a:hover,
+.region--light-typography li.pager__item a:focus {
+  background-color: #3b3b3b;
+  color: #ffffff;
+}
+.region--black-background li.pager__item.is-active,
+.region--black-background li.pager__item a:hover,
+.region--black-background li.pager__item a:focus {
+  background-color: #2d2d2d;
+}
+
+/*Reset Bootstrap's rules*/
+.pager {
+  margin: 0;
+}

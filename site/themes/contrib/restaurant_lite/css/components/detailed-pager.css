@@ -1,0 +1,43 @@
+/**
+ * @file
+ * Styles for Restaurant+'s detailed pager.
+ */
+
+/* Using .pager selector on the first one to override .region-content ul. */
+.detailed-pager--top {
+  border-bottom: 2px solid #eaeaea;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+}
+.detailed-pager--bottom {
+  border-top: 2px solid #eaeaea;
+  margin-top: 60px;
+  padding-top: 20px;
+}
+.detailed-pager .total-items {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 1em 0;
+}
+.detailed-pager .pager__items {
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-align: right;
+}
+.detailed-pager .pager__item {
+  text-align: center;
+}
+li.pager__item > a {
+  margin: 0 0.4em;
+}
+.detailed-pager .pager__item:last-child a {
+  margin-right: 0;
+}
+
+/*detailed pager @colored regions*/
+.region--colored-background .detailed-pager,
+.region--dark-background .detailed-pager,
+.region--black-background .detailed-pager {
+  border-color: rgba(255, 255, 255, 0.4);
+}

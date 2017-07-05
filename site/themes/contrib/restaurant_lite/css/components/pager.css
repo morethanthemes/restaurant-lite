@@ -1,0 +1,93 @@
+/**
+ * @file
+ * Styles for Restaurant+'s full pager.
+ */
+
+/* Using .pager selector on the first one to override .region-content ul. */
+.pager__items {
+  margin: 30px 0;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #eaeaea;
+  font-size: 0;
+  padding: 20px 0;
+}
+li.pager__item {
+  padding: 0;
+  margin: 0 0 -1px 0;
+  display: inline-block;
+}
+li.pager__item > a {
+  font-size: 14px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  line-height: 40px;
+  margin: 0 5px;
+  border-width: 0;
+  color: #3b3b3b;
+  background-color: #f4f4f4;
+  -webkit-border-radius: 100%;
+  -moz-border-radius: 100%;
+  border-radius: 100%;
+  line-height: 40px;
+  text-decoration: none;
+}
+li.pager__item a:hover,
+li.pager__item a:focus,
+li.pager__item.is-active a,
+li.pager__item.is-active a:hover,
+li.pager__item.is-active a:focus {
+  background-color: #3b3b3b;
+  color: #ffffff;
+}
+li.pager__item--next a,
+li.pager__item--previous a,
+li.pager__item--first a,
+li.pager__item--last a {
+  padding: 0 20px;
+  -webkit-border-radius: 50px;
+  -moz-border-radius: 50px;
+  border-radius: 50px;
+  width: auto;
+}
+
+/*mini pager @colored regions*/
+.region--gray-background li.pager__item > a {
+  background-color: #ffffff;
+}
+.region--gray-background li.pager__item a:hover,
+.region--gray-background li.pager__item a:focus,
+.region--gray-background li.pager__item.is-active a,
+.region--gray-background li.pager__item.is-active a:hover,
+.region--gray-background li.pager__item.is-active a:focus {
+  background-color: #3b3b3b;
+  color: #ffffff;
+}
+.region--light-typography .pager__items {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.region--light-typography li.pager__item > a {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.region--light-typography li.pager__item a:hover,
+.region--light-typography li.pager__item a:focus,
+.region--light-typography li.pager__item.is-active a,
+.region--light-typography li.pager__item.is-active a:hover,
+.region--light-typography li.pager__item.is-active a:focus {
+  background-color: #3b3b3b;
+  color: #ffffff;
+}
+.region--black-background li.pager__item a:hover,
+.region--black-background li.pager__item a:focus,
+.region--black-background li.pager__item.is-active a,
+.region--black-background li.pager__item.is-active a:hover,
+.region--black-background li.pager__item.is-active a:focus {
+  background-color: #2d2d2d;
+}
+
+/*Reset Bootstrap's rules*/
+.pager {
+  margin: 0;
+}

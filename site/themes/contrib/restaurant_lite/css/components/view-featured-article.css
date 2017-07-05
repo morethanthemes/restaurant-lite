@@ -1,0 +1,23 @@
+/**
+ * @file
+ * Visual styles for Restaurant Lite's featured article views.
+ */
+.view-featured-article {
+  text-align: center;
+}
+.view-featured-article h2 {
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+.region--dark-typography .view-featured-article h2 a {
+  color: #3b3b3b;
+}
+.region--dark-typography .view-featured-article h2 a:hover {
+  text-decoration: none;
+}
+.view-featured-article .views-field-created {
+  margin-bottom: 20px;
+}
+.view-featured-article .views-field-body {
+  margin-bottom: 20px;
+}

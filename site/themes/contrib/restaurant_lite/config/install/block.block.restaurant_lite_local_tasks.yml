@@ -1,0 +1,21 @@
+langcode: en
+status: true
+dependencies:
+  theme:
+    - restaurant_lite
+_core:
+  default_config_hash: X9I1OB0W3WlWtrK-CNcg6hNWwa8wficanpH8pYnDZDE
+id: restaurant_lite_local_tasks
+theme: restaurant_lite
+region: content
+weight: -7
+provider: null
+plugin: local_tasks_block
+settings:
+  id: local_tasks_block
+  label: Tabs
+  provider: core
+  label_display: '0'
+  primary: true
+  secondary: true
+visibility: {  }

@@ -1,0 +1,115 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s dishes views.
+ */
+.view-dishes .views-row {
+  overflow-x: hidden;
+  margin-bottom: 10px;
+}
+.view-dishes .view-content > h3 a {
+  font-size: 30px;
+  font-weight: 500;
+  margin: 0 0 30px;
+  padding-bottom: 10px;
+  display: block;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #f1f1f1;
+}
+.view-dishes .views-row + h3 {
+  margin-top: 70px;
+}
+.region--dark-typography .view-dishes .view-content > h3 a {
+  color: #3b3b3b;
+}
+.region--light-typography .view-dishes .view-content > h3 a {
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+  text-decoration: none;
+}
+.region--light-typography .view-dishes .view-content > h3 a:hover {
+  opacity: 0.85;
+}
+.view-dishes .views-field-title h4 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  display: inline;
+}
+.view-dishes .views-field-title a {
+  display: inline;
+}
+.view-dishes .title-and-price-container {
+  position: relative;
+  margin-bottom: 5px;
+}
+.view-dishes .title-and-price-container:after {
+  float: left;
+  width: 0;
+  white-space: nowrap;
+  content:
+  ". . . . . . . . . . . . . . . . . . . . "
+  ". . . . . . . . . . . . . . . . . . . . "
+  ". . . . . . . . . . . . . . . . . . . . "
+  ". . . . . . . . . . . . . . . . . . . . "
+  ". . . . . . . . . . . . . . . . . . . . "
+  ". . . . . . . . . . . . . . . . . . . . "
+  ". . . . . . . . . . . . . . . . . . . . ";
+  color: #bfbfbf;
+}
+.view-dishes .title-and-price-container > div:first-child {
+  padding-right: 0.33em;
+  display: inline;
+}
+.view-dishes .title-and-price-container > div + div {
+  float: right;
+  padding-left: 0.33em;
+  position: relative;
+  z-index: 1;
+  display: inline;
+  line-height: 1.3;
+}
+.view-dishes .views-field-field-mt-price {
+  font-size: 18px;
+  font-weight: 600;
+}
+.view-dishes .views-field-body {
+  font-size: 14px;
+}
+
+/*view dishes grid at colored regions*/
+.region--white-background .view-dishes .title-and-price-container > div {
+  background-color: #ffffff;
+}
+.region--gray-background .view-dishes .title-and-price-container > div {
+  background-color: #f4f4f4;
+}
+.highlighted.region--gray-background .view-dishes .title-and-price-container > div {
+  background-color: #ededed;
+}
+@media (min-width: 768px) {
+  .highlighted.region--gray-background .highlighted-first .view-dishes .title-and-price-container > div {
+    background-color: #ededed;
+  }
+  .highlighted.region--gray-background .highlighted-second .view-dishes .title-and-price-container > div {
+    background-color: #e1e1e1;
+  }
+}
+.region--black-background .view-dishes .title-and-price-container > div {
+  background-color: #3b3b3b;
+}
+.subfooter.region--black-background .view-dishes .title-and-price-container > div,
+.subfooter-top.region--black-background .view-dishes .title-and-price-container > div,
+.footer-bottom.region--black-background  .view-dishes .title-and-price-container > div {
+  background-color: #2d2d2d;
+}
+.region--white-pattern  .view-dishes .title-and-price-container > div {
+  background-image: url('../../images/white-pattern.png');
+  background-repeat: repeat;
+  background-position: 0 0;
+}
+.region--dark-typography .view-dishes .views-field-title a {
+  color: #3b3b3b;
+}
+.region--dark-typography .view-dishes .views-field-title a:hover {
+  text-decoration: none;
+}

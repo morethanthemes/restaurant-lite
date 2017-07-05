@@ -1,0 +1,36 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s article content type.
+ */
+.page-node-type-article .page-title {
+  font-size: 35px;
+  margin-bottom: 5px;
+}
+.node--type-article .node__meta {
+  margin-bottom: 0;
+  color: #a6a6a6;
+}
+.node--type-article .node__meta i.fa {
+  font-size: 12px;
+  padding-right: 2px;
+}
+.node--type-article .node__header {
+  margin-bottom: 25px;
+}
+.node--type-article .node__header .profile {
+  margin-right: 5px;
+}
+.node--type-article .node__header .profile + .node__meta .fa-user {
+  display: none;
+}
+.node--type-article .node__meta .inline-list {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.node--type-article .node__meta .username {
+  padding-right: 30px;
+}
+.node--type-article .node__title {
+  margin-bottom: 10px;
+  font-size: 24px;
+}

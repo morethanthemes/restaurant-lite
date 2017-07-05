@@ -1,0 +1,318 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s forms.
+ */
+.form-item,
+.form-actions {
+  margin: 20px 0;
+}
+input.form-text,
+input.form-tel,
+input.form-email,
+input.form-url,
+input.form-search,
+input.form-file,
+input.form-number,
+input.form-color,
+input.form-date,
+input.form-time,
+textarea,
+select {
+  color: #3b3b3b;
+  padding: 10px 15px;
+  outline: none;
+  border: none;
+  -webkit-appearance: none;
+  width: 100%;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e9e9e9;
+  background-color: #e9e9e9;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  font-weight: 500;
+  -webkit-transition: border-color 0.2s linear;
+  -o-transition: border-color 0.2s linear;
+  transition: border-color 0.2s linear;
+}
+
+/*webkit specific rules for select list*/
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  select {
+    background-image: url("../../images/angle-down-black.png");
+    background-image: linear-gradient(transparent, transparent), url("../../images/angle-down-black.svg");
+    background-size: 20px 20px;
+    background-repeat: no-repeat;
+    background-position: 98.5% 50%;
+    height: 46px;
+  }
+  .region--light-typography select {
+    background-image: url("../../images/angle-down-white.png");
+    background-image: linear-gradient(transparent, transparent), url("../../images/angle-down-white.svg");
+  }
+}
+.region--gray-background input.form-text,
+.region--gray-background input.form-tel,
+.region--gray-background input.form-email,
+.region--gray-background input.form-url,
+.region--gray-background input.form-search,
+.region--gray-background input.form-file,
+.region--gray-background input.form-number,
+.region--gray-background input.form-color,
+.region--gray-background input.form-date,
+.region--gray-background input.form-time,
+.region--gray-background textarea,
+.region--gray-background select {
+  border-color: #d2d2d2;
+  background-color: #d2d2d2;
+}
+.region--black-background input.form-text,
+.region--black-background input.form-tel,
+.region--black-background input.form-email,
+.region--black-background input.form-url,
+.region--black-background input.form-search,
+.region--black-background input.form-file,
+.region--black-background input.form-number,
+.region--black-background input.form-color,
+.region--black-background input.form-date,
+.region--black-background input.form-time,
+.region--black-background textarea,
+.region--black-background select {
+  border-color: #474747;
+  background-color: #474747;
+  color: #b1b1b1;
+}
+.region--black-background input.form-text:hover,
+.region--black-background input.form-tel:hover,
+.region--black-background input.form-email:hover,
+.region--black-background input.form-url:hover,
+.region--black-background input.form-search:hover,
+.region--black-background input.form-file:hover,
+.region--black-background input.form-number:hover,
+.region--black-background input.form-color:hover,
+.region--black-background input.form-date:hover,
+.region--black-background input.form-time:hover,
+.region--black-background textarea:hover,
+.region--black-background select:hover,
+.region--black-background input.form-text:focus,
+.region--black-background input.form-tel:focus,
+.region--black-background input.form-email:focus,
+.region--black-background input.form-url:focus,
+.region--black-background input.form-search:focus,
+.region--black-background input.form-file:focus,
+.region--black-background input.form-number:focus,
+.region--black-background input.form-color:focus,
+.region--black-background input.form-date:focus,
+.region--black-background input.form-time:focus,
+.region--black-background textarea:focus,
+.region--black-background select:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/*inline form elements*/
+.container-inline:not(.block) {
+  margin: 15px 0;
+}
+.container-inline {
+  font-size: 0;
+}
+.container-inline input.form-text,
+.container-inline input.form-tel,
+.container-inline input.form-email,
+.container-inline input.form-url,
+.container-inline input.form-search,
+.container-inline input.form-file,
+.container-inline input.form-number,
+.container-inline input.form-color,
+.container-inline input.form-date,
+.container-inline input.form-time {
+  width: auto;
+  margin-right: 0;
+  font-size: 15px;
+  border-radius: 5px 0 0 5px;
+  min-height: 50px;
+  min-width: 250px;
+}
+.container-inline input[type="submit"] {
+  margin: 0;
+  border-radius: 0 5px 5px 0;
+  min-height: 50px;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+@media (max-width: 767px) {
+  .container-inline .form-actions {
+    margin: 10px 0;
+    display: block;
+  }
+  .container-inline input[type="submit"] {
+    margin-top: 5px;
+    border-radius: 50px;
+  }
+  .container-inline input.form-text,
+  .container-inline input.form-tel,
+  .container-inline input.form-email,
+  .container-inline input.form-url,
+  .container-inline input.form-search,
+  .container-inline input.form-file,
+  .container-inline input.form-number,
+  .container-inline input.form-color,
+  .container-inline input.form-date,
+  .container-inline input.form-time {
+    width: 100%;
+    border-radius: 5px;
+    min-width: 0;
+  }
+}
+@media (max-width: 991px) {
+  .col-sm-6 .container-inline .form-actions {
+    margin: 10px 0;
+    display: block;
+  }
+  .col-sm-6 .container-inline input[type="submit"] {
+    margin-top: 5px;
+    border-radius: 50px;
+  }
+  .col-sm-6 .container-inline input.form-text,
+  .col-sm-6 .container-inline input.form-tel,
+  .col-sm-6 .container-inline input.form-email,
+  .col-sm-6 .container-inline input.form-url,
+  .col-sm-6 .container-inline input.form-search,
+  .col-sm-6 .container-inline input.form-file,
+  .col-sm-6 .container-inline input.form-number,
+  .col-sm-6 .container-inline input.form-color,
+  .col-sm-6 .container-inline input.form-date,
+  .col-sm-6 .container-inline input.form-time {
+    width: 100%;
+    border-radius: 5px;
+    min-width: 0;
+  }
+}
+
+/* Date time fields */
+.form-type-datetime .container-inline {
+  margin: 0;
+}
+.form-type-datetime .container-inline:before,
+.form-type-datetime .container-inline:after {
+  display: table;
+  content: " ";
+}
+.form-type-datetime .container-inline:after {
+  clear: both;
+}
+.form-type-datetime .container-inline .form-item {
+  width: 49%;
+  display: block;
+  float: left;
+  margin: 0;
+  padding: 0 1px;
+}
+.form-type-datetime .container-inline .form-item:nth-child(odd) {
+  margin-right: 1%;
+}
+.form-type-datetime .container-inline .form-item:nth-child(even) {
+  margin-left: 1%;
+}
+.form-type-datetime .container-inline input {
+  border-radius: 5px;
+  width: 100%;
+  min-width: auto;
+}
+
+/*Form group*/
+.form-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+.form-group:last-child {
+  margin-bottom: 0;
+}
+.form-group .form-item, 
+.form-group .form-actions {
+  margin: 0;
+}
+.form-submit-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 30px;
+  height: 100%;
+  color: #ffffff;
+  border: none;
+  border-radius: 0 5px 5px 0;
+}
+.form-submit-icon i {
+  line-height: 40px
+}
+
+/*textarea*/
+textarea {
+  resize: none;
+}
+label {
+  display: block;
+}
+.label {
+  color: #2d2d2d;
+}
+.region--colored-background .label {
+  color: #ffffff;
+}
+
+/*fieldset*/
+fieldset {
+  border: 1px solid #eaeaea;
+  padding: 0.5em;
+  margin: 20px 0 35px;
+}
+fieldset legend {
+  border: 1px solid #eaeaea;
+  display: inline-block;
+  width: auto;
+  padding: 5px;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-left: 10px;
+}
+.region--light-typography fieldset legend {
+  color: #ffffff;
+}
+
+/*checkboxes and radios*/
+input[type="radio"],
+input[type="checkbox"] {
+  margin: 0px 10px 3px 0;
+}
+
+/*form placeholder*/
+::-webkit-input-placeholder {
+  color: #3b3b3b;
+}
+:-moz-placeholder {
+  color: #3b3b3b;
+}
+::-moz-placeholder {
+  color: #3b3b3b;
+}
+:-ms-input-placeholder {
+  color: #3b3b3b;
+}
+.region--black-background ::-webkit-input-placeholder {
+  color: #b1b1b1;
+}
+.region--black-background :-moz-placeholder {
+  color: #b1b1b1;
+}
+.region--black-background ::-moz-placeholder {
+  color: #b1b1b1;
+}
+.region--black-background :-ms-input-placeholder {
+  color: #b1b1b1;
+}
+
+/*webforms*/
+.block-webform h2.title ~ .content form > .form-item:first-child {
+  margin-top: 0;
+}

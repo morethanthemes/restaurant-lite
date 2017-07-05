@@ -1,0 +1,71 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s working hours.
+ */
+.working-hours {
+  padding: 40px 30px 35px;
+  border-width: 2px;
+  border-color: #eaeaea;
+  border-style: solid;
+  border-radius: 5px;
+}
+.region--light-typography .working-hours {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+.working-hours h2.title {
+  text-align: center;
+}
+.working-hours ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.working-hours ul li {
+  clear: both;
+  padding: 8px 0;
+  position: relative;
+  min-height: 40px;
+}
+.working-hours ul li:before {
+  border-style: dashed;
+  border-width: 1px;
+  border-color: #dddddd;
+  position: absolute;
+  left: 40px;
+  right: 100px;
+  bottom: 15px;
+  content: "";
+}
+.region--black-background .working-hours ul li:before {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.working-hours__day {
+  position: absolute;
+  left: 0;
+}
+.working-hours__hours {
+  position: absolute;
+  left: auto;
+  right: 0;
+  text-align: right;
+}
+.region--black-background .working-hours__hours {
+  color: #ffffff;
+}
+
+/*Opening Hours*/
+.opening-hours {
+  padding: 40px 20px 30px;
+  border-radius: 5px;
+}
+.opening-hours h5 {
+  margin-top: 0;
+}
+.opening-hours i {
+  font-size: 30px;
+  color: #d2d2d2;
+  margin-bottom: 15px;
+}
+.region--white-background .opening-hours {
+  background-color: #f3f3f3;
+}

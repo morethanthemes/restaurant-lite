@@ -1,0 +1,16 @@
+/**
+ * @file
+ * Visual styles for comments section in Restaurant+.
+ */
+
+/*comments section*/
+.comment-wrapper {
+  margin-top: 35px;
+}
+.comment-wrapper h2.title {
+  font-size: 24px;
+  font-weight: 500;
+  border-bottom: 2px solid #f1f1f1;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}

@@ -1,0 +1,7 @@
+/**
+ * @file
+ * Visual styles for username in Restaurant+.
+ */
+a.username {
+  text-decoration: none;
+}

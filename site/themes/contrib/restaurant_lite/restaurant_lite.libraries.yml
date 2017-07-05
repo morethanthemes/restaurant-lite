@@ -1,0 +1,423 @@
+bootstrap:
+  version: 3.3.7
+  css:
+    base: #The CSS category. base is loaded before theme category
+      bootstrap/css/bootstrap.min.css: { weight: 0 } #weight sets the order within the category above
+  js:
+    bootstrap/js/bootstrap.min.js: {}
+  dependencies:
+    - core/jquery
+
+bootstrap-cdn:
+  version: 3.3.7
+  remote: //maxcdn.bootstrapcdn.com/bootstrap/3.3.7
+  css:
+    base:
+      //maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css: { weight: 0 }
+  js:
+    //maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js: {}
+  license:
+    name: The MIT License (MIT)
+    url: //github.com/twbs/bootstrap/blob/master/LICENSE
+    gpl-compatible: true
+  dependencies:
+    - core/jquery
+
+global-styling:
+  version: VERSION
+  css:
+    base:
+      css/base/elements.css: { weight: 1 }
+      css/base/layout.css: {}
+      css/base/typography.css: {}
+    component:
+      css/components/alert.css: {}
+      css/components/accordion.css: {}
+      css/components/block.css: {}
+      css/components/buttons.css: {}
+      css/components/better-exposed-filters.css: {}
+      css/components/contact-info.css: {}
+      css/components/dropdowns.css: {}
+      css/components/fancy-block.css: {}
+      css/components/fancy-block-2.css: {}
+      css/components/highlights.css: {}
+      css/components/more-links.css: {}
+      css/components/fa-icons-list.css: {}
+      css/components/forms.css: {}
+      css/components/field-taxonomy-term.css: {}
+      css/components/icons-list.css: {}
+      css/components/social-links.css: {}
+      css/components/social-media.css: {}
+      css/components/item-list.css: {}
+      css/components/inline-list.css: {}
+      css/components/image-overlay.css: {}
+      css/components/node-testimonial.css: {}
+      css/components/node-links.css: {}
+      css/components/node-dish.css: {}
+      css/components/view-featured-article.css: {}
+      css/components/separators.css: {}
+      css/components/subscribe-forms.css: {}
+      css/components/search.css: {}
+      css/components/site-branding.css: {}
+      css/components/static-promoted-images-grid.css: {}
+      css/components/text-blocks.css: {}
+      css/components/tables.css: {}
+      css/components/tabs.css: {}
+      css/components/team-members.css: {}
+      css/components/pills.css: {}
+      css/components/progress-bars.css: {}
+      css/components/working-hours.css: {}
+      css/components/layout-switcher.css: {}
+      css/components/language-switcher.css: {}
+      css/components/menu.css: {}
+      css/components/username.css: {}
+      css/components/views.css: {}
+      css/components/view-dishes.css: {}
+
+to-top:
+  version: VERSION
+  css:
+    component:
+      css/components/to-top.css: {}
+  js:
+    js/custom/to-top.js: {}
+  dependencies:
+    - core/jquery
+
+fixed-header:
+  version: VERSION
+  css:
+    component:
+      css/components/fixed-header.css: {}
+  js:
+    js/init/waypoints-fixed-header-init.js: {}
+  dependencies:
+    - restaurant_lite/waypoints
+    - restaurant_lite/waypoints-sticky
+
+transparent-header:
+  version: VERSION
+  css:
+    component:
+      css/components/transparent-header.css: {}
+  js:
+    js/custom/transparent-header.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings
+
+animate:
+  version: 3.4.0
+  css:
+    component:
+      js/animate/animate.css: { weight: 0 }
+
+animate-global:
+  version: VERSION
+  css:
+    theme:
+      css/theme/animations.css: { weight: 1 }
+  dependencies:
+    - restaurant_lite/animate
+
+slideout:
+  version: 0.1.12
+  css:
+    component:
+      js/slideout/slideout.css: { weight: 0 }
+  js:
+    js/slideout/slideout.min.js: {}
+  dependencies:
+    - core/jquery
+
+slideout-init:
+  version: VERSION
+  css:
+    component:
+      css/components/slideout.css: { weight: 0 }
+  js:
+    js/init/slideout-init.js: {}
+  dependencies:
+    - restaurant_lite/slideout
+
+waypoints:
+  version: 4.0.1
+  js:
+    js/waypoints/jquery.waypoints.min.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/jquery.once
+
+waypoints-sticky:
+  version: 4.0.1
+  js:
+    js/waypoints/shortcuts/sticky.min.js: {}
+  dependencies:
+    - core/jquery
+
+waypoints-animations-init:
+  version: VERSION
+  js:
+    js/init/waypoints-animations-init.js: {}
+  dependencies:
+    - restaurant_lite/waypoints
+
+magnific-popup:
+  version: 1.1.0
+  css:
+    component:
+      js/magnific-popup/magnific-popup.css: { weight: 0 }
+  js:
+    js/magnific-popup/jquery.magnific-popup.min.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/jquery.once
+
+magnific-popup-field-image-init:
+  version: VERSION
+  js:
+    js/init/magnific-popup-field-image-init.js: {}
+  dependencies:
+    - restaurant_lite/magnific-popup
+
+magnific-popup-field-member-photo-init:
+  version: VERSION
+  js:
+    js/init/magnific-popup-field-member-photo-init.js: {}
+  dependencies:
+    - restaurant_lite/magnific-popup
+
+magnific-popup-field-image-slider-init:
+  version: VERSION
+  js:
+    js/init/magnific-popup-field-image-slider-init.js: {}
+  dependencies:
+    - restaurant_lite/magnific-popup
+
+magnific-popup-field-video-init:
+  version: VERSION
+  js:
+    js/init/magnific-popup-field-video-init.js: {}
+  dependencies:
+    - restaurant_lite/magnific-popup
+
+flexslider:
+  version: 2.6.1
+  css:
+    base:
+      js/flexslider/flexslider.css: { weight: 0 }
+  js:
+    js/flexslider/jquery.flexslider-min.js: {}
+  dependencies:
+    - core/jquery
+
+flexslider-global:
+  version: VERSION
+  css:
+    component:
+      css/components/flexslider-global.css: {}
+  dependencies:
+    - restaurant_lite/flexslider
+
+flexslider-in-page-init:
+  version: VERSION
+  css:
+    component:
+      css/components/flexslider-in-page.css: {}
+  js:
+    js/init/flexslider-in-page-init.js: {}
+  dependencies:
+    - restaurant_lite/flexslider-global
+    - core/drupalSettings
+
+flexslider-nodes-slideshow:
+  version: VERSION
+  css:
+    component:
+      css/components/flexslider-nodes-slideshow.css: {}
+  js:
+    js/init/flexslider-nodes-slideshow-init.js: {}
+  dependencies:
+    - restaurant_lite/flexslider-global
+
+smooth-scroll:
+  version: VERSION
+  css:
+    component:
+      css/components/to-bottom-button.css: {}
+  js:
+    js/custom/smooth-scroll.js: {}
+  dependencies:
+    - core/jquery
+
+
+imagesloaded:
+  version: 3.2.0
+  js:
+    js/imagesloaded/imagesloaded.pkgd.min.js: {}
+  dependencies:
+    - core/jquery
+
+tooltip:
+  version: VERSION
+  css:
+    component:
+      css/components/tooltip.css: {}
+  js:
+    js/init/tooltip-init.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/jquery.once
+
+count-to:
+  version: 1.2.0
+  js:
+    js/count-to/jquery.countTo.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/jquery.once
+
+count-to-init:
+  version: VERSION
+  js:
+    js/init/count-to-init.js: {}
+  dependencies:
+    - restaurant_lite/count-to
+    - restaurant_lite/waypoints
+
+node:
+  version: VERSION
+  css:
+    component:
+      css/components/node.css: {}
+
+node-article:
+  version: VERSION
+  css:
+    component:
+      css/components/node-article.css: {}
+
+node-images:
+  version: VERSION
+  css:
+    component:
+      css/components/node-images.css: {}
+
+background-image-block:
+  version: VERSION
+  css:
+    component:
+      css/components/background-image-block.css: {}
+
+fontawesome:
+  version: 4.7.0
+  remote: //use.fontawesome.com/
+  js:
+    //use.fontawesome.com/f479fb1064.js: {}
+  license:
+    name: MIT
+    url: //opensource.org/licenses/mit-license.html
+    gpl-compatible: true
+
+breadcrumb:
+  version: VERSION
+  css:
+    component:
+      css/components/breadcrumb.css: {}
+
+pager:
+  version: VERSION
+  css:
+    component:
+      css/components/pager.css: {}
+
+mini-pager:
+  version: VERSION
+  css:
+    component:
+      css/components/mini-pager.css: {}
+
+detailed-pager:
+  version: VERSION
+  css:
+    component:
+      css/components/detailed-pager.css: {}
+
+messages:
+  version: VERSION
+  css:
+    component:
+      css/components/messages.css: { preprocess: false }
+
+comments:
+  version: VERSION
+  css:
+    component:
+      css/components/comments.css: {}
+
+comment:
+  version: VERSION
+  css:
+    component:
+      css/components/comment.css: {}
+
+theme-settings:
+  version: VERSION
+  css:
+    theme:
+      css/components/theme-settings.css: {}
+
+maintenance-page:
+  version: VERSION
+  css:
+    component:
+      css/components/maintenance-page.css: {}
+
+local-stylesheets:
+  version: VERSION
+  css:
+    base:
+      css/base/local-base.css: { weight: 100 }
+    component:
+      css/components/local-components.css: { weight: 100 }
+    theme:
+      css/theme/local-theme.css: { weight: 150 }
+
+#####################
+#   Color Schemes   #
+#####################
+color-red-green:
+  version: VERSION
+  css:
+    theme:
+      css/theme/color-red-green.css: { weight: 100, preprocess: FALSE }
+
+####################
+# Fonts collection #
+####################
+fonts-id-42:
+  version: VERSION
+  remote: //fonts.googleapis.com/css
+  css:
+    theme:
+      //fonts.googleapis.com/css?family=Arimo:400,400italic,700,700italic&subset=latin,greek,cyrillic: { type: external }
+  license:
+    name: Apache License, version 2.0
+    url: //www.apache.org/licenses/LICENSE-2.0.html
+    gpl-compatible: true
+
+fonts-id-44:
+  version: VERSION
+  remote: //fonts.googleapis.com/css
+  css:
+    theme:
+      //fonts.googleapis.com/css?family=Taviraj:300,300i,400,400i,500,500i,600,600i,700,700i,900,900i&amp;subset=latin-ext: { type: external }
+  license:
+    name: SIL Open Font License, 1.1
+    url: //scripts.sil.org/OFL
+    gpl-compatible: true
+

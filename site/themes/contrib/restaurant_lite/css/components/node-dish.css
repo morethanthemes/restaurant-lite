@@ -1,0 +1,12 @@
+/**
+ * @file
+ * Visual styles for Restaurant Lite's dish content type.
+ */
+
+/*price field*/
+.field--name-field-mt-price {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+

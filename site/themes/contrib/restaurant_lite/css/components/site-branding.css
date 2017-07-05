@@ -1,0 +1,97 @@
+/**
+ * @file
+ * Visual styles for the site branding block in Restaurant+.
+ */
+.logo {
+  float: left;
+  margin-right: 10px;
+  display: inline-block;
+}
+.logo-centered {
+  float: none;
+  text-align: center;
+}
+.logo:hover {
+  opacity: 0.8;
+  filter: alpha(opacity=80);
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  -ms-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+.site-name a {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+@media (max-width: 1440px) {
+  .site-name a {
+    font-size: 26px;
+  }
+}
+@media (min-width: 992px) and (max-width: 1199px) {
+  .site-name a {
+    font-size: 18px;
+  }
+}
+.region--light-typography .site-name a {
+  color: #ffffff;
+}
+.site-name a:hover {
+  text-decoration: none;
+  opacity: 0.8;
+  filter: alpha(opacity=80);
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  -ms-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+.site-slogan {
+  font-size: 14px;
+  line-height: 1.20;
+  color: #7f7f7f;
+}
+.headings-wide-spacing-enabled .site-slogan {
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+@media (max-width:991px) {
+  .logo {
+    float: none;
+    margin-right: 0;
+    display: block;
+    text-align: center;
+    display: block;
+    visibility: visible;
+    -webkit-transform: scale(0.75);
+    -moz-transform: scale(0.75);
+    -ms-transform: scale(0.75);
+    -o-transform: scale(0.75);
+    transform: scale(0.75);
+  }
+  .site-name,
+  .site-slogan {
+    text-align: center;
+  }
+  .site-name {
+    margin: 5px 0 0 0;
+  }
+  .site-slogan {
+    display: block;
+    visibility: visible;
+    padding: 5px 0 0 0;
+  }
+}
+
+/* Site Branding @footer*/
+.footer__section .logo-and-site-name-wrapper {
+  margin: 0 0 15px;
+}
+
+/* Site Branding @dark regions*/
+.region--light-typography .site-slogan {
+  color: #ffffff;
+}

@@ -1,0 +1,827 @@
+/**
+ * @file
+ Red green color styling for Restaurant+.
+ *
+ * Color 1: #B91C06
+ * RGB base color 1: 185, 28, 6
+ * Color 1 dark: #881504
+ * RGB base color 1: 136, 21, 4
+ * Color 2: #358C00
+ * RGB base color 2: 53, 140, 0
+ */
+/* base: elements */
+a {
+  color: #B91C06;
+}
+a:hover,
+a:focus {
+  color: #358C00;
+}
+a.link--dark,
+.link--dark a {
+  color: #358C00;
+}
+a.link--dark:hover,
+.link--dark a:hover,
+a.link--dark:focus,
+.link--dark a:focus {
+  color: #B91C06;
+}
+a.link--bordered,
+.link--bordered a {
+  border-color: #B91C06;
+}
+.text--dark {
+  color: #B91C06;
+}
+.text--colored {
+  color: #B91C06;
+}
+.text--colored-secondary {
+  color: #358C00;
+}
+blockquote:after {
+  color: rgba(185, 28, 6, 0.5);
+}
+
+/* base: layout */
+.region--dark-background {
+  background-color: #881504;
+}
+.region--colored-background {
+  background-color: #B91C06;
+}
+.region--colored-background + .region--separator-incline-diagonal:before {
+  background: linear-gradient(to bottom right, #B91C06 49.5%, transparent 50%);
+}
+.region--dark-background + .region--separator-incline-diagonal:before {
+  background: linear-gradient(to bottom right, #881504 49.5%, transparent 50%);
+}
+.region--colored-background + .region--separator-decline-diagonal:before {
+  background: linear-gradient(to bottom left, #B91C06 49.5%, transparent 50%);
+}
+.region--dark-background + .region--separator-decline-diagonal:before {
+  background: linear-gradient(to bottom left, #881504 49.5%, transparent 50%);
+}
+.page-container-border-enabled .page-container {
+  border-color: #B91C06;
+}
+
+/* components: accordion */
+.panel-heading--trigger-icon .panel-title a:after {
+  background-color: #B91C06;
+}
+.panel-heading--trigger-icon .panel-title a:hover:after {
+  background-color: #B91C06;
+}
+.region--light-typography.region--dark-background .panel-title a:hover,
+.region--light-typography.region--dark-background .panel-title a:focus {
+  color: #358C00;
+}
+.panel-group.panel-group--style-2 .panel .panel-title a {
+  background-color: #B91C06;
+}
+.panel-group.panel-group--style-2 .panel-title a.collapsed {
+  background-color: #358C00;
+}
+.panel-group.panel-group--style-2 .panel-title a:hover {
+  background-color: #B91C06;
+}
+.region--light-typography .panel-group.panel-group--style-2 .panel-heading--trigger-icon .panel-title a,
+.region--light-typography .panel-group.panel-group--style-2 .panel-heading--trigger-icon .panel-title a:hover {
+  color: #358C00;
+}
+
+/* components: buttons */
+a.button,
+.button > a,
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+  background-color: #358C00;
+}
+a.button:hover,
+a.button:focus,
+.button > a:hover,
+.button > a:focus,
+input[type="submit"]:hover,
+input[type="submit"]:focus,
+input[type="reset"]:hover,
+input[type="reset"]:focus,
+input[type="button"]:hover,
+input[type="button"]:focus {
+  background-color: #B91C06;
+}
+a.button.button--hover-style-2:before,
+.button.button--hover-style-2 > a:before {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.region--light-typography a.button:hover,
+.region--light-typography .button > a:hover,
+.region--light-typography input[type="submit"]:hover,
+.region--light-typography input[type="reset"]:hover,
+.region--light-typography input[type="button"]:hover,
+.region--light-typography a.button:focus,
+.region--light-typography .button > a:focus,
+.region--light-typography input[type="submit"]:focus,
+.region--light-typography input[type="reset"]:focus,
+.region--light-typography input[type="button"]:focus {
+  border-color: #B91C06;
+  background-color: #B91C06;
+}
+.region--light-typography.region--colored-background a.button:hover,
+.region--light-typography.region--colored-background .button > a:hover,
+.region--light-typography.region--colored-background input[type="submit"]:hover,
+.region--light-typography.region--colored-background input[type="reset"]:hover,
+.region--light-typography.region--colored-background input[type="button"]:hover,
+.region--light-typography.region--colored-background a.button:focus,
+.region--light-typography.region--colored-background .button > a:focus,
+.region--light-typography.region--colored-background input[type="submit"]:focus,
+.region--light-typography.region--colored-background input[type="reset"]:focus,
+.region--light-typography.region--colored-background input[type="button"]:focus,
+.region--light-typography.region--dark-background a.button:hover,
+.region--light-typography.region--dark-background .button > a:hover,
+.region--light-typography.region--dark-background input[type="submit"]:hover,
+.region--light-typography.region--dark-background input[type="reset"]:hover,
+.region--light-typography.region--dark-background input[type="button"]:hover,
+.region--light-typography.region--dark-background a.button:focus,
+.region--light-typography.region--dark-background .button > a:focus,
+.region--light-typography.region--dark-background input[type="submit"]:focus,
+.region--light-typography.region--dark-background input[type="reset"]:focus,
+.region--light-typography.region--dark-background input[type="button"]:focus {
+  border-color: #358C00;
+  background-color: #358C00;
+}
+.region--colored-background a.button.button--hover-style-2:hover,
+.region--dark-background a.button.button--hover-style-2:hover,
+.region--black-background a.button.button--hover-style-2:hover,
+.region--colored-background .button.button--hover-style-2 > a:hover,
+.region--dark-background .button.button--hover-style-2 > a:hover,
+.region--black-background .button.button--hover-style-2 > a:hover {
+  border-color: #B91C06;
+}
+.region--light-typography.region--colored-background a.button.button--hover-style-2:before,
+.region--light-typography.region--colored-background .button.button--hover-style-2 > a:before,
+.region--light-typography.region--dark-background a.button.button--hover-style-2:before,
+.region--light-typography.region--dark-background .button.button--hover-style-2 > a:before {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+
+/* components: collapsible block */
+.collapsible-block__trigger a {
+  background-color: #358C00;
+}
+.collapsible-block__trigger a:hover,
+.collapsible-block__trigger a:focus {
+  background-color: #B91C06;
+}
+.region--colored-background .collapsible-block__trigger a {
+  background-color: #358C00;
+  text-decoration: none;
+}
+.region--colored-background .collapsible-block__trigger a:hover {
+  background-color: rgba(53, 140, 0, 0.8);
+}
+
+/* components: comment */
+.comment__meta .username:hover,
+.node .comment ul.links li a:hover {
+  color: #358C00;
+}
+
+/* components: contact info */
+.contact-info .icon {
+  background-color: #358C00;
+}
+
+/* components: dropdowns */
+.region--colored-background .dropdown-menu {
+  background-color: #B91C06;
+}
+.region--dark-background .dropdown-menu {
+  background-color: #881504;
+}
+
+/* components: fancy block */
+.region--colored-background .fancy-block-text {
+  background-color: #B91C06;
+}
+.region--dark-background .fancy-block-text {
+  background-color: #881504;
+}
+
+/* components: fancy linked images block */
+.clip-path-support .clip-pentagon-container {
+  background-color: #B91C06;
+}
+.clip-path-support .clip-circle-container {
+  background-color: #B91C06;
+}
+.clip-path-support .clip-rectangle-container:before {
+  border-color: #B91C06;
+}
+
+/*CSS rules only for FF*/
+@-moz-document url-prefix() {
+  .clip-pentagon-container {
+    background-color: #B91C06;
+  }
+  .clip-circle-container {
+    background-color: #B91C06;
+  }
+  .clip-rectangle-container:before {
+    border-color: #B91C06;
+  }
+}
+
+/* components: featured linked text tiles block */
+.region--light-typography .featured-linked-text-tile__body a {
+  color: #B91C06;
+}
+.region--light-typography .featured-linked-text-tile__body a:hover {
+  color: #358C00;
+}
+.region--light-typography .featured-linked-text-tile a.button {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.region--light-typography .featured-linked-text-tile a.button:hover {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.featured-linked-text-tile .featured-linked-text-tile__title a {
+  color: #358C00;
+}
+
+/* components: content tabs */
+.field--name-field-mt-content-tabs .nav-tabs > li > a {
+  color: #358C00;
+}
+.field--name-field-mt-content-tabs .nav-tabs > li > a:hover {
+  color: #B91C06;
+}
+.field--name-field-mt-content-tabs .nav-tabs > li > a:focus,
+.field--name-field-mt-content-tabs .nav-tabs > li.active > a,
+.field--name-field-mt-content-tabs .nav-tabs > li.active > a:focus,
+.field--name-field-mt-content-tabs .nav-tabs > li.active > a:hover {
+  color: #358C00;
+  border-color: #358C00;
+}
+
+/* components: field taxonomy terms */
+.field--entity-reference-target-type-taxonomy-term .field__item a:hover,
+.field--entity-reference-target-type-taxonomy-term.field__item a:hover {
+  color: #358C00;
+}
+
+/* components: fixed header */
+.onscroll .header.js-fixed.region--colored-background {
+  background-color: rgba(185, 28, 6, 0.95);
+}
+.onscroll .header.js-fixed.region--dark-background {
+  background-color: rgba(136, 21, 4, 0.95);
+}
+
+/* components: forms */
+input.form-text:hover,
+input.form-tel:hover,
+input.form-email:hover,
+input.form-url:hover,
+input.form-search:hover,
+input.form-file:hover,
+input.form-number:hover,
+input.form-color:hover,
+input.form-date:hover,
+input.form-time:hover,
+textarea:hover,
+select:hover,
+input.form-text:focus,
+input.form-tel:focus,
+input.form-email:focus,
+input.form-url:focus,
+input.form-search:focus,
+input.form-file:focus,
+input.form-number:focus,
+input.form-color:focus,
+input.form-date:focus,
+input.form-time:focus,
+textarea:focus,
+select:focus {
+  border-color: #358C00;
+}
+.region--gray-background input.form-text:hover,
+.region--gray-background input.form-tel:hover,
+.region--gray-background input.form-email:hover,
+.region--gray-background input.form-url:hover,
+.region--gray-background input.form-search:hover,
+.region--gray-background input.form-file:hover,
+.region--gray-background input.form-number:hover,
+.region--gray-background input.form-color:hover,
+.region--gray-background input.form-date:hover,
+.region--gray-background input.form-time:hover,
+.region--gray-background textarea:hover,
+.region--gray-background select:hover,
+.region--gray-background input.form-text:focus,
+.region--gray-background input.form-tel:focus,
+.region--gray-background input.form-email:focus,
+.region--gray-background input.form-url:focus,
+.region--gray-background input.form-search:focus,
+.region--gray-background input.form-file:focus,
+.region--gray-background input.form-number:focus,
+.region--gray-background input.form-color:focus,
+.region--gray-background input.form-date:focus,
+.region--gray-background input.form-time:focus,
+.region--gray-background textarea:focus,
+.region--gray-background select:focus {
+  border-color: #358C00;
+}
+
+/* components: image overlay */
+.overlay--colored {
+  background-color: rgba(53, 140, 0, 0.7);
+}
+.overlay-icon--button:hover {
+  background-color: #B91C06;
+}
+.overlay-inner a.overlay-title:hover {
+  border-bottom-color: #358C00;
+}
+.overlay--white .overlay-subtitle {
+  color: #B91C06;
+}
+
+/* components: language switcher */
+.region--dark-typography .block-language ul li .is-active {
+  color: #358C00;
+}
+
+/* components: layout switcher */
+.layout-switcher ul li a {
+  color: #B91C06;
+}
+.layout-switcher ul li.active a {
+  color: #358C00;
+}
+
+/* components: menu */
+.header-container ul.menu li a:hover,
+.header-container ul.menu li > span:hover,
+.header-container ul.menu li a.is-active,
+.header-container ul.menu li.active-trail > a {
+  color: #358C00;
+}
+.header-container .sf-menu li.sfHover > a,
+.header-container .sf-menu li.sfHover > span {
+  color: #358C00;
+}
+.region--colored-background .sf-menu.menu ul {
+  background-color: #B91C06;
+}
+.region--dark-background .sf-menu.menu ul {
+  background-color: #881504;
+}
+.region--dark-typography .sidebar__section ul.menu li a:hover {
+  color: #358C00;
+}
+.region--colored-background .sidebar__section ul.menu li a:hover {
+  color: #ffffff;
+}
+.menu.cta-active > li:last-child > a {
+  background-color: #358C00;
+}
+.region--dark-background .menu.cta-active > li:last-child > a:hover {
+  border-color: #B91C06;
+}
+.menu.cta-active > li:last-child > a:hover {
+  background-color: #B91C06;
+}
+
+/* components: node dish */
+.node--type-mt-dish .field--name-field-mt-price {
+  color: #B91C06;
+}
+
+/* components: node links */
+.node ul.links li a {
+  background-color: #358C00;
+}
+.node ul.links li a:hover,
+.node ul.links li a:focus {
+  background-color: #B91C06;
+}
+
+/* components: node product */
+.node--type-mt-product .field--name-field-mt-buy-link a {
+  background-color: #358C00;
+}
+.node--type-mt-product .field--name-field-mt-buy-link a:hover {
+  background-color: #B91C06;
+}
+.region--light-typography .field--name-field-mt-buy-link a:hover {
+  border-color: #B91C06;
+}
+.region--light-typography.region--colored-background .field--name-field-mt-buy-link a:hover {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.node--type-mt-product .field--entity-reference-target-type-taxonomy-term .field__item a,
+.node--type-mt-product .field--entity-reference-target-type-taxonomy-term.field__item a {
+  color: #B91C06;
+}
+.node--type-mt-product .field--entity-reference-target-type-taxonomy-term .field__item a:hover,
+.node--type-mt-product .field--entity-reference-target-type-taxonomy-term.field__item a:hover {
+  color: #358C00;
+}
+
+/* components: node service */
+.node--type-mt-service .field--name-field-mt-buy-link a {
+  background-color: #358C00;
+}
+.node--type-mt-service .field--name-field-mt-buy-link a:hover {
+  background-color: #B91C06;
+}
+.region--light-typography .field--name-field-mt-buy-link a:hover {
+  border-color: #B91C06;
+}
+.region--light-typography.region--colored-background .field--name-field-mt-buy-link a:hover {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+
+/* components: node team member */
+.node--type-mt-team-member .field--name-field-mt-subtitle + .icons-list li a:hover {
+  color: #358C00;
+}
+
+/* components: node testimonials */
+.node--type-mt-testimonial .field--name-body p:first-child:after {
+  color: rgba(185, 28, 6, 0.5);
+}
+
+/* components: owl carousel global */
+.owl-nav div:hover {
+  color: #B91C06;
+}
+.owl-dot span {
+  border-color: #B91C06;
+}
+.owl-dot.active span {
+  border-color: #358C00;
+}
+.owl-dot:hover span {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+
+/* components: pills */
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:focus,
+.nav-pills > li.active > a:hover,
+.nav-pills > li > a:focus {
+  border-color: #B91C06;
+  background-color: #B91C06;
+}
+.nav-pills > li > a:hover {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.region--light-typography .nav-pills > li.active > a,
+.region--light-typography .nav-pills > li.active > a:focus,
+.region--light-typography .nav-pills > li.active > a:hover,
+.region--light-typography .nav-pills > li > a:hover,
+.region--light-typography .nav-pills > li > a:focus {
+  border-color: #B91C06;
+  background-color: #B91C06;
+}
+.region--light-typography.region--colored-background .nav-pills > li.active > a,
+.region--light-typography.region--colored-background .nav-pills > li.active > a:focus,
+.region--light-typography.region--colored-background .nav-pills > li.active > a:hover,
+.region--light-typography.region--colored-background .nav-pills > li > a:hover,
+.region--light-typography.region--colored-background .nav-pills > li > a:focus {
+  border-color: #358C00;
+  background-color: #358C00;
+}
+
+/* components: post progress */
+.post-progress__bar {
+  background-color: #B91C06;
+}
+
+/* components: progress bars */
+.progress-bar-default {
+  background-color: #358C00;
+}
+
+/* components: share links */
+.share-links ul li.email a:hover {
+  color: #358C00;
+}
+
+/* components: slideout */
+.slideout-toggle {
+  background-color: #B91C06;
+}
+
+/* components: slider revolution global */
+.tp-caption__button {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.tp-caption__button:hover {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.region--light-typography a.tp-caption__button:hover {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.region--light-typography.region--colored-background a.tp-caption__button:hover {
+  color: #358C00;
+}
+.tparrows:hover {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.tp-bullet.selected,
+.tp-bullet:hover {
+  background-color: #358C00;
+}
+.tp-tabs {
+  background-color: #358C00 !important;
+}
+.tp-tabs .tp-tab.selected,
+.tp-tabs .tp-tab:hover {
+  background-color: #B91C06;
+}
+
+/* components: tabs */
+.nav-tabs > li > a:focus,
+.nav-tabs > li > a:hover {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:focus,
+.nav-tabs > li.active > a:hover {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.nav-tabs.nav-tabs--vertical > li > a:hover,
+.nav-tabs.nav-tabs--vertical > li > a:focus {
+  border-bottom-color: #358C00;
+}
+.nav-tabs.nav-tabs--vertical > li.active > a {
+  border-bottom-color: #B91C06;
+}
+.region--colored-background .nav-tabs > li > a:focus,
+.region--colored-background .nav-tabs > li > a:hover,
+.region--colored-background .nav-tabs > li.active > a,
+.region--colored-background .nav-tabs > li.active > a:focus,
+.region--colored-background .nav-tabs > li.active > a:hover {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.region--colored-background .nav-tabs.nav-tabs--vertical > li > a:hover,
+.region--colored-background .nav-tabs.nav-tabs--vertical > li.active > a {
+  border-bottom-color: #358C00;
+}
+.region--dark-background .nav-tabs > li > a:focus,
+.region--dark-background .nav-tabs > li > a:hover,
+.region--dark-background .nav-tabs > li.active > a,
+.region--dark-background .nav-tabs > li.active > a:focus,
+.region--dark-background .nav-tabs > li.active > a:hover {
+  background-color: #358C00;
+  border-color: #358C00;
+}
+.region--dark-background .nav-tabs.nav-tabs--vertical > li > a:hover,
+.region--dark-background .nav-tabs.nav-tabs--vertical > li.active > a {
+  border-bottom-color: #358C00;
+}
+.nav-tab__subtitle {
+  color: #B91C06;
+}
+.nav-tabs.nav-tabs--fancy > .active > a,
+.nav-tabs.nav-tabs--fancy > .active > a:focus,
+.nav-tabs.nav-tabs--fancy > .active > a:hover,
+.nav-tabs.nav-tabs--fancy > li > a:focus,
+.nav-tabs.nav-tabs--fancy > li > a:hover {
+  border-color: #358C00;
+  color: #358C00;
+}
+.region--light-typography.region--colored-background .nav-tabs.nav-tabs--fancy > li > a,
+.region--light-typography.region--colored-background .nav-tabs.nav-tabs--fancy > li > a:hover,
+.region--light-typography.region--colored-background .nav-tabs.nav-tabs--fancy > li > a:focus {
+  color: #358C00;
+}
+
+/* components: to top */
+.to-top {
+  background-color: #358C00;
+}
+.to-top:hover {
+  background-color: #B91C06;
+}
+
+/* components: view articles grid */
+.view-articles-grid .views-field-title a {
+  color: #358C00;
+}
+.view-articles-grid .views-field-title a:hover {
+  color: #B91C06;
+}
+.region--light-typography .view-articles-grid .article-header a {
+  color: #B91C06;
+}
+.region--light-typography .view-articles-grid .article-header a:hover {
+  color: #358C00;
+}
+
+/* components: view articles grid */
+.region--dark-typography .view-articles-grid-2 .views-field-title h6 a:hover {
+  color: #358C00;
+}
+
+/* components: view collections image overlay */
+.view-collections-grid .overlay-inner a,
+.view-collections-carousel .overlay-inner a,
+.view-collection-masonry .overlay-inner a {
+  background-color: #358C00;
+}
+.view-collections-grid .overlay-inner a:hover,
+.view-collections-carousel .overlay-inner a:hover,
+.view-collection-masonry .overlay-inner a:hover {
+  background-color: #B91C06;
+}
+
+/* components: view dishes */
+.view-dishes .overlay-category a {
+  background-color: #358C00;
+}
+.view-dishes .overlay-category a:hover {
+  background-color: #B91C06;
+}
+.region--dark-typography .view-dishes .views-field-title a:hover {
+  color: #358C00;
+}
+.region--dark-typography .view-dishes .views-field-field-mt-price {
+  color: #B91C06;
+}
+.region--dark-background .view-dishes .title-and-price-container > div {
+  background-color: #881504;
+}
+.region--colored-background .view-dishes .title-and-price-container > div {
+  background-color: #B91C06;
+}
+
+/* components: view daily menu */
+.region--dark-typography .view-daily-menu .view-content > h3 a:hover {
+  color: #358C00;
+}
+.region--dark-typography .view-daily-menu .views-field-title a:hover {
+  color: #358C00;
+}
+
+/* components: view dishes grid */
+.view-dishes-grid .overlay-category a {
+  background-color: #358C00;
+}
+.view-dishes-grid .overlay-category a:hover {
+  background-color: #B91C06;
+}
+.region--dark-typography .view-dishes-grid .views-field-title a:hover {
+  color: #358C00;
+}
+.region--dark-typography .view-dishes-grid .views-field-field-mt-price {
+  color: #B91C06;
+}
+.region--dark-background .view-dishes-grid .title-and-price-container > div {
+  background-color: #881504;
+}
+.region--colored-background .view-dishes-grid .title-and-price-container > div {
+  background-color: #B91C06;
+}
+
+/* components: view dishes category */
+.region--dark-typography .view-dish-category .views-field-title a:hover {
+  color: #358C00;
+}
+.region--dark-typography .view-dish-category .views-field-field-mt-price {
+  color: #B91C06;
+}
+
+/* components: view featured article */
+.region--dark-typography .view-featured-article h2 a:hover {
+  color: #358C00;
+}
+
+/* components: view latest items */
+.region--dark-typography .view-latest-items .views-field-title a:hover {
+  color: #358C00;
+}
+
+/* components: view popular taxonomy */
+.view-mt-popular-tags .views-row a:hover {
+  background-color: #B91C06;
+}
+.region--gray-background .view-mt-popular-tags .views-row a:hover {
+  background-color: #B91C06;
+}
+.region--colored-background .view-mt-popular-tags .views-row a:hover,
+.region--dark-background .view-mt-popular-tags .views-row a:hover,
+.region--black-background .view-mt-popular-tags .views-row a:hover {
+  color: #358C00;
+}
+
+/* components: view pricing tables */
+.view-pricing-tables .pricing-table .views-field-title h4 a:hover {
+  color: #B91C06;
+}
+.view-pricing-tables .views-row.most-popular .pricing-table {
+  border-top-color: #358C00;
+}
+.view-pricing-tables .pricing-table .views-field-field-mt-most-popular {
+  background-color: #358C00;
+}
+.region--dark-background .view-pricing-tables .pricing-table .views-field-field-mt-most-popular {
+  background-color: #B91C06;
+}
+.pricing-table a.button {
+  background-color: #358C00;
+}
+.pricing-table a.button:hover {
+  background-color: #B91C06;
+}
+.region--light-typography .pricing-table a.button:hover {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+.region--light-typography.region--colored-background .pricing-table a.button {
+  background-color: #358C00;
+}
+.region--light-typography.region--colored-background .pricing-table a.button.button--hover-style-2:before {
+  background-color: #B91C06;
+  border-color: #B91C06;
+}
+
+/* components: view products grid */
+.view-products-grid .views-field-title h5 a {
+  color: #358C00;
+}
+.view-products-grid .views-field-title h5 a:hover {
+  color: #B91C06;
+}
+
+/* components: view products list */
+.view-products-list .views-field-title a {
+  color: #358C00;
+}
+.view-products-list .views-field-title a:hover {
+  color: #B91C06;
+}
+
+/* components: view promoted items */
+.view-promoted-items-icon {
+  background-color: #358C00;
+}
+.view-promoted-items-icon:hover {
+  background-color: #B91C06;
+}
+.view-promoted-items .views-field-title h5 a {
+  color: #358C00;
+}
+.view-promoted-items .views-field-title h5 a:hover {
+  color: #B91C06;
+}
+
+/* components: view testimonials grid */
+.view-testimonials-grid .views-field-body p:first-child::before {
+  color: rgba(185, 28, 6, 0.5);
+}
+
+/* components: view testimonials grid 2 */
+.view-testimonials-grid-2 .views-field-body p:first-child:after {
+  color: rgba(185, 28, 6, 0.5);
+}
+
+/* components: view testimonials list */
+.view-testimonials-list .views-field-body p:first-child::before {
+  color: rgba(185, 28, 6, 0.5);
+}
+
+/* components: views */
+.view > .more-link a {
+  background-color: #358C00;
+}
+.view > .more-link a:hover {
+  background-color: #B91C06;
+}
+.region--light-typography .view > .more-link a:hover {
+  border-color: #B91C06;
+  background-color: #B91C06;
+}
+.region--light-typography.region--colored-background .view > .more-link a:hover {
+  border-color: #358C00;
+  background-color: #358C00;
+}

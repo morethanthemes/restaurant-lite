@@ -1,0 +1,55 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s scroll to top button.
+ */
+.to-top {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  right: 30px;
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  color: #ffffff;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  opacity: 0;
+  filter: alpha(opacity=0);
+  -webkit-transform: scale(0);
+  -moz-transform: scale(0);
+  -ms-transform: scale(0);
+  -o-transform: scale(0);
+  transform: scale(0);
+  -webkit-transition: all 0.4s;
+  -moz-transition: all 0.4s;
+  -o-transition: all 0.4s;
+  -ms-transition: all 0.4s;
+  transition: all 0.4s;
+  z-index: 500;
+  background-color: #000;
+  color: #ffffff;
+}
+.to-top.show {
+  -webkit-transform: scale(1);
+  -moz-transform: scale(1);
+  -ms-transform: scale(1);
+  -o-transform: scale(1);
+  transform: scale(1);
+  opacity: 1;
+  filter: alpha(opacity=100);
+  -webkit-backface-visibility: hidden;
+}
+.to-top:hover {
+  cursor: pointer;
+}
+@media (max-width: 992px) {
+  .to-top {
+    right: 10px;
+    bottom: 10px;
+    padding: 10px 15px;
+  }
+}

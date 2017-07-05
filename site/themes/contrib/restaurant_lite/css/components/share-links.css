@@ -1,0 +1,33 @@
+/**
+ * @file
+ * Visual styles for share links in Restaurant+.
+ */
+.share-links ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0 -10px;
+}
+.share-links ul li {
+  white-space: normal;
+  display: inline-block;
+}
+.share-links ul li a {
+  line-height: 1;
+  white-space: normal;
+  display: block;
+  text-align: center;
+  padding: 10px;
+  font-size: 20px;
+}
+.share-links ul li a {
+  color: #a6a6a6;
+}
+.share-links ul li.facebook a:hover {
+  color: #39579a;
+}
+.share-links ul li.twitter a:hover {
+  color: #50abf1
+}
+.share-links ul li a i {
+  padding: 0;
+}

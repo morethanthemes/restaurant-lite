@@ -1,0 +1,86 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s nav pills.
+ */
+.nav.nav-pills {
+  margin-right: -10px;
+  margin-left: -10px;
+}
+.nav.nav-pills.text-center {
+  font-size: 0px;
+}
+.nav.nav-pills.text-center > li {
+  float: none;
+  display: inline-block;
+}
+.nav-pills > li > a {
+  font-size: 14px;
+  font-weight: 400;
+  padding: 15px 30px;
+  color: #a6a6a6;
+  display: inline-block;
+  line-height: 1;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -ms-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  margin: 5px 0;
+  text-align: center;
+  border-radius: 5px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  text-decoration: none;
+  text-transform: uppercase;
+  background-color: #3b3b3b;
+}
+.headings-wide-spacing-enabled .nav-pills > li > a {
+  letter-spacing: 0.25em;
+}
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:focus,
+.nav-pills > li.active > a:hover,
+.nav-pills > li > a:focus {
+  color: #ffffff;
+}
+.nav-pills > li > a:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+.nav.nav-pills > li,
+.nav.nav-pills > li + li {
+  margin: 0px 10px 30px;
+}
+.col-md-12 .nav.nav-pills {
+  text-align: center;
+  font-size: 0;
+}
+.col-md-12 .nav.nav-pills li {
+  display: inline-block;
+  float: none;
+}
+
+/*nav pills @colored-regions*/
+.region--light-typography .nav-pills > li > a {
+  color: #ffffff;
+  text-decoration: none;
+  background-color: transparent;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #ffffff;
+}
+.region--light-typography .nav-pills > li.active > a,
+.region--light-typography .nav-pills > li.active > a:focus,
+.region--light-typography .nav-pills > li.active > a:hover,
+.region--light-typography .nav-pills > li > a:hover,
+.region--light-typography .nav-pills > li > a:focus {
+  color: #ffffff;
+}
+.region--light-typography.region--colored-background .nav-pills > li.active > a,
+.region--light-typography.region--colored-background .nav-pills > li.active > a:focus,
+.region--light-typography.region--colored-background .nav-pills > li.active > a:hover,
+.region--light-typography.region--colored-background .nav-pills > li > a:hover,
+.region--light-typography.region--colored-background .nav-pills > li > a:focus {
+  color: #ffffff;
+}

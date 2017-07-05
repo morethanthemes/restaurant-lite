@@ -1,0 +1,109 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s icons list.
+ */
+ul.icons-list {
+  list-style: none;
+  margin: 0 -15px;
+  padding: 0;
+}
+ul.icons-list li {
+  display: inline-block;
+  margin: 10px 15px;
+  vertical-align: middle;
+}
+ul.icons-list li a {
+  display: block;
+}
+ul.icons-list li a:hover {
+  text-decoration: none;
+  -ms-transform: scale(1.1);
+  -webkit-transform: scale(1.1);
+  transform: scale(1.1);
+}
+ul.icons-list li i {
+  font-size: 20px;
+}
+ul.icons-list--large li i {
+  font-size: 30px;
+}
+ul.icons-list--extra-large li i {
+  font-size: 55px;
+}
+
+/*icons list @colored-region*/
+.region--light-typography ul.icons-list li a {
+  color: rgba(255, 255, 255, 0.70);
+}
+.region--light-typography ul.icons-list li a:hover {
+  color: #ffffff;
+}
+.region--black-background.footer-bottom ul.icons-list li a {
+  color: #818181;
+}
+.region--black-background.footer-bottom ul.icons-list li a:hover {
+  color: #ffffff;
+}
+
+/*icons list square*/
+ul.icons-list--square {
+  font-size: 0;
+}
+ul.icons-list--square li {
+  margin: 0;
+}
+ul.icons-list--square li a {
+  width: 50px;
+  height: 45px;
+  background-color: #f4f4f4;
+  color: #3b3b3b;
+  text-align: center;
+  -webkit-transition: all 0.25s ease-in-out;
+  -moz-transition: all 0.25s ease-in-out;
+  -ms-transition: all 0.25s ease-in-out;
+  -o-transition: all 0.25s ease-in-out;
+  transition: all 0.25s ease-in-out;
+}
+ul.icons-list--square li a:hover {
+  -webkit-transform: translateY(-2px);
+  -moz-transform: translateY(-2px);
+  -ms-transform: translateY(-2px);
+  -o-transform: translateY(-2px);
+  transform: translateY(-2px);
+}
+.region--gray-background ul.icons-list--square li a {
+  background-color: #ffffff;
+}
+.region--light-typography ul.icons-list--square li a {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #ffffff;
+}
+ul.icons-list--square li i {
+  line-height: 45px;
+}
+ul.icons-list--square.icons-list--large li a {
+  width: 60px;
+  height: 60px;
+}
+ul.icons-list--square.icons-list--large li i {
+  line-height: 60px;
+}
+ul.icons-list--square.icons-list--extra-large li a {
+  width: 80px;
+  height: 80px;
+}
+ul.icons-list--square.icons-list--extra-large li i {
+  line-height: 80px;
+}
+ul.icons-list--stripped li a {
+  background-color: #cacaca;
+}
+ul.icons-list--stripped li:nth-of-type(odd) a {
+  background-color: #e1e1e1;
+}
+.region--light-typography ul.icons-list--stripped li a {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+.region--light-typography ul.icons-list--stripped li:nth-of-type(odd) a {
+  background-color: rgba(0, 0, 0, 0.25);
+}

@@ -1,0 +1,53 @@
+/**
+ * @file
+ * Visual styles for taxonomy terms in Restaurant+.
+ */
+.field--entity-reference-target-type-taxonomy-term {
+  display: block;
+  overflow: hidden;
+  position: relative;
+  margin: 25px 0 5px;
+  padding-left: 20px;
+  padding: 20px 0 20px 25px;
+  border-top: 2px;
+  border-top-color: #f1f1f1;
+  border-top-style: solid;
+}
+.field--entity-reference-target-type-taxonomy-term + .field--entity-reference-target-type-taxonomy-term {
+  margin-top: 0;
+}
+.field--entity-reference-target-type-taxonomy-term:after {
+  content: "\f07c";
+  font-family: "FontAwesome";
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  margin-top: -8px;
+  color: #a6a6a6;
+  font-size: 12px;
+}
+.field--entity-reference-target-type-taxonomy-term .field__item,
+.field--entity-reference-target-type-taxonomy-term.field__item {
+  display: inline-block;
+  vertical-align: top;
+}
+.field--entity-reference-target-type-taxonomy-term.field__item {
+  display: block;
+}
+.field--entity-reference-target-type-taxonomy-term .field__item a,
+.field--entity-reference-target-type-taxonomy-term.field__item a {
+  display: block;
+  color: #3b3b3b;
+}
+.field--entity-reference-target-type-taxonomy-term .field__item a:after {
+  content: ",";
+}
+.field--entity-reference-target-type-taxonomy-term .field__item:last-child a:after {
+  content: "";
+}
+.field--name-field-mt-brand-image {
+  margin-bottom: 30px;
+}
+.field--name-field-mt-collection-image {
+  margin-bottom: 30px;
+}

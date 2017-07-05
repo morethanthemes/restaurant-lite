@@ -1,0 +1,59 @@
+/**
+ * @file
+ * Visual styles for Restaurant+'s status messages.
+ */
+.system-messages .col-md-12 {
+  min-height: 0;
+}
+.messages {
+  color: #ffffff;
+  margin: 30px 0;
+  padding: 10px 15px 10px 50px;
+  position: relative;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  border-color: transparent;
+  border-radius: 5px;
+  font-size: 15px;
+}
+.headings-wide-spacing-enabled .messages {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.messages a {
+  color: #ffffff;
+  text-decoration: underline;
+}
+.messages a:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+.messages--status {
+  background: #19a62a;
+}
+.messages--error {
+  background: #d92313;
+}
+.messages--warning {
+  background: #ed6d20;
+}
+
+/*Status messages symbols*/
+.messages:before {
+  font-family: "FontAwesome";
+  line-height: 44px;
+  position: absolute;
+  font-size: 15px;
+  left: 18px;
+  top: 0px;
+  text-align: center;
+}
+.messages--status:before {
+  content: "\f058";
+}
+.messages--error:before {
+  content: "\f057";
+}
+.messages--warning:before {
+  content: "\f071";
+}

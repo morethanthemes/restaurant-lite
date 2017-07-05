@@ -1,0 +1,5 @@
+# Schema for the configuration files of the Showcase+ theme.
+
+showcaseplus.settings:
+  type: theme_settings
+  label: 'Showcase+ settings'
