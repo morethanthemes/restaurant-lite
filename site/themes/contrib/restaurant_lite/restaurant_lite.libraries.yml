@@ -181,6 +181,8 @@ magnific-popup-field-image-init:
     js/init/magnific-popup-field-image-init.js: {}
   dependencies:
     - restaurant_lite/magnific-popup
+    - core/drupal
+    - core/jquery.once
 
 magnific-popup-field-member-photo-init:
   version: VERSION
@@ -231,6 +233,8 @@ flexslider-in-page-init:
   dependencies:
     - restaurant_lite/flexslider-global
     - core/drupalSettings
+    - core/drupal
+    - core/jquery.once
 
 flexslider-nodes-slideshow:
   version: VERSION
