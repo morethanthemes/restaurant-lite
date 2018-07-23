@@ -3,7 +3,7 @@ Restaurant Lite
 
 This repository contains the Drupal installation that runs at [morethanthemes.com](http://www.morethanthemes.com/drupal-themes/free) and demonstrates the ["Restaurant Lite"](https://drupal.org/project/restaurant_lite) Drupal theme. We use this repository in order to maintain the above mentioned site and develop the corresponding theme.
 
-You are welcome however to grab this code and have the demonstration site running on your end. By doing this you have the chance to see the ["Restaurant Lite" theme in action](http://demo.drupalizing.com/?theme=restaurant-lite/site) exactly the way it looks like on our demo.
+You are welcome however to grab this code and have the demonstration site running on your end. By doing this you have the chance to see the ["Restaurant Lite" theme in action](http://demo.drupalizing.com/restaurant-lite/site) exactly the way it looks like on our demo.
 
 Installation instructions
 --------------
