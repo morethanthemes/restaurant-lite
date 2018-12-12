@@ -3,6 +3,7 @@
 namespace Drupal\KernelTests\Core\Entity;
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\RevisionLogInterface;
 use Drupal\Core\Entity\TypedData\EntityDataDefinition;
 use Drupal\Core\Entity\TypedData\EntityDataDefinitionInterface;
@@ -16,6 +17,7 @@ use Drupal\Core\TypedData\DataDefinitionInterface;
 use Drupal\Core\TypedData\ListInterface;
 use Drupal\Core\TypedData\Type\StringInterface;
 use Drupal\Core\TypedData\TypedDataInterface;
+use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestComputedField;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
@@ -871,6 +873,32 @@ class EntityFieldTest extends EntityKernelTestBase {
   }
 
   /**
+   * Tests an entity reference computed field.
+   */
+  public function testEntityReferenceComputedField() {
+    $this->installEntitySchema('entity_test_computed_field');
+
+    // Create 2 entities to be referenced.
+    $ref1 = EntityTest::create(['name' => 'foo', 'type' => 'bar']);
+    $ref1->save();
+    $ref2 = EntityTest::create(['name' => 'baz', 'type' => 'bar']);
+    $ref2->save();
+    \Drupal::state()->set('entity_test_reference_computed_target_ids', [$ref1->id(), $ref2->id()]);
+
+    $entity = EntityTestComputedField::create([]);
+    $entity->save();
+
+    /** @var \Drupal\entity_test\Plugin\Field\ComputedReferenceTestFieldItemList $field */
+    $field = $entity->get('computed_reference_field');
+    /** @var \Drupal\Core\Entity\EntityInterface[] $referenced_entities */
+    $referenced_entities = $field->referencedEntities();
+
+    // Check that ::referencedEntities() is working with computed fields.
+    $this->assertEquals($ref1->id(), $referenced_entities[0]->id());
+    $this->assertEquals($ref2->id(), $referenced_entities[1]->id());
+  }
+
+  /**
    * Executes the computed properties tests for the given entity type.
    *
    * @param string $entity_type
@@ -890,6 +918,35 @@ class EntityFieldTest extends EntityKernelTestBase {
       ->getStorage($entity_type)
       ->load($entity->id());
     $this->assertEqual($entity->field_test_text->processed, $target, format_string('%entity_type: Text is processed with the default filter.', ['%entity_type' => $entity_type]));
+  }
+
+  /**
+   * Tests explicit entity ID assignment.
+   */
+  public function testEntityIdAssignment() {
+    $entity_type = 'entity_test';
+    /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $storage */
+    $storage = $this->container->get('entity_type.manager')->getStorage($entity_type);
+
+    // Check that an ID can be explicitly assigned on creation.
+    /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
+    $entity = $this->createTestEntity($entity_type);
+    $entity_id = 3;
+    $entity->set('id', $entity_id);
+    $this->assertSame($entity_id, $entity->id());
+    $storage->save($entity);
+    $entity = $storage->loadUnchanged($entity->id());
+    $this->assertTrue($entity);
+
+    // Check that an explicitly-assigned ID is preserved on update.
+    $storage->save($entity);
+    $entity = $storage->loadUnchanged($entity->id());
+    $this->assertTrue($entity);
+
+    // Check that an ID cannot be explicitly assigned on update.
+    $this->setExpectedException(EntityStorageException::class);
+    $entity->set('id', $entity_id + 1);
+    $storage->save($entity);
   }
 
 }

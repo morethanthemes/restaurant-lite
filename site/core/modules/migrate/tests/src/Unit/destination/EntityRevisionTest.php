@@ -176,7 +176,6 @@ class EntityRevisionTest extends UnitTestCase {
     $this->assertEquals([1234], $destination->save($entity->reveal(), []));
   }
 
-
   /**
    * Helper method to create an entity revision destination with mock services.
    *
@@ -230,6 +229,8 @@ class EntityRevision extends RealEntityRevision {
    * workings of its implementation which would trickle into mock assertions. An
    * empty implementation avoids this.
    */
-  protected function updateEntity(EntityInterface $entity, Row $row) {}
+  protected function updateEntity(EntityInterface $entity, Row $row) {
+    return $entity;
+  }
 
 }

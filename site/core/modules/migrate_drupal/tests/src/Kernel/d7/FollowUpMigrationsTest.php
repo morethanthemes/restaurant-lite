@@ -26,6 +26,8 @@ class FollowUpMigrationsTest extends MigrateDrupal7TestBase {
     'language',
     'link',
     'menu_ui',
+    // A requirement for translation migrations.
+    'migrate_drupal_multilingual',
     'node',
     'taxonomy',
     'telephone',
@@ -59,6 +61,18 @@ class FollowUpMigrationsTest extends MigrateDrupal7TestBase {
       'd7_node',
       'd7_node_translation',
     ]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getFileMigrationInfo() {
+    return [
+      'path' => 'public://sites/default/files/cube.jpeg',
+      'size' => '3620',
+      'base_path' => 'public://',
+      'plugin_id' => 'd7_file',
+    ];
   }
 
   /**

@@ -13,6 +13,7 @@ libraries-override:
   classy/messages: false
 
 regions:
+  pre_header: Pre-header
   header: Header
   highlighted: Highlighted
   tabs: Tabs
@@ -21,13 +22,14 @@ regions:
   page_title: 'Page Title'
   content: Content
   sidebar: Sidebar
+  content_bottom: 'Content Bottom'
   footer: Footer
   bottom: Bottom
   page_top: 'Page top' # Needed by Drupal Core
   page_bottom: 'Page bottom' # Needed by Drupal Core
 
-# Information added by Drupal.org packaging script on 2018-06-06
-version: '8.5.4'
+# Information added by Drupal.org packaging script on 2018-12-05
+version: '8.6.4'
 core: '8.x'
 project: 'drupal'
-datestamp: 1528319624
+datestamp: 1544011727

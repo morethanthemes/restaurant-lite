@@ -93,6 +93,7 @@ class TrackerTest extends BrowserTestBase {
     $expected_tags = Cache::mergeTags($expected_tags, $role_tags);
     $block_tags = [
       'block_view',
+      'local_task',
       'config:block.block.page_actions_block',
       'config:block.block.page_tabs_block',
       'config:block_list',
@@ -179,6 +180,7 @@ class TrackerTest extends BrowserTestBase {
     $expected_tags = Cache::mergeTags($expected_tags, $role_tags);
     $block_tags = [
       'block_view',
+      'local_task',
       'config:block.block.page_actions_block',
       'config:block.block.page_tabs_block',
       'config:block_list',
@@ -361,8 +363,14 @@ class TrackerTest extends BrowserTestBase {
     ];
     $this->drupalPostForm('comment/reply/node/' . $nodes[3]->id() . '/comment', $comment, t('Save'));
 
-    // Start indexing backwards from node 3.
-    \Drupal::state()->set('tracker.index_nid', 3);
+    // Create an unpublished node.
+    $unpublished = $this->drupalCreateNode([
+      'title' => $this->randomMachineName(8),
+      'status' => 0,
+    ]);
+
+    // Start indexing backwards from node 4.
+    \Drupal::state()->set('tracker.index_nid', 4);
 
     // Clear the current tracker tables and rebuild them.
     db_delete('tracker_node')
