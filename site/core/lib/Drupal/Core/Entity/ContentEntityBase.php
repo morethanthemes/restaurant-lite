@@ -17,11 +17,12 @@ use Drupal\Core\TypedData\TypedDataInterface;
  *
  * @ingroup entity_api
  */
-abstract class ContentEntityBase extends Entity implements \IteratorAggregate, ContentEntityInterface, TranslationStatusInterface {
+abstract class ContentEntityBase extends EntityBase implements \IteratorAggregate, ContentEntityInterface, TranslationStatusInterface {
 
   use EntityChangesDetectionTrait {
     getFieldsToSkipFromTranslationChangesCheck as traitGetFieldsToSkipFromTranslationChangesCheck;
   }
+  use SynchronizableEntityTrait;
 
   /**
    * The plain data values of the contained fields.
@@ -428,7 +429,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
   public function isTranslatable() {
     // Check the bundle is translatable, the entity has a language defined, and
     // the site has more than one language.
-    $bundles = $this->entityManager()->getBundleInfo($this->entityTypeId);
+    $bundles = $this->entityTypeBundleInfo()->getBundleInfo($this->entityTypeId);
     return !empty($bundles[$this->bundle()]['translatable']) && !$this->getUntranslated()->language()->isLocked() && $this->languageManager()->isMultilingual();
   }
 
@@ -605,7 +606,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
           // $this->defaultLangcode might not be set if we are initializing the
           // default language code cache, in which case there is no valid
           // langcode to assign.
-          $field_langcode = isset($this->defaultLangcode) ? $this->defaultLangcode : LanguageInterface::LANGCODE_NOT_SPECIFIED;
+          $field_langcode = $this->defaultLangcode ?? LanguageInterface::LANGCODE_NOT_SPECIFIED;
         }
         else {
           $field_langcode = $langcode;
@@ -657,6 +658,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
   /**
    * {@inheritdoc}
    */
+  #[\ReturnTypeWillChange]
   public function getIterator() {
     return new \ArrayIterator($this->getFields());
   }
@@ -678,7 +680,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    */
   public function getFieldDefinitions() {
     if (!isset($this->fieldDefinitions)) {
-      $this->fieldDefinitions = $this->entityManager()->getFieldDefinitions($this->entityTypeId, $this->bundle());
+      $this->fieldDefinitions = \Drupal::service('entity_field.manager')->getFieldDefinitions($this->entityTypeId, $this->bundle());
     }
     return $this->fieldDefinitions;
   }
@@ -699,11 +701,11 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    */
   public function access($operation, AccountInterface $account = NULL, $return_as_object = FALSE) {
     if ($operation == 'create') {
-      return $this->entityManager()
+      return $this->entityTypeManager()
         ->getAccessControlHandler($this->entityTypeId)
         ->createAccess($this->bundle(), $account, [], $return_as_object);
     }
-    return $this->entityManager()
+    return $this->entityTypeManager()
       ->getAccessControlHandler($this->entityTypeId)
       ->access($this, $operation, $account, $return_as_object);
   }
@@ -767,7 +769,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    * Updates language for already instantiated fields.
    */
   protected function updateFieldLangcodes($langcode) {
-    foreach ($this->fields as $name => $items) {
+    foreach ($this->fields as $items) {
       if (!empty($items[LanguageInterface::LANGCODE_DEFAULT])) {
         $items[LanguageInterface::LANGCODE_DEFAULT]->setLangcode($langcode);
       }
@@ -921,6 +923,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
     $translation->loadedRevisionId = &$this->loadedRevisionId;
     $translation->isDefaultRevision = &$this->isDefaultRevision;
     $translation->enforceRevisionTranslationAffected = &$this->enforceRevisionTranslationAffected;
+    $translation->isSyncing = &$this->isSyncing;
 
     return $translation;
   }
@@ -958,7 +961,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
 
     // Initialize the translation object.
     /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $storage */
-    $storage = $this->entityManager()->getStorage($this->getEntityTypeId());
+    $storage = $this->entityTypeManager()->getStorage($this->getEntityTypeId());
     $this->translations[$langcode]['status'] = !isset($this->translations[$langcode]['status_existed']) ? static::TRANSLATION_CREATED : static::TRANSLATION_EXISTING;
     return $storage->createTranslation($this, $langcode, $values);
   }
@@ -1126,6 +1129,23 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
   /**
    * {@inheritdoc}
    */
+  public static function create(array $values = []) {
+    $entity_type_repository = \Drupal::service('entity_type.repository');
+    $entity_type_manager = \Drupal::entityTypeManager();
+    $class_name = static::class;
+    $storage = $entity_type_manager->getStorage($entity_type_repository->getEntityTypeFromClass($class_name));
+
+    // Always explicitly specify the bundle if the entity has a bundle class.
+    if ($storage instanceof BundleEntityStorageInterface && ($bundle = $storage->getBundleFromClass($class_name))) {
+      $values[$storage->getEntityType()->getKey('bundle')] = $bundle;
+    }
+
+    return $storage->create($values);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function createDuplicate() {
     if ($this->translations[$this->activeLangcode]['status'] == static::TRANSLATION_REMOVED) {
       throw new \InvalidArgumentException("The entity object refers to a removed translation ({$this->activeLangcode}) and cannot be manipulated.");
@@ -1219,6 +1239,9 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
     $is_revision_translation_affected_enforced = $this->enforceRevisionTranslationAffected;
     $this->enforceRevisionTranslationAffected = &$is_revision_translation_affected_enforced;
 
+    $is_syncing = $this->isSyncing;
+    $this->isSyncing = &$is_syncing;
+
     foreach ($this->fields as $name => $fields_by_langcode) {
       $this->fields[$name] = [];
       // Untranslatable fields may have multiple references for the same field
@@ -1239,15 +1262,9 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    * {@inheritdoc}
    */
   public function label() {
-    $label = NULL;
-    $entity_type = $this->getEntityType();
-    if (($label_callback = $entity_type->getLabelCallback()) && is_callable($label_callback)) {
-      $label = call_user_func($label_callback, $this);
+    if ($this->getEntityType()->getKey('label')) {
+      return $this->getEntityKey('label');
     }
-    elseif (($label_key = $entity_type->getKey('label'))) {
-      $label = $this->getEntityKey('label');
-    }
-    return $label;
   }
 
   /**
@@ -1406,7 +1423,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
 
     if (!$original) {
       $id = $this->getOriginalId() !== NULL ? $this->getOriginalId() : $this->id();
-      $original = $this->entityManager()->getStorage($this->getEntityTypeId())->loadUnchanged($id);
+      $original = $this->entityTypeManager()->getStorage($this->getEntityTypeId())->loadUnchanged($id);
     }
 
     // If the current translation has just been added, we have a change.
@@ -1425,7 +1442,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
     $translation = $original->getTranslation($this->activeLangcode);
     $langcode = $this->language()->getId();
 
-    // The list of fields to skip from the comparision.
+    // The list of fields to skip from the comparison.
     $skip_fields = $this->getFieldsToSkipFromTranslationChangesCheck();
 
     // We also check untranslatable fields, so that a change to those will mark
@@ -1435,7 +1452,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
 
     foreach ($this->getFieldDefinitions() as $field_name => $definition) {
       // @todo Avoid special-casing the following fields. See
-      //    https://www.drupal.org/node/2329253.
+      //   https://www.drupal.org/node/2329253.
       if (in_array($field_name, $skip_fields, TRUE) || ($skip_untranslatable_fields && !$definition->isTranslatable())) {
         continue;
       }

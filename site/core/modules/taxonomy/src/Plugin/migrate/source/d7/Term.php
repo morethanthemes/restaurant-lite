@@ -6,7 +6,37 @@ use Drupal\migrate\Row;
 use Drupal\migrate_drupal\Plugin\migrate\source\d7\FieldableEntity;
 
 /**
- * Taxonomy term source from database.
+ * Drupal 7 taxonomy term source from database.
+ *
+ * Available configuration keys:
+ * - bundle: (optional) The taxonomy vocabulary (machine name) to filter terms
+ *   retrieved from the source - can be a string or an array. If omitted, all
+ *   terms are retrieved.
+ *
+ * Examples:
+ *
+ * @code
+ * source:
+ *   plugin: d7_taxonomy_term
+ *   bundle: tags
+ * @endcode
+ *
+ * In this example terms of 'tags' vocabulary are retrieved from the source
+ * database.
+ *
+ * @code
+ * source:
+ *   plugin: d7_taxonomy_term
+ *   bundle: [tags, forums]
+ * @endcode
+ *
+ * In this example terms of 'tags' and 'forums' vocabularies are retrieved
+ * from the source database.
+ *
+ * For additional configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBase
  *
  * @todo Support term_relation, term_synonym table if possible.
  *
@@ -25,8 +55,14 @@ class Term extends FieldableEntity {
       ->fields('td')
       ->distinct()
       ->orderBy('tid');
-    $query->leftJoin('taxonomy_vocabulary', 'tv', 'td.vid = tv.vid');
+    $query->leftJoin('taxonomy_vocabulary', 'tv', '[td].[vid] = [tv].[vid]');
     $query->addField('tv', 'machine_name');
+
+    if ($this->getDatabase()
+      ->schema()
+      ->fieldExists('taxonomy_vocabulary', 'i18n_mode')) {
+      $query->addField('tv', 'i18n_mode');
+    }
 
     if (isset($this->configuration['bundle'])) {
       $query->condition('tv.machine_name', (array) $this->configuration['bundle'], 'IN');
@@ -66,8 +102,18 @@ class Term extends FieldableEntity {
     // migration.
     $translatable_vocabularies = array_keys(array_filter($this->variableGet('entity_translation_taxonomy', [])));
     $entity_translatable = $this->isEntityTranslatable('taxonomy_term') && in_array($vocabulary, $translatable_vocabularies, TRUE);
-    $source_language = $this->getEntityTranslationSourceLanguage('taxonomy_term', $tid);
-    $language = $entity_translatable && $source_language ? $source_language : $default_language['language'];
+
+    if ($entity_translatable) {
+      $source_language = $this->getEntityTranslationSourceLanguage('taxonomy_term', $tid);
+      $language = $entity_translatable && $source_language ? $source_language : $default_language['language'];
+    }
+    // If this is an i18n translation use the default language when i18n_mode
+    // is localized.
+    if ($row->get('i18n_mode')) {
+      $language = ($row->get('i18n_mode') === '1') ? $default_language['language'] : $row->get('language');
+    }
+
+    $language = $language ?? $default_language['language'];
     $row->setSourceProperty('language', $language);
 
     // Get Field API field values.

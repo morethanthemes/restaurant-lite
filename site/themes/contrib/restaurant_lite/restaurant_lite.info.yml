@@ -2,7 +2,7 @@ name: Restaurant Lite
 type: theme
 base theme: classy
 description: 'A flexible, recolorable theme with many regions and a responsive, mobile-first layout.'
-# core: 8.x
+core_version_requirement: ^8 || ^9
 libraries:
   - restaurant_lite/fontawesome
   - restaurant_lite/global-styling

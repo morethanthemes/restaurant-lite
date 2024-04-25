@@ -14,13 +14,18 @@ class ConfigTranslationUiTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'config_translation',
     'contextual',
     'node',
     'views',
     'views_ui',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Tests that contextual link related to views.

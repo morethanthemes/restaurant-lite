@@ -15,7 +15,7 @@ class AddFeedTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system'];
+  protected static $modules = ['system'];
 
   /**
    * Tests attaching feeds with paths, URLs, and titles.
@@ -68,7 +68,7 @@ class AddFeedTest extends KernelTestBase {
     $this->setRawContent($response->getContent());
     // Assert that the content contains the RSS links we specified.
     foreach ($urls as $description => $feed_info) {
-      $this->assertPattern($this->urlToRSSLinkPattern($feed_info['url'], $feed_info['title']), format_string('Found correct feed header for %description', ['%description' => $description]));
+      $this->assertPattern($this->urlToRSSLinkPattern($feed_info['url'], $feed_info['title']));
     }
   }
 
@@ -94,7 +94,7 @@ class AddFeedTest extends KernelTestBase {
       '#title' => '<>&"\'',
     ];
     $text = \Drupal::service('renderer')->renderRoot($variables);
-    $this->assertEqual(trim(strip_tags($text)), 'Subscribe to &lt;&gt;&amp;&quot;&#039;', 'feed_icon template escapes reserved HTML characters.');
+    $this->assertEquals('Subscribe to &lt;&gt;&amp;&quot;&#039;', trim(strip_tags($text)), 'feed_icon template escapes reserved HTML characters.');
   }
 
 }

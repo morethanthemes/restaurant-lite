@@ -18,12 +18,17 @@ class WorkspaceSwitcherTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block', 'workspaces'];
+  protected static $modules = ['block', 'workspaces'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $permissions = [
@@ -40,7 +45,7 @@ class WorkspaceSwitcherTest extends BrowserTestBase {
   }
 
   /**
-   * Test switching workspace via the switcher block and admin page.
+   * Tests switching workspace via the switcher block and admin page.
    */
   public function testSwitchingWorkspaces() {
     $vultures = $this->createWorkspaceThroughUi('Vultures', 'vultures');
@@ -62,20 +67,21 @@ class WorkspaceSwitcherTest extends BrowserTestBase {
   }
 
   /**
-   * Test switching workspace via a query parameter.
+   * Tests switching workspace via a query parameter.
    */
   public function testQueryParameterNegotiator() {
     $web_assert = $this->assertSession();
     // Initially the default workspace should be active.
-    $web_assert->elementContains('css', '.block-workspace-switcher', 'Live');
+    $web_assert->elementContains('css', '#block-workspaceswitcher', 'None');
 
     // When adding a query parameter the workspace will be switched.
-    $this->drupalGet('<front>', ['query' => ['workspace' => 'stage']]);
-    $web_assert->elementContains('css', '.block-workspace-switcher', 'Stage');
+    $current_user_url = \Drupal::currentUser()->getAccount()->toUrl();
+    $this->drupalGet($current_user_url, ['query' => ['workspace' => 'stage']]);
+    $web_assert->elementContains('css', '#block-workspaceswitcher', 'Stage');
 
     // The workspace switching via query parameter should persist.
-    $this->drupalGet('<front>');
-    $web_assert->elementContains('css', '.block-workspace-switcher', 'Stage');
+    $this->drupalGet($current_user_url);
+    $web_assert->elementContains('css', '#block-workspaceswitcher', 'Stage');
 
     // Check that WorkspaceCacheContext provides the cache context used to
     // support its functionality.

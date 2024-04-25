@@ -20,7 +20,13 @@ class TimestampFormatterTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system', 'field', 'text', 'entity_test', 'user'];
+  protected static $modules = [
+    'system',
+    'field',
+    'text',
+    'entity_test',
+    'user',
+  ];
 
   /**
    * @var string
@@ -45,7 +51,7 @@ class TimestampFormatterTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installConfig(['system']);
@@ -70,7 +76,8 @@ class TimestampFormatterTest extends KernelTestBase {
     ]);
     $instance->save();
 
-    $this->display = entity_get_display($this->entityType, $this->bundle, 'default')
+    $this->display = \Drupal::service('entity_display.repository')
+      ->getViewDisplay($this->entityType, $this->bundle)
       ->setComponent($this->fieldName, [
         'type' => 'boolean',
         'settings' => [],
@@ -102,7 +109,7 @@ class TimestampFormatterTest extends KernelTestBase {
     $data = [];
 
     // Test standard formats.
-    $date_formats = array_keys(\Drupal::entityManager()->getStorage('date_format')->loadMultiple());
+    $date_formats = array_keys(\Drupal::entityTypeManager()->getStorage('date_format')->loadMultiple());
 
     foreach ($date_formats as $date_format) {
       $data[] = ['date_format' => $date_format, 'custom_date_format' => '', 'timezone' => ''];
@@ -112,7 +119,7 @@ class TimestampFormatterTest extends KernelTestBase {
     $data[] = ['date_format' => 'custom', 'custom_date_format' => 'e', 'timezone' => 'Asia/Tokyo'];
 
     foreach ($data as $settings) {
-      list($date_format, $custom_date_format, $timezone) = array_values($settings);
+      [$date_format, $custom_date_format, $timezone] = array_values($settings);
       if (empty($timezone)) {
         $timezone = NULL;
       }

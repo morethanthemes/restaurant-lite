@@ -24,7 +24,7 @@ class MigrateDrupal7AuditIdsTest extends MigrateDrupal7TestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     // Enable all modules.
     self::$modules = array_keys($this->coreModuleListDataProvider());
     parent::setUp();
@@ -39,6 +39,7 @@ class MigrateDrupal7AuditIdsTest extends MigrateDrupal7TestBase {
     $this->installSchema('node', ['node_access']);
     $this->installSchema('search', ['search_dataset']);
     $this->installSchema('system', ['sequences']);
+    // @todo Remove tracker in https://www.drupal.org/project/drupal/issues/3261452
     $this->installSchema('tracker', ['tracker_node', 'tracker_user']);
 
     // Enable content moderation for nodes of type page.
@@ -127,6 +128,7 @@ class MigrateDrupal7AuditIdsTest extends MigrateDrupal7TestBase {
     );
 
     $expected = [
+      // @todo Remove aggregator in https://www.drupal.org/project/drupal/issues/3264120
       'd7_aggregator_feed',
       'd7_aggregator_item',
       'd7_comment',
@@ -135,6 +137,7 @@ class MigrateDrupal7AuditIdsTest extends MigrateDrupal7TestBase {
       'd7_file_private',
       'd7_menu_links',
       'd7_node',
+      'd7_node_complete',
       'd7_node_revision',
       'd7_taxonomy_term',
       'd7_user',

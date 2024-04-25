@@ -3,8 +3,8 @@
 namespace Drupal\Tests\views\FunctionalJavascript;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
-use Drupal\simpletest\ContentTypeCreationTrait;
-use Drupal\simpletest\NodeCreationTrait;
+use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
+use Drupal\Tests\node\Traits\NodeCreationTrait;
 use Drupal\views\Tests\ViewTestData;
 
 /**
@@ -20,14 +20,19 @@ class ClickSortingAJAXTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['node', 'views', 'views_test_config'];
+  protected static $modules = ['node', 'views', 'views_test_config'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   public static $testViews = ['test_content_ajax'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     ViewTestData::createTestViews(self::class, ['views_test_config']);
@@ -62,16 +67,16 @@ class ClickSortingAJAXTest extends WebDriverTestBase {
     /** @var \Behat\Mink\Element\NodeElement[] $rows */
     $rows = $page->findAll('css', 'tbody tr');
     $this->assertCount(2, $rows);
-    $this->assertContains('Page B', $rows[0]->getHtml());
-    $this->assertContains('Page A', $rows[1]->getHtml());
+    $this->assertStringContainsString('Page B', $rows[0]->getHtml());
+    $this->assertStringContainsString('Page A', $rows[1]->getHtml());
 
     // Now sort by title and check if the order changed.
     $page->clickLink('Title');
     $session_assert->assertWaitOnAjaxRequest();
     $rows = $page->findAll('css', 'tbody tr');
     $this->assertCount(2, $rows);
-    $this->assertContains('Page A', $rows[0]->getHtml());
-    $this->assertContains('Page B', $rows[1]->getHtml());
+    $this->assertStringContainsString('Page A', $rows[0]->getHtml());
+    $this->assertStringContainsString('Page B', $rows[1]->getHtml());
   }
 
 }

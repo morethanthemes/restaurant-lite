@@ -4,19 +4,16 @@ namespace Drupal\Tests\node\Functional\Rest;
 
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
-use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
 use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
 use Drupal\user\Entity\User;
 use GuzzleHttp\RequestOptions;
 
 abstract class NodeResourceTestBase extends EntityResourceTestBase {
 
-  use BcTimestampNormalizerUnixTestTrait;
-
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['node', 'path'];
+  protected static $modules = ['node', 'path'];
 
   /**
    * {@inheritdoc}
@@ -49,9 +46,11 @@ abstract class NodeResourceTestBase extends EntityResourceTestBase {
       case 'GET':
         $this->grantPermissionsToTestedRole(['access content']);
         break;
+
       case 'POST':
         $this->grantPermissionsToTestedRole(['access content', 'create camelids content']);
         break;
+
       case 'PATCH':
         // Do not grant the 'create url aliases' permission to test the case
         // when the path field is protected/not accessible, see
@@ -59,6 +58,7 @@ abstract class NodeResourceTestBase extends EntityResourceTestBase {
         // for a positive test.
         $this->grantPermissionsToTestedRole(['access content', 'edit any camelids content']);
         break;
+
       case 'DELETE':
         $this->grantPermissionsToTestedRole(['access content', 'delete any camelids content']);
         break;
@@ -129,10 +129,16 @@ abstract class NodeResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'created' => [
-        $this->formatExpectedTimestampItemValues(123456789),
+        [
+          'value' => (new \DateTime())->setTimestamp(123456789)->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'changed' => [
-        $this->formatExpectedTimestampItemValues($this->entity->getChangedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp($this->entity->getChangedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'promote' => [
         [
@@ -145,7 +151,10 @@ abstract class NodeResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'revision_timestamp' => [
-        $this->formatExpectedTimestampItemValues(123456789),
+        [
+          'value' => (new \DateTime())->setTimestamp(123456789)->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'revision_translation_affected' => [
         [
@@ -206,11 +215,7 @@ abstract class NodeResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function getExpectedUnauthorizedAccessMessage($method) {
-    if ($this->config('rest.settings')->get('bc_entity_resource_permissions')) {
-      return parent::getExpectedUnauthorizedAccessMessage($method);
-    }
-
-    if ($method === 'GET' || $method == 'PATCH' || $method == 'DELETE') {
+    if ($method === 'GET' || $method == 'PATCH' || $method == 'DELETE' || $method == 'POST') {
       return "The 'access content' permission is required.";
     }
     return parent::getExpectedUnauthorizedAccessMessage($method);

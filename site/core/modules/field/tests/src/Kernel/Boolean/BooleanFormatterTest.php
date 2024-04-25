@@ -21,7 +21,13 @@ class BooleanFormatterTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['field', 'text', 'entity_test', 'user', 'system'];
+  protected static $modules = [
+    'field',
+    'text',
+    'entity_test',
+    'user',
+    'system',
+  ];
 
   /**
    * @var string
@@ -46,7 +52,7 @@ class BooleanFormatterTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installConfig(['field']);
@@ -70,7 +76,8 @@ class BooleanFormatterTest extends KernelTestBase {
     ]);
     $instance->save();
 
-    $this->display = entity_get_display($this->entityType, $this->bundle, 'default')
+    $this->display = \Drupal::service('entity_display.repository')
+      ->getViewDisplay($this->entityType, $this->bundle)
       ->setComponent($this->fieldName, [
         'type' => 'boolean',
         'settings' => [],
@@ -120,7 +127,7 @@ class BooleanFormatterTest extends KernelTestBase {
     $data[] = [1, $format, 'TRUE'];
 
     foreach ($data as $test_data) {
-      list($value, $settings, $expected) = $test_data;
+      [$value, $settings, $expected] = $test_data;
 
       $component = $this->display->getComponent($this->fieldName);
       $component['settings'] = $settings;

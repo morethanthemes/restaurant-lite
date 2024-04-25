@@ -20,12 +20,22 @@ class BookContentModerationTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['book', 'block', 'book_test', 'content_moderation'];
+  protected static $modules = [
+    'book',
+    'block',
+    'book_test',
+    'content_moderation',
+  ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalPlaceBlock('system_breadcrumb_block');
@@ -36,7 +46,16 @@ class BookContentModerationTest extends BrowserTestBase {
     $workflow->save();
 
     // We need a user with additional content moderation permissions.
-    $this->bookAuthor = $this->drupalCreateUser(['create new books', 'create book content', 'edit own book content', 'add content to books', 'access printer-friendly version', 'view any unpublished content', 'use editorial transition create_new_draft', 'use editorial transition publish']);
+    $this->bookAuthor = $this->drupalCreateUser([
+      'create new books',
+      'create book content',
+      'edit own book content',
+      'add content to books',
+      'access printer-friendly version',
+      'view any unpublished content',
+      'use editorial transition create_new_draft',
+      'use editorial transition publish',
+    ]);
   }
 
   /**
@@ -63,33 +82,38 @@ class BookContentModerationTest extends BrowserTestBase {
       'title[0][value]' => $this->randomString(),
       'moderation_state[0][state]' => 'published',
     ];
-    $this->drupalPostForm('node/add/book', $edit, t('Save'));
+    $this->drupalGet('node/add/book');
+    $this->submitForm($edit, 'Save');
     $node = $this->drupalGetNodeByTitle($edit['title[0][value]']);
-    $this->assertTrue($node);
+    $this->assertNotEmpty($node);
 
     $edit = [
       'moderation_state[0][state]' => 'draft',
     ];
-    $this->drupalPostForm('node/' . $node->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $node->id() . '/edit');
+    $this->submitForm($edit, 'Save');
     $this->assertSession()->pageTextNotContains('You can only change the book outline for the published version of this content.');
 
     // Create a book draft with no changes, then publish it.
     $edit = [
       'moderation_state[0][state]' => 'draft',
     ];
-    $this->drupalPostForm('node/' . $book_1->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $book_1->id() . '/edit');
+    $this->submitForm($edit, 'Save');
     $this->assertSession()->pageTextNotContains('You can only change the book outline for the published version of this content.');
     $edit = [
       'moderation_state[0][state]' => 'published',
     ];
-    $this->drupalPostForm('node/' . $book_1->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $book_1->id() . '/edit');
+    $this->submitForm($edit, 'Save');
 
     // Try to move Node 2 to a different parent.
     $edit = [
       'book[pid]' => $book_1_nodes[3]->id(),
       'moderation_state[0][state]' => 'draft',
     ];
-    $this->drupalPostForm('node/' . $book_1_nodes[1]->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $book_1_nodes[1]->id() . '/edit');
+    $this->submitForm($edit, 'Save');
 
     $this->assertSession()->pageTextContains('You can only change the book outline for the published version of this content.');
 
@@ -103,7 +127,8 @@ class BookContentModerationTest extends BrowserTestBase {
       'book[bid]' => $book_2->id(),
       'moderation_state[0][state]' => 'draft',
     ];
-    $this->drupalPostForm('node/' . $book_1_nodes[1]->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $book_1_nodes[1]->id() . '/edit');
+    $this->submitForm($edit, 'Save');
 
     $this->assertSession()->pageTextContains('You can only change the book outline for the published version of this content.');
 
@@ -117,7 +142,8 @@ class BookContentModerationTest extends BrowserTestBase {
       'book[weight]' => 2,
       'moderation_state[0][state]' => 'draft',
     ];
-    $this->drupalPostForm('node/' . $book_1_nodes[1]->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $book_1_nodes[1]->id() . '/edit');
+    $this->submitForm($edit, 'Save');
 
     $this->assertSession()->pageTextContains('You can only change the book outline for the published version of this content.');
 
@@ -131,7 +157,8 @@ class BookContentModerationTest extends BrowserTestBase {
     $edit = [
       'moderation_state[0][state]' => 'draft',
     ];
-    $this->drupalPostForm('node/' . $book_1_nodes[1]->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $book_1_nodes[1]->id() . '/edit');
+    $this->submitForm($edit, 'Save');
 
     $this->assertSession()->pageTextNotContains('You can only change the book outline for the published version of this content.');
   }

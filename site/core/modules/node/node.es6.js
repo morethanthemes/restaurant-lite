@@ -1,9 +1,9 @@
 /**
  * @file
- * Defines Javascript behaviors for the node module.
+ * Defines JavaScript behaviors for the node module.
  */
 
-(function($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings) {
   /**
    * Behaviors for tabs in the node edit form.
    *
@@ -16,10 +16,11 @@
     attach(context) {
       const $context = $(context);
 
-      $context.find('.node-form-author').drupalSetSummary(context => {
-        const $authorContext = $(context);
-        const name = $authorContext.find('.field--name-uid input').val();
-        const date = $authorContext.find('.field--name-created input').val();
+      $context.find('.node-form-author').drupalSetSummary((context) => {
+        const nameElement = context.querySelector('.field--name-uid input');
+        const name = nameElement && nameElement.value;
+        const dateElement = context.querySelector('.field--name-created input');
+        const date = dateElement && dateElement.value;
 
         if (name && date) {
           return Drupal.t('By @name on @date', {
@@ -35,18 +36,18 @@
         }
       });
 
-      $context.find('.node-form-options').drupalSetSummary(context => {
+      $context.find('.node-form-options').drupalSetSummary((context) => {
         const $optionsContext = $(context);
-        const vals = [];
+        const values = [];
 
         if ($optionsContext.find('input').is(':checked')) {
           $optionsContext
             .find('input:checked')
             .next('label')
-            .each(function() {
-              vals.push(Drupal.checkPlain($.trim($(this).text())));
+            .each(function () {
+              values.push(Drupal.checkPlain(this.textContent.trim()));
             });
-          return vals.join(', ');
+          return values.join(', ');
         }
 
         return Drupal.t('Not promoted');

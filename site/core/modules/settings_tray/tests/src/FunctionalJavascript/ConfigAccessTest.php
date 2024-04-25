@@ -15,7 +15,7 @@ class ConfigAccessTest extends SettingsTrayTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'menu_link_content',
     'menu_ui',
   ];
@@ -23,7 +23,12 @@ class ConfigAccessTest extends SettingsTrayTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $user = $this->createUser([

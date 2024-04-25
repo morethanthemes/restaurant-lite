@@ -14,40 +14,15 @@ use Drupal\Core\Entity\RevisionLogInterface;
 interface BlockContentInterface extends ContentEntityInterface, EntityChangedInterface, RevisionLogInterface, EntityPublishedInterface, RefinableDependentAccessInterface {
 
   /**
-   * Returns the block revision log message.
-   *
-   * @return string
-   *   The revision log message.
-   *
-   * @deprecated in Drupal 8.2.0, will be removed before Drupal 9.0.0. Use
-   *   \Drupal\Core\Entity\RevisionLogInterface::getRevisionLogMessage() instead.
-   */
-  public function getRevisionLog();
-
-  /**
    * Sets the block description.
    *
    * @param string $info
    *   The block description.
    *
-   * @return \Drupal\block_content\BlockContentInterface
+   * @return $this
    *   The class instance that this method is called on.
    */
   public function setInfo($info);
-
-  /**
-   * Sets the block revision log message.
-   *
-   * @param string $revision_log
-   *   The revision log message.
-   *
-   * @return \Drupal\block_content\BlockContentInterface
-   *   The class instance that this method is called on.
-   *
-   * @deprecated in Drupal 8.2.0, will be removed before Drupal 9.0.0. Use
-   *   \Drupal\Core\Entity\RevisionLogInterface::setRevisionLogMessage() instead.
-   */
-  public function setRevisionLog($revision_log);
 
   /**
    * Determines if the block is reusable or not.
@@ -81,7 +56,7 @@ interface BlockContentInterface extends ContentEntityInterface, EntityChangedInt
    * @param string $theme
    *   The theme name.
    *
-   * @return \Drupal\block_content\BlockContentInterface
+   * @return $this
    *   The class instance that this method is called on.
    */
   public function setTheme($theme);

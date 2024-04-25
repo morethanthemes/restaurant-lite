@@ -8,7 +8,6 @@ use Drupal\file\Entity\File;
 use Drupal\media\Entity\Media;
 use Drupal\media\Entity\MediaType;
 use Drupal\rest\RestResourceConfigInterface;
-use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
 use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\Entity\User;
@@ -17,12 +16,10 @@ use GuzzleHttp\RequestOptions;
 
 abstract class MediaResourceTestBase extends EntityResourceTestBase {
 
-  use BcTimestampNormalizerUnixTestTrait;
-
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['media'];
+  protected static $modules = ['media'];
 
   /**
    * {@inheritdoc}
@@ -40,6 +37,33 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
   protected static $patchProtectedFieldNames = [
     'changed' => NULL,
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+
+    \Drupal::configFactory()
+      ->getEditable('media.settings')
+      ->set('standalone_url', TRUE)
+      ->save(TRUE);
+
+    // Provisioning the Media REST resource without the File REST resource does
+    // not make sense.
+    $this->resourceConfigStorage->create([
+      'id' => 'entity.file',
+      'granularity' => RestResourceConfigInterface::RESOURCE_GRANULARITY,
+      'configuration' => [
+        'methods' => ['GET'],
+        'formats' => [static::$format],
+        'authentication' => isset(static::$auth) ? [static::$auth] : [],
+      ],
+      'status' => TRUE,
+    ])->save();
+
+    $this->container->get('router.builder')->rebuild();
+  }
 
   /**
    * {@inheritdoc}
@@ -162,7 +186,7 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
           'target_id' => (int) $file->id(),
           'target_type' => 'file',
           'target_uuid' => $file->uuid(),
-          'url' => $file->url(),
+          'url' => $file->createFileUrl(FALSE),
         ],
       ],
       'thumbnail' => [
@@ -174,7 +198,7 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
           'target_type' => 'file',
           'target_uuid' => $thumbnail->uuid(),
           'title' => NULL,
-          'url' => $thumbnail->url(),
+          'url' => $thumbnail->createFileUrl(FALSE),
         ],
       ],
       'status' => [
@@ -183,13 +207,22 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'created' => [
-        $this->formatExpectedTimestampItemValues(123456789),
+        [
+          'value' => (new \DateTime())->setTimestamp(123456789)->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'changed' => [
-        $this->formatExpectedTimestampItemValues($this->entity->getChangedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp((int) $this->entity->getChangedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'revision_created' => [
-        $this->formatExpectedTimestampItemValues((int) $this->entity->getRevisionCreationTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp((int) $this->entity->getRevisionCreationTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'default_langcode' => [
         [
@@ -257,13 +290,9 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function getExpectedUnauthorizedAccessMessage($method) {
-    if ($this->config('rest.settings')->get('bc_entity_resource_permissions')) {
-      return parent::getExpectedUnauthorizedAccessMessage($method);
-    }
-
     switch ($method) {
       case 'GET';
-        return "The 'view media' permission is required and the media item must be published.";
+        return "The 'view media' permission is required when the media item is published.";
 
       case 'POST':
         return "The following permissions are required: 'administer media' OR 'create media' OR 'create camelids media'.";
@@ -299,8 +328,12 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
   }
 
   /**
-   * This duplicates some of the 'file_upload' REST resource plugin test
-   * coverage, to be able to test it on a concrete use case.
+   * Tests the 'file_upload' REST resource plugin.
+   *
+   * This test duplicates some of the 'file_upload' REST resource plugin test
+   * coverage.
+   *
+   * @see \Drupal\Tests\rest\Functional\FileUploadResourceTestBase
    */
   protected function uploadFile() {
     // Enable the 'file_upload' REST resource for the current format + auth.
@@ -345,7 +378,7 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
 
     // To still run the complete test coverage for POSTing a Media entity, we
     // must revoke the additional permissions that we granted.
-    $role = Role::load(static::$auth ? RoleInterface::AUTHENTICATED_ID : RoleInterface::AUTHENTICATED_ID);
+    $role = Role::load(static::$auth ? RoleInterface::AUTHENTICATED_ID : RoleInterface::ANONYMOUS_ID);
     $role->revokePermission('create camelids media');
     $role->trustData()->save();
   }
@@ -411,10 +444,16 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'created' => [
-        $this->formatExpectedTimestampItemValues($file->getCreatedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp($file->getCreatedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'changed' => [
-        $this->formatExpectedTimestampItemValues($file->getChangedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp($file->getChangedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
     ];
   }
@@ -422,9 +461,9 @@ abstract class MediaResourceTestBase extends EntityResourceTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function getExpectedUnauthorizedAccessCacheability() {
+  protected function getExpectedUnauthorizedEntityAccessCacheability($is_authenticated) {
     // @see \Drupal\media\MediaAccessControlHandler::checkAccess()
-    return parent::getExpectedUnauthorizedAccessCacheability()
+    return parent::getExpectedUnauthorizedEntityAccessCacheability($is_authenticated)
       ->addCacheTags(['media:1']);
   }
 

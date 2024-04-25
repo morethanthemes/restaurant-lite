@@ -29,12 +29,19 @@ class ViewEntityDependenciesTest extends ViewsKernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['node', 'comment', 'user', 'field', 'text', 'search'];
+  protected static $modules = [
+    'node',
+    'comment',
+    'user',
+    'field',
+    'text',
+    'search',
+  ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp($import_test_views = TRUE) {
+  protected function setUp($import_test_views = TRUE): void {
     parent::setUp(FALSE);
 
     // Install the necessary dependencies for node type creation to work.
@@ -76,7 +83,7 @@ class ViewEntityDependenciesTest extends ViewsKernelTestBase {
       'settings' => ['display_summary' => TRUE],
     ])->save();
 
-    ViewTestData::createTestViews(get_class($this), ['views_test_config']);
+    ViewTestData::createTestViews(static::class, ['views_test_config']);
   }
 
   /**
@@ -133,7 +140,7 @@ class ViewEntityDependenciesTest extends ViewsKernelTestBase {
       $view = Views::getView($view_id);
 
       $dependencies = $view->getDependencies();
-      $this->assertEqual($expected[$view_id], $dependencies);
+      $this->assertEquals($expected[$view_id], $dependencies);
       $config = $this->config('views.view.' . $view_id);
       \Drupal::service('config.storage.sync')->write($view_id, $config->get());
     }
@@ -171,7 +178,7 @@ class ViewEntityDependenciesTest extends ViewsKernelTestBase {
     $view->initDisplay();
     foreach ($view->displayHandlers as $display) {
       // Calculate the dependencies each display has.
-      $this->assertEqual($expected_display[$display->getPluginId()], $display->calculateDependencies());
+      $this->assertEquals($expected_display[$display->getPluginId()], $display->calculateDependencies());
     }
   }
 

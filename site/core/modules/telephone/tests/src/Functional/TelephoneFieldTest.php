@@ -3,6 +3,7 @@
 namespace Drupal\Tests\telephone\Functional;
 
 use Drupal\field\Entity\FieldConfig;
+use Drupal\telephone\Plugin\Field\FieldType\TelephoneItem;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\field\Entity\FieldStorageConfig;
 
@@ -18,11 +19,16 @@ class TelephoneFieldTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'field',
     'node',
     'telephone',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * A user with permission to create articles.
@@ -34,11 +40,14 @@ class TelephoneFieldTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalCreateContentType(['type' => 'article']);
-    $this->webUser = $this->drupalCreateUser(['create article content', 'edit own article content']);
+    $this->webUser = $this->drupalCreateUser([
+      'create article content',
+      'edit own article content',
+    ]);
     $this->drupalLogin($this->webUser);
 
     // Add the telephone field to the article content type.
@@ -54,7 +63,9 @@ class TelephoneFieldTest extends BrowserTestBase {
       'bundle' => 'article',
     ])->save();
 
-    entity_get_form_display('node', 'article', 'default')
+    /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $display_repository */
+    $display_repository = \Drupal::service('entity_display.repository');
+    $display_repository->getFormDisplay('node', 'article')
       ->setComponent('field_telephone', [
         'type' => 'telephone_default',
         'settings' => [
@@ -63,7 +74,7 @@ class TelephoneFieldTest extends BrowserTestBase {
       ])
       ->save();
 
-    entity_get_display('node', 'article', 'default')
+    $display_repository->getViewDisplay('node', 'article')
       ->setComponent('field_telephone', [
         'type' => 'telephone_link',
         'weight' => 1,
@@ -72,18 +83,19 @@ class TelephoneFieldTest extends BrowserTestBase {
   }
 
   /**
-   * Test to confirm the widget is setup.
+   * Tests to confirm the widget is setup.
    *
    * @covers \Drupal\telephone\Plugin\Field\FieldWidget\TelephoneDefaultWidget::formElement
    */
   public function testTelephoneWidget() {
     $this->drupalGet('node/add/article');
-    $this->assertFieldByName("field_telephone[0][value]", '', 'Widget found.');
-    $this->assertRaw('placeholder="123-456-7890"');
+    $this->assertSession()->fieldValueEquals("field_telephone[0][value]", '');
+    $this->assertSession()->elementAttributeContains('css', 'input[name="field_telephone[0][value]"]', 'maxlength', TelephoneItem::MAX_LENGTH);
+    $this->assertSession()->responseContains('placeholder="123-456-7890"');
   }
 
   /**
-   * Test the telephone formatter.
+   * Tests the telephone formatter.
    *
    * @covers \Drupal\telephone\Plugin\Field\FieldFormatter\TelephoneLinkFormatter::viewElements
    *
@@ -96,8 +108,9 @@ class TelephoneFieldTest extends BrowserTestBase {
       'field_telephone[0][value]' => $input,
     ];
 
-    $this->drupalPostForm('node/add/article', $edit, t('Save'));
-    $this->assertRaw('<a href="tel:' . $expected . '">');
+    $this->drupalGet('node/add/article');
+    $this->submitForm($edit, 'Save');
+    $this->assertSession()->responseContains('<a href="tel:' . $expected . '">');
   }
 
   /**

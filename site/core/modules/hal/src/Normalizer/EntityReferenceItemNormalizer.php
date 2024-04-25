@@ -19,11 +19,9 @@ class EntityReferenceItemNormalizer extends FieldItemNormalizer implements UuidR
   use EntityReferenceFieldItemNormalizerTrait;
 
   /**
-   * The interface or class that this Normalizer supports.
-   *
-   * @var string
+   * {@inheritdoc}
    */
-  protected $supportedInterfaceOrClass = 'Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem';
+  protected $supportedInterfaceOrClass = EntityReferenceItem::class;
 
   /**
    * The hypermedia link manager.
@@ -72,19 +70,22 @@ class EntityReferenceItemNormalizer extends FieldItemNormalizer implements UuidR
       return parent::normalize($field_item, $format, $context);
     }
 
-    /** @var $field_item \Drupal\Core\Field\FieldItemInterface */
+    /** @var \Drupal\Core\Field\FieldItemInterface $field_item */
     $target_entity = $field_item->get('entity')->getValue();
 
     // If the parent entity passed in a langcode, unset it before normalizing
     // the target entity. Otherwise, untranslatable fields of the target entity
     // will include the langcode.
-    $langcode = isset($context['langcode']) ? $context['langcode'] : NULL;
+    $langcode = $context['langcode'] ?? NULL;
     unset($context['langcode']);
     $context['included_fields'] = ['uuid'];
 
     // Normalize the target entity.
     $embedded = $this->serializer->normalize($target_entity, $format, $context);
-    $link = $embedded['_links']['self'];
+    // @todo https://www.drupal.org/project/drupal/issues/3110815 $embedded will
+    //   be NULL if the target entity does not exist. Use null coalescence
+    //   operator to preserve behavior in PHP 7.4.
+    $link = $embedded['_links']['self'] ?? NULL;
     // If the field is translatable, add the langcode to the link relation
     // object. This does not indicate the language of the target entity.
     if ($langcode) {
@@ -181,6 +182,13 @@ class EntityReferenceItemNormalizer extends FieldItemNormalizer implements UuidR
       }
       return $uuid;
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasCacheableSupportsMethod(): bool {
+    return TRUE;
   }
 
 }

@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\user\FunctionalJavascript;
 
+use Drupal\Core\Database\Database;
 use Drupal\Core\Test\AssertMailTrait;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
@@ -44,12 +45,12 @@ class UserPasswordResetTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block'];
+  protected static $modules = ['block'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a user.
@@ -65,7 +66,7 @@ class UserPasswordResetTest extends WebDriverTestBase {
     // Set the last login time that is used to generate the one-time link so
     // that it is definitely over a second ago.
     $account->login = REQUEST_TIME - mt_rand(10, 100000);
-    db_update('users_field_data')
+    Database::getConnection()->update('users_field_data')
       ->fields(['login' => $account->getLastLoginTime()])
       ->condition('uid', $account->id())
       ->execute();
@@ -84,14 +85,14 @@ class UserPasswordResetTest extends WebDriverTestBase {
     $this->drupalGet('user/password');
 
     // Reset the password by username via the password reset page.
-    $edit['name'] = $this->account->getUsername();
-    $this->drupalPostForm(NULL, $edit, t('Submit'));
+    $edit['name'] = $this->account->getAccountName();
+    $this->submitForm($edit, 'Submit');
 
     $resetURL = $this->getResetURL();
     $this->drupalGet($resetURL);
 
     // Login
-    $this->drupalPostForm(NULL, NULL, t('Log in'));
+    $this->submitForm([], 'Log in');
 
     // Generate file.
     $image_file = current($this->drupalGetTestFiles('image'));
@@ -102,12 +103,12 @@ class UserPasswordResetTest extends WebDriverTestBase {
     $this->assertSession()->waitForButton('Remove');
 
     // Change the forgotten password.
-    $password = user_password();
+    $password = \Drupal::service('password_generator')->generate();
     $edit = ['pass[pass1]' => $password, 'pass[pass2]' => $password];
-    $this->drupalPostForm(NULL, $edit, t('Save'));
+    $this->submitForm($edit, 'Save');
 
     // Verify that the password reset session has been destroyed.
-    $this->drupalPostForm(NULL, $edit, t('Save'));
+    $this->submitForm($edit, 'Save');
     // Password needed to make profile changes.
     $this->assertSession()->pageTextContains("Your current password is missing or incorrect; it's required to change the Password.");
   }

@@ -1,25 +1,18 @@
-style:
-  version: VERSION
-  css:
-    component:
-      css/media_library.module.css: {}
-    theme:
-      css/media_library.theme.css: {}
-
 click_to_select:
   version: VERSION
   js:
     js/media_library.click_to_select.js: {}
   dependencies:
     - core/drupal
-    - core/jquery.once
+    - core/once
 
 view:
   version: VERSION
   js:
     js/media_library.view.js: {}
   dependencies:
-    - media_library/style
+    - core/drupal.announce
+    - core/drupal.checkbox
     - media_library/click_to_select
 
 widget:
@@ -27,8 +20,22 @@ widget:
   js:
     js/media_library.widget.js: {}
   dependencies:
+    - core/drupal.dialog.ajax
+    - core/once
+    - core/sortable
+    - core/drupal.nodelist.foreach
+
+ui:
+  version: VERSION
+  js:
+    js/media_library.ui.js: {}
+  dependencies:
     - core/drupal.ajax
-    - core/jquery.ui.sortable
-    - media_library/view
     - core/drupal.announce
-    - core/jquery.once
+    - core/drupal.nodelist.foreach
+    - core/once
+    - core/jquery.once.bc
+    - core/jquery
+    - media_library/view
+    - core/tabbable
+    - core/es6-promise

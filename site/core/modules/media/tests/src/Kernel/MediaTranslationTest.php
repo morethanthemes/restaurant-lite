@@ -4,6 +4,7 @@ namespace Drupal\Tests\media\Kernel;
 
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\content_translation\ContentTranslationHandler;
 
 /**
  * Tests multilanguage fields logic.
@@ -17,7 +18,7 @@ class MediaTranslationTest extends MediaKernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['language'];
+  protected static $modules = ['language' , 'content_translation'];
 
   /**
    * The test media translation type.
@@ -29,7 +30,7 @@ class MediaTranslationTest extends MediaKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installConfig(['language']);
@@ -48,12 +49,16 @@ class MediaTranslationTest extends MediaKernelTestBase {
   }
 
   /**
-   * Test translatable fields storage/retrieval.
+   * Tests translatable fields storage/retrieval.
    */
   public function testTranslatableFieldSaveLoad() {
     /** @var \Drupal\Core\Entity\EntityTypeInterface $entity_type */
     $entity_type = $this->container->get('entity_type.manager')->getDefinition('media');
     $this->assertTrue($entity_type->isTranslatable(), 'Media is translatable.');
+
+    // Check if the translation handler uses the content_translation handler.
+    $translation_handler_class = $entity_type->getHandlerClass('translation');
+    $this->assertEquals(ContentTranslationHandler::class, $translation_handler_class, 'Translation handler is set to use the content_translation handler.');
 
     // Prepare the field translations.
     $source_field_definition = $this->testTranslationMediaType->getSource()->getSourceFieldDefinition($this->testTranslationMediaType);

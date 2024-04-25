@@ -19,10 +19,10 @@ class QueryFactoryTest extends UnitTestCase {
    * @dataProvider providerTestGetKeys
    */
   public function testGetKeys(array $expected, $key, Config $config) {
-    $config_factory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
-    $key_value_factory = $this->getMock('Drupal\Core\KeyValueStore\KeyValueFactoryInterface');
-    $config_manager = $this->getMock('Drupal\Core\Config\ConfigManagerInterface');
-    $config_entity_type = $this->getMock('Drupal\Core\Config\Entity\ConfigEntityTypeInterface');
+    $config_factory = $this->createMock('Drupal\Core\Config\ConfigFactoryInterface');
+    $key_value_factory = $this->createMock('Drupal\Core\KeyValueStore\KeyValueFactoryInterface');
+    $config_manager = $this->createMock('Drupal\Core\Config\ConfigManagerInterface');
+    $config_entity_type = $this->createMock('Drupal\Core\Config\Entity\ConfigEntityTypeInterface');
     $query_factory = new QueryFactory($config_factory, $key_value_factory, $config_manager);
     $method = new \ReflectionMethod($query_factory, 'getKeys');
     $method->setAccessible(TRUE);
@@ -61,7 +61,7 @@ class QueryFactoryTest extends UnitTestCase {
       $this->getConfigObject('test')->set('uuid', 'abc'),
     ];
 
-    // Tests a existent sub key.
+    // Tests an existent sub key.
     $tests[] = [
       ['uuid.blah:abc'],
       'uuid.blah',
@@ -100,10 +100,10 @@ class QueryFactoryTest extends UnitTestCase {
    * @covers ::getValues
    */
   public function testGetKeysWildCardEnd() {
-    $config_factory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
-    $key_value_factory = $this->getMock('Drupal\Core\KeyValueStore\KeyValueFactoryInterface');
-    $config_manager = $this->getMock('Drupal\Core\Config\ConfigManagerInterface');
-    $config_entity_type = $this->getMock('Drupal\Core\Config\Entity\ConfigEntityTypeInterface');
+    $config_factory = $this->createMock('Drupal\Core\Config\ConfigFactoryInterface');
+    $key_value_factory = $this->createMock('Drupal\Core\KeyValueStore\KeyValueFactoryInterface');
+    $config_manager = $this->createMock('Drupal\Core\Config\ConfigManagerInterface');
+    $config_entity_type = $this->createMock('Drupal\Core\Config\Entity\ConfigEntityTypeInterface');
     $config_entity_type->expects($this->atLeastOnce())
       ->method('id')
       ->willReturn('test_config_entity_type');
@@ -111,7 +111,8 @@ class QueryFactoryTest extends UnitTestCase {
 
     $method = new \ReflectionMethod($query_factory, 'getKeys');
     $method->setAccessible(TRUE);
-    $this->setExpectedException(\LogicException::class, 'test_config_entity_type lookup key test.* ends with a wildcard this can not be used as a lookup');
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('test_config_entity_type lookup key test.* ends with a wildcard this can not be used as a lookup');
     $method->invoke($query_factory, $this->getConfigObject('test'), 'test.*', 'get', $config_entity_type);
   }
 
@@ -121,13 +122,13 @@ class QueryFactoryTest extends UnitTestCase {
    * @param string $name
    *   The config name.
    *
-   * @return \Drupal\Core\Config\Config|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\Core\Config\Config|\PHPUnit\Framework\MockObject\MockObject
    *   The test configuration object.
    */
   protected function getConfigObject($name) {
     $config = $this->getMockBuilder('Drupal\Core\Config\Config')
       ->disableOriginalConstructor()
-      ->setMethods(['save', 'delete'])
+      ->onlyMethods(['save', 'delete'])
       ->getMock();
     return $config->setName($name);
   }

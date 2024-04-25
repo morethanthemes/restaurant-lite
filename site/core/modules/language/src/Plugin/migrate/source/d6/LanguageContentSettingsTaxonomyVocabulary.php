@@ -8,6 +8,11 @@ use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 /**
  * Drupal 6 i18n vocabularies source from database.
  *
+ * For available configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBas
+ *
  * @MigrateSource(
  *   id = "d6_language_content_settings_taxonomy_vocabulary",
  *   source_module = "taxonomy"
@@ -19,8 +24,14 @@ class LanguageContentSettingsTaxonomyVocabulary extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function query() {
-    return $this->select('vocabulary', 'v')
-      ->fields('v', ['vid', 'language']);
+    $query = $this->select('vocabulary', 'v')
+      ->fields('v', ['vid']);
+    if ($this->getDatabase()
+      ->schema()
+      ->fieldExists('vocabulary', 'language')) {
+      $query->addField('v', 'language');
+    }
+    return $query;
   }
 
   /**
@@ -44,9 +55,9 @@ class LanguageContentSettingsTaxonomyVocabulary extends DrupalSqlBase {
     // 2 - Predefined language for a vocabulary and its terms.
     // 3 - Per-language terms, translatable (referencing terms with different
     // languages) but not localizable.
-    $i18ntaxonomy_vocabulary = $this->variableGet('i18ntaxonomy_vocabulary', NULL);
+    $i18ntaxonomy_vocabulary = $this->variableGet('i18ntaxonomy_vocabulary', []);
     $vid = $row->getSourceProperty('vid');
-    $state = FALSE;
+    $state = 0;
     if (array_key_exists($vid, $i18ntaxonomy_vocabulary)) {
       $state = $i18ntaxonomy_vocabulary[$vid];
     }

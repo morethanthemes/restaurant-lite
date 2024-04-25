@@ -12,22 +12,9 @@ use Drupal\user\EntityOwnerInterface;
 interface WorkspaceInterface extends ContentEntityInterface, EntityChangedInterface, EntityOwnerInterface {
 
   /**
-   * The ID of the default workspace.
-   */
-  const DEFAULT_WORKSPACE = 'live';
-
-  /**
    * Publishes the contents of this workspace to the default (Live) workspace.
    */
   public function publish();
-
-  /**
-   * Determines whether the workspace is the default one or not.
-   *
-   * @return bool
-   *   TRUE if this workspace is the default one (e.g 'Live'), FALSE otherwise.
-   */
-  public function isDefaultWorkspace();
 
   /**
    * Gets the workspace creation timestamp.
@@ -46,5 +33,13 @@ interface WorkspaceInterface extends ContentEntityInterface, EntityChangedInterf
    * @return $this
    */
   public function setCreatedTime($timestamp);
+
+  /**
+   * Determines whether the workspace has a parent.
+   *
+   * @return bool
+   *   TRUE if the workspace has a parent, FALSE otherwise.
+   */
+  public function hasParent();
 
 }

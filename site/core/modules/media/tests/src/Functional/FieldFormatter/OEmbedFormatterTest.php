@@ -21,7 +21,7 @@ class OEmbedFormatterTest extends MediaFunctionalTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'field_ui',
     'link',
     'media_test_oembed',
@@ -30,9 +30,21 @@ class OEmbedFormatterTest extends MediaFunctionalTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->lockHttpClientToFixtures();
+
+    \Drupal::configFactory()
+      ->getEditable('media.settings')
+      ->set('standalone_url', TRUE)
+      ->save(TRUE);
+
+    $this->container->get('router.builder')->rebuild();
   }
 
   /**
@@ -51,32 +63,51 @@ class OEmbedFormatterTest extends MediaFunctionalTestBase {
         [
           'iframe' => [
             'src' => '/media/oembed?url=https%3A//vimeo.com/7073899',
-            'width' => 480,
-            'height' => 360,
+            'width' => '480',
+            'height' => '360',
+            'title' => 'Drupal Rap Video - Schipulcon09',
           ],
         ],
       ],
       'Vimeo video, resized' => [
         'https://vimeo.com/7073899',
         'video_vimeo.json?maxwidth=100&maxheight=100',
-        ['max_width' => 100, 'max_height' => 100],
+        ['max_width' => '100', 'max_height' => '100'],
         [
           'iframe' => [
             'src' => '/media/oembed?url=https%3A//vimeo.com/7073899',
-            'width' => 100,
-            'height' => 100,
+            'width' => '100',
+            'height' => '100',
+            'title' => 'Drupal Rap Video - Schipulcon09',
+          ],
+        ],
+      ],
+      'Vimeo video, no title' => [
+        'https://vimeo.com/7073899',
+        'video_vimeo-no-title.json',
+        [],
+        [
+          'iframe' => [
+            'src' => '/media/oembed?url=https%3A//vimeo.com/7073899',
+            'width' => '480',
+            'height' => '360',
+            'title' => NULL,
           ],
         ],
       ],
       'tweet' => [
         'https://twitter.com/drupaldevdays/status/935643039741202432',
         'rich_twitter.json',
-        [],
+        [
+          // The tweet resource does not specify a height, so the formatter
+          // should default to the configured maximum height.
+          'max_height' => 360,
+        ],
         [
           'iframe' => [
             'src' => '/media/oembed?url=https%3A//twitter.com/drupaldevdays/status/935643039741202432',
-            'width' => 550,
-            'height' => 360,
+            'width' => '550',
+            'height' => '360',
           ],
         ],
       ],
@@ -87,8 +118,18 @@ class OEmbedFormatterTest extends MediaFunctionalTestBase {
         [
           'img' => [
             'src' => '/core/misc/druplicon.png',
-            'width' => 88,
-            'height' => 100,
+            'width' => '88',
+            'height' => '100',
+          ],
+        ],
+      ],
+      'Flickr photo (no dimensions)' => [
+        'https://www.flickr.com/photos/amazeelabs/26497866357',
+        'photo_flickr_no_dimensions.json',
+        [],
+        [
+          'img' => [
+            'src' => '/core/misc/druplicon.png',
           ],
         ],
       ],
@@ -118,8 +159,8 @@ class OEmbedFormatterTest extends MediaFunctionalTestBase {
    * @param string $url
    *   The canonical URL of the media asset to test.
    * @param string $resource_url
-   *   The oEmebd resource URL of the media asset to test.
-   * @param mixed $formatter_settings
+   *   The oEmbed resource URL of the media asset to test.
+   * @param array $formatter_settings
    *   Settings for the oEmbed field formatter.
    * @param array $selectors
    *   An array of arrays. Each key is a CSS selector targeting an element in
@@ -164,8 +205,14 @@ class OEmbedFormatterTest extends MediaFunctionalTestBase {
     $assert = $this->assertSession();
     $assert->statusCodeEquals(200);
     foreach ($selectors as $selector => $attributes) {
+      $element = $assert->elementExists('css', $selector);
       foreach ($attributes as $attribute => $value) {
-        $assert->elementAttributeContains('css', $selector, $attribute, $value);
+        if (isset($value)) {
+          $this->assertStringContainsString($value, $element->getAttribute($attribute));
+        }
+        else {
+          $this->assertFalse($element->hasAttribute($attribute));
+        }
       }
     }
   }

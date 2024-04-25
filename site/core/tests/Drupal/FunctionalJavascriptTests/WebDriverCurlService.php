@@ -15,6 +15,31 @@ use WebDriver\Exception as WebDriverException;
 class WebDriverCurlService extends CurlService {
 
   /**
+   * Flag that indicates if retries are enabled.
+   *
+   * @var bool
+   */
+  private static $retry = TRUE;
+
+  /**
+   * Enables retries.
+   *
+   * This is useful if the caller is implementing it's own waiting process.
+   */
+  public static function enableRetry() {
+    static::$retry = TRUE;
+  }
+
+  /**
+   * Disables retries.
+   *
+   * This is useful if the caller is implementing it's own waiting process.
+   */
+  public static function disableRetry() {
+    static::$retry = FALSE;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function execute($requestMethod, $url, $parameters = NULL, $extraOptions = []) {
@@ -22,7 +47,8 @@ class WebDriverCurlService extends CurlService {
       CURLOPT_FAILONERROR => TRUE,
     ];
     $retries = 0;
-    while ($retries < 10) {
+    $max_retries = static::$retry ? 10 : 1;
+    while ($retries < $max_retries) {
       try {
         $customHeaders = [
           'Content-Type: application/json;charset=UTF-8',
@@ -42,6 +68,11 @@ class WebDriverCurlService extends CurlService {
             }
             else {
               $customHeaders[] = 'Content-Length: 0';
+
+              // Suppress "Transfer-Encoding: chunked" header automatically
+              // added by cURL that causes a 400 bad request (bad
+              // content-length).
+              $customHeaders[] = 'Transfer-Encoding:';
             }
 
             // Suppress "Expect: 100-continue" header automatically added by
@@ -62,6 +93,11 @@ class WebDriverCurlService extends CurlService {
             }
             else {
               $customHeaders[] = 'Content-Length: 0';
+
+              // Suppress "Transfer-Encoding: chunked" header automatically
+              // added by cURL that causes a 400 bad request (bad
+              // content-length).
+              $customHeaders[] = 'Transfer-Encoding:';
             }
 
             // Suppress "Expect: 100-continue" header automatically added by
@@ -103,6 +139,9 @@ class WebDriverCurlService extends CurlService {
       catch (CurlExec $exception) {
         $retries++;
       }
+    }
+    if (empty($error)) {
+      $error = "Retries: $retries and last result:\n" . ($rawResult ?? '');
     }
     throw WebDriverException::factory(WebDriverException::CURL_EXEC, sprintf("Curl error thrown for http %s to %s%s\n\n%s", $requestMethod, $url, $parameters && is_array($parameters) ? ' with params: ' . json_encode($parameters) : '', $error));
   }

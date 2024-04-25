@@ -7,6 +7,7 @@ use Drupal\comment\CommentManagerInterface;
 use Drupal\comment\Entity\Comment;
 use Drupal\comment\Tests\CommentTestTrait;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\system\Functional\Entity\EntityWithUriCacheTagsTestBase;
@@ -25,7 +26,12 @@ class CommentCacheTagsTest extends EntityWithUriCacheTagsTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['comment'];
+  protected static $modules = ['comment'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * @var \Drupal\entity_test\Entity\EntityTest
@@ -40,7 +46,7 @@ class CommentCacheTagsTest extends EntityWithUriCacheTagsTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Give anonymous users permission to view comments, so that we can verify
@@ -91,11 +97,11 @@ class CommentCacheTagsTest extends EntityWithUriCacheTagsTestBase {
   }
 
   /**
-   * Test that comments correctly invalidate the cache tag of their host entity.
+   * Tests that comments invalidate the cache tag of their host entity.
    */
   public function testCommentEntity() {
-    $this->verifyPageCache($this->entityTestCamelid->urlInfo(), 'MISS');
-    $this->verifyPageCache($this->entityTestCamelid->urlInfo(), 'HIT');
+    $this->verifyPageCache($this->entityTestCamelid->toUrl(), 'MISS');
+    $this->verifyPageCache($this->entityTestCamelid->toUrl(), 'HIT');
 
     // Create a "Hippopotamus" comment.
     $this->entityTestHippopotamidae = EntityTest::create([
@@ -104,8 +110,8 @@ class CommentCacheTagsTest extends EntityWithUriCacheTagsTestBase {
     ]);
     $this->entityTestHippopotamidae->save();
 
-    $this->verifyPageCache($this->entityTestHippopotamidae->urlInfo(), 'MISS');
-    $this->verifyPageCache($this->entityTestHippopotamidae->urlInfo(), 'HIT');
+    $this->verifyPageCache($this->entityTestHippopotamidae->toUrl(), 'MISS');
+    $this->verifyPageCache($this->entityTestHippopotamidae->toUrl(), 'HIT');
 
     $hippo_comment = Comment::create([
       'subject' => 'Hippopotamus',
@@ -121,15 +127,15 @@ class CommentCacheTagsTest extends EntityWithUriCacheTagsTestBase {
     $hippo_comment->save();
 
     // Ensure that a new comment only invalidates the commented entity.
-    $this->verifyPageCache($this->entityTestCamelid->urlInfo(), 'HIT');
-    $this->verifyPageCache($this->entityTestHippopotamidae->urlInfo(), 'MISS');
-    $this->assertText($hippo_comment->getSubject());
+    $this->verifyPageCache($this->entityTestCamelid->toUrl(), 'HIT');
+    $this->verifyPageCache($this->entityTestHippopotamidae->toUrl(), 'MISS');
+    $this->assertSession()->pageTextContains($hippo_comment->getSubject());
 
     // Ensure that updating an existing comment only invalidates the commented
     // entity.
     $this->entity->save();
-    $this->verifyPageCache($this->entityTestCamelid->urlInfo(), 'MISS');
-    $this->verifyPageCache($this->entityTestHippopotamidae->urlInfo(), 'HIT');
+    $this->verifyPageCache($this->entityTestCamelid->toUrl(), 'MISS');
+    $this->verifyPageCache($this->entityTestHippopotamidae->toUrl(), 'HIT');
   }
 
   /**
@@ -150,6 +156,17 @@ class CommentCacheTagsTest extends EntityWithUriCacheTagsTestBase {
       'config:filter.format.plain_text',
       'user:' . $entity->getOwnerId(),
       'user_view',
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getDefaultCacheContexts() {
+    return [
+      'languages:' . LanguageInterface::TYPE_INTERFACE,
+      'theme',
+      'user.permissions',
     ];
   }
 

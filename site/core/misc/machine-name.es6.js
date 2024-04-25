@@ -3,7 +3,7 @@
  * Machine name functionality.
  */
 
-(function($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings) {
   /**
    * Attach the machine-readable name form element behavior.
    *
@@ -55,7 +55,7 @@
       function machineNameHandler(e) {
         const data = e.data;
         const options = data.options;
-        const baseValue = $(e.target).val();
+        const baseValue = e.target.value;
 
         const rx = new RegExp(options.replace_pattern, 'g');
         const expected = baseValue
@@ -78,7 +78,7 @@
         }
         if (baseValue.toLowerCase() !== expected) {
           timeout = setTimeout(() => {
-            xhr = self.transliterate(baseValue, options).done(machine => {
+            xhr = self.transliterate(baseValue, options).done((machine) => {
               self.showMachineName(machine.substr(0, options.maxlength), data);
             });
           }, 300);
@@ -87,14 +87,15 @@
         }
       }
 
-      Object.keys(settings.machineName).forEach(sourceId => {
-        let machine = '';
+      Object.keys(settings.machineName).forEach((sourceId) => {
         const options = settings.machineName[sourceId];
 
-        const $source = $context
-          .find(sourceId)
-          .addClass('machine-name-source')
-          .once('machine-name');
+        const $source = $(
+          once(
+            'machine-name',
+            $context.find(sourceId).addClass('machine-name-source'),
+          ),
+        );
         const $target = $context
           .find(options.target)
           .addClass('machine-name-target');
@@ -117,14 +118,8 @@
         options.maxlength = $target.attr('maxlength');
         // Hide the form item container of the machine name form element.
         $wrapper.addClass('visually-hidden');
-        // Determine the initial machine name value. Unless the machine name
-        // form element is disabled or not empty, the initial default value is
-        // based on the human-readable form element value.
-        if ($target.is(':disabled') || $target.val() !== '') {
-          machine = $target.val();
-        } else if ($source.val() !== '') {
-          machine = self.transliterate($source.val(), options);
-        }
+        // Initial machine name from the target field default value.
+        const machine = $target[0].value;
         // Append the machine name preview to the source field.
         const $preview = $(
           `<span class="machine-name-value">${
@@ -152,6 +147,18 @@
           $preview,
           options,
         };
+
+        // If no initial value, determine machine name based on the
+        // human-readable form element value.
+        if (machine === '' && $source[0].value !== '') {
+          self.transliterate($source[0].value, options).done((machineName) => {
+            self.showMachineName(
+              machineName.substr(0, options.maxlength),
+              eventData,
+            );
+          });
+        }
+
         // If it is editable, append an edit link.
         const $link = $(
           `<span class="admin-link"><button type="button" class="link">${Drupal.t(
@@ -163,7 +170,7 @@
         // Preview the machine name in realtime when the human-readable name
         // changes, but only if there is no machine name yet; i.e., only upon
         // initial creation, not when editing.
-        if ($target.val() === '') {
+        if ($target[0].value === '') {
           $source
             .on('formUpdated.machineName', eventData, machineNameHandler)
             // Initialize machine name preview.
@@ -181,7 +188,7 @@
       // Set the machine name to the transliterated value.
       if (machine !== '') {
         if (machine !== settings.replace) {
-          data.$target.val(machine);
+          data.$target[0].value = machine;
           data.$preview.html(
             settings.field_prefix +
               Drupal.checkPlain(machine) +
@@ -191,7 +198,7 @@
         data.$suffix.show();
       } else {
         data.$suffix.hide();
-        data.$target.val(machine);
+        data.$target[0].value = machine;
         data.$preview.empty();
       }
     },

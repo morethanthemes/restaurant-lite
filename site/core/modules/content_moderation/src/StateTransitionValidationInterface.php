@@ -36,10 +36,12 @@ interface StateTransitionValidationInterface {
    *   The new workflow state.
    * @param \Drupal\Core\Session\AccountInterface $user
    *   The user to validate.
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The entity to be transitioned.
    *
    * @return bool
    *   Returns TRUE if transition is valid, otherwise FALSE.
    */
-  public function isTransitionValid(WorkflowInterface $workflow, StateInterface $original_state, StateInterface $new_state, AccountInterface $user);
+  public function isTransitionValid(WorkflowInterface $workflow, StateInterface $original_state, StateInterface $new_state, AccountInterface $user, ContentEntityInterface $entity);
 
 }

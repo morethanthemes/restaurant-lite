@@ -218,6 +218,10 @@ class MediaSourceTest extends MediaKernelTestBase {
     $media->save();
     $media_source = $media->getSource();
     $this->assertSame('some_value', $media_source->getSourceFieldValue($media));
+
+    // Test that NULL is returned if there is no value in the source field.
+    $media->set('field_media_test', NULL)->save();
+    $this->assertNull($media_source->getSourceFieldValue($media));
   }
 
   /**
@@ -295,6 +299,25 @@ class MediaSourceTest extends MediaKernelTestBase {
     $this->assertSame('public://thumbnail2.jpg', $media->thumbnail->entity->getFileUri(), 'Correct metadata attribute was not used for the thumbnail.');
     $this->assertEmpty($media->thumbnail->title);
     $this->assertSame('', $media->thumbnail->alt);
+
+    // Set the width and height metadata attributes and make sure they're used
+    // for the thumbnail.
+    \Drupal::state()->set('media_source_test_definition', [
+      'thumbnail_width_metadata_attribute' => 'width',
+      'thumbnail_height_metadata_attribute' => 'height',
+    ]);
+    \Drupal::state()->set('media_source_test_attributes', [
+      'width' => ['value' => 1024],
+      'height' => ['value' => 768],
+    ]);
+    $media = Media::create([
+      'bundle' => $this->testMediaType->id(),
+      'name' => 'Are you looking at me?',
+      'field_media_test' => 'some_value',
+    ]);
+    $media->save();
+    $this->assertSame(1024, $media->thumbnail->width);
+    $this->assertSame(768, $media->thumbnail->height);
 
     // Enable queued thumbnails and make sure that the entity gets the default
     // thumbnail initially.
@@ -530,12 +553,12 @@ class MediaSourceTest extends MediaKernelTestBase {
     $this->createMediaTypeViaForm($id, $field_name);
 
     // Source field not in displays.
-    $display = entity_get_display('media', $id, 'default');
+    $display = \Drupal::service('entity_display.repository')->getViewDisplay('media', $id);
     $components = $display->getComponents();
     $this->assertArrayHasKey($field_name, $components);
     $this->assertSame('entity_reference_entity_id', $components[$field_name]['type']);
 
-    $display = entity_get_form_display('media', $id, 'default');
+    $display = \Drupal::service('entity_display.repository')->getFormDisplay('media', $id);
     $components = $display->getComponents();
     $this->assertArrayHasKey($field_name, $components);
     $this->assertSame('entity_reference_autocomplete_tags', $components[$field_name]['type']);
@@ -551,10 +574,10 @@ class MediaSourceTest extends MediaKernelTestBase {
     $this->createMediaTypeViaForm($id, $field_name);
 
     // Source field not in displays.
-    $display = entity_get_display('media', $id, 'default');
+    $display = \Drupal::service('entity_display.repository')->getViewDisplay('media', $id);
     $this->assertArrayNotHasKey($field_name, $display->getComponents());
 
-    $display = entity_get_form_display('media', $id, 'default');
+    $display = \Drupal::service('entity_display.repository')->getFormDisplay('media', $id);
     $this->assertArrayNotHasKey($field_name, $display->getComponents());
   }
 
@@ -578,7 +601,7 @@ class MediaSourceTest extends MediaKernelTestBase {
     $form_state->setValues([
       'label' => 'Test type',
       'id' => $source_plugin_id,
-      'op' => t('Save'),
+      'op' => 'Save',
     ]);
 
     /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $field_manager */

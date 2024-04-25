@@ -22,7 +22,7 @@ class FieldInputValueNormalizerTraitTest extends UnitTestCase {
   }
 
   /**
-   * Test cases for ::testKeyValueByDelta.
+   * Provides test cases for ::testKeyValueByDelta.
    */
   public function keyValueByDeltaTestCases() {
     return [
@@ -84,7 +84,8 @@ class FieldInputValueNormalizerTraitTest extends UnitTestCase {
    * @covers ::normalizeValue
    */
   public function testScalarWithNoMainProperty() {
-    $this->setExpectedException(\InvalidArgumentException::class, 'A main property is required when normalizing scalar field values.');
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('A main property is required when normalizing scalar field values.');
     $value = 'foo';
     $this->normalizeValue($value, NULL);
   }

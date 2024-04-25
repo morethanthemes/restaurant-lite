@@ -2,8 +2,9 @@
 
 namespace Drupal\field;
 
+use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Extension\ModuleUninstallValidatorInterface;
+use Drupal\Core\Extension\ConfigImportModuleUninstallValidatorInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
@@ -11,7 +12,7 @@ use Drupal\Core\StringTranslation\TranslationInterface;
 /**
  * Prevents uninstallation of modules providing active field storage.
  */
-class FieldUninstallValidator implements ModuleUninstallValidatorInterface {
+class FieldUninstallValidator implements ConfigImportModuleUninstallValidatorInterface {
 
   use StringTranslationTrait;
 
@@ -33,7 +34,7 @@ class FieldUninstallValidator implements ModuleUninstallValidatorInterface {
    * Constructs a new FieldUninstallValidator.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   *   The entity manager.
+   *   The entity type manager.
    * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
    *   The string translation service.
    * @param \Drupal\Core\Field\FieldTypePluginManagerInterface $field_type_manager
@@ -70,6 +71,15 @@ class FieldUninstallValidator implements ModuleUninstallValidatorInterface {
       }
     }
     return $reasons;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateConfigImport(string $module, StorageInterface $source_storage): array {
+    // The field_config_import_steps_alter() method removes field data prior to
+    // configuration import so the checks in ::validate() are unnecessary.
+    return [];
   }
 
   /**

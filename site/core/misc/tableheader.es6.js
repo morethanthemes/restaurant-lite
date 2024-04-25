@@ -3,7 +3,7 @@
  * Sticky table headers.
  */
 
-(function($, Drupal, displace) {
+(function ($, Drupal, displace) {
   /**
    * Constructor for the tableHeader object. Provides sticky table headers.
    *
@@ -76,13 +76,11 @@
 
   // Select and initialize sticky table headers.
   function tableHeaderInitHandler(e) {
-    const $tables = $(e.data.context)
-      .find('table.sticky-enabled')
-      .once('tableheader');
-    const il = $tables.length;
-    for (let i = 0; i < il; i++) {
-      TableHeader.tables.push(new TableHeader($tables[i]));
-    }
+    once('tableheader', $(e.data.context).find('table.sticky-enabled')).forEach(
+      (table) => {
+        TableHeader.tables.push(new TableHeader(table));
+      },
+    );
     forTables('onScroll');
   }
 
@@ -139,12 +137,13 @@
   // Bind to custom Drupal events.
   $(document).on({
     /**
-     * Recalculate columns width when window is resized and when show/hide
-     * weight is triggered.
+     * Recalculate columns width when window is resized, when show/hide weight
+     * is triggered, or when toolbar tray is toggled.
      *
      * @ignore
      */
-    'columnschange.TableHeader': tableHeaderResizeHandler,
+    'columnschange.TableHeader drupalToolbarTrayChange':
+      tableHeaderResizeHandler,
 
     /**
      * Recalculate TableHeader.topOffset when viewport is resized.
@@ -207,10 +206,12 @@
        * Create the duplicate header.
        */
       createSticky() {
+        // For caching purposes.
+        this.$html = $('html');
         // Clone the table header so it inherits original jQuery properties.
         const $stickyHeader = this.$originalHeader.clone(true);
         // Hide the table to avoid a flash of the header clone upon page load.
-        this.$stickyTable = $('<table class="sticky-header"/>')
+        this.$stickyTable = $('<table class="sticky-header"></table>')
           .css({
             visibility: 'hidden',
             position: 'fixed',
@@ -244,6 +245,11 @@
         if (typeof offsetLeft === 'number') {
           css.left = `${this.tableOffset.left - offsetLeft}px`;
         }
+        this.$html.css(
+          'scroll-padding-top',
+          displace.offsets.top +
+            (this.stickyVisible ? this.$stickyTable.height() : 0),
+        );
         return this.$stickyTable.css(css);
       },
 

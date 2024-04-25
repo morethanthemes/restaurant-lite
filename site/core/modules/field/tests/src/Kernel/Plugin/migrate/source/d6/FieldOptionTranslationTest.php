@@ -4,6 +4,8 @@ namespace Drupal\Tests\field\Kernel\Plugin\migrate\source\d6;
 
 use Drupal\Tests\migrate\Kernel\MigrateSqlSourceTestBase;
 
+// cspell:ignore optionwidgets selectlist
+
 /**
  * Tests the field option translation source plugin.
  *
@@ -15,7 +17,7 @@ class FieldOptionTranslationTest extends MigrateSqlSourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['field', 'migrate_drupal'];
+  protected static $modules = ['field', 'migrate_drupal'];
 
   /**
    * {@inheritdoc}
@@ -107,6 +109,14 @@ class FieldOptionTranslationTest extends MigrateSqlSourceTestBase {
         'objectid' => 'field_test_integer_selectlist',
         'type' => 'field',
         'property' => 'option_4123',
+        'objectindex' => 0,
+        'format' => 0,
+      ],
+      [
+        'lid' => 22,
+        'objectid' => 'field_test_integer_selectlist',
+        'type' => 'field',
+        'property' => 'option_0',
         'objectindex' => 0,
         'format' => 0,
       ],
@@ -236,6 +246,14 @@ class FieldOptionTranslationTest extends MigrateSqlSourceTestBase {
         'i18n_status' => 0,
       ],
     ];
+
+    // Change the name of the locale_target i18n status field.
+    $test[1] = $test[0];
+    foreach ($test[1]['source_data']['locales_target'] as &$lt) {
+      $lt['status'] = $lt['i18n_status'];
+      unset($lt['i18n_status']);
+    }
+
     return $test;
   }
 

@@ -13,7 +13,7 @@ process:
   tid: tid
   langcode: language
   vid:
-    plugin: migration
+    plugin: migration_lookup
     migration: d6_taxonomy_vocabulary
     source: vid
   name:
@@ -42,3 +42,4 @@ destination:
 migration_dependencies:
   required:
     - d6_taxonomy_term
+    - language

@@ -4,7 +4,9 @@ namespace Drupal\Core\Config;
 
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Config\Entity\ConfigDependencyManager;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Drupal\Core\Extension\ExtensionPathResolver;
+use Drupal\Core\Installer\InstallerKernel;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class ConfigInstaller implements ConfigInstallerInterface {
 
@@ -39,7 +41,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
   /**
    * The event dispatcher.
    *
-   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   * @var \Symfony\Contracts\EventDispatcher\EventDispatcherInterface
    */
   protected $eventDispatcher;
 
@@ -65,6 +67,13 @@ class ConfigInstaller implements ConfigInstallerInterface {
   protected $installProfile;
 
   /**
+   * The extension path resolver.
+   *
+   * @var \Drupal\Core\Extension\ExtensionPathResolver
+   */
+  protected $extensionPathResolver;
+
+  /**
    * Constructs the configuration installer.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -75,25 +84,32 @@ class ConfigInstaller implements ConfigInstallerInterface {
    *   The typed configuration manager.
    * @param \Drupal\Core\Config\ConfigManagerInterface $config_manager
    *   The configuration manager.
-   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   * @param \Symfony\Contracts\EventDispatcher\EventDispatcherInterface $event_dispatcher
    *   The event dispatcher.
    * @param string $install_profile
    *   The name of the currently active installation profile.
+   * @param \Drupal\Core\Extension\ExtensionPathResolver $extension_path_resolver
+   *   The extension path resolver.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, StorageInterface $active_storage, TypedConfigManagerInterface $typed_config, ConfigManagerInterface $config_manager, EventDispatcherInterface $event_dispatcher, $install_profile) {
+  public function __construct(ConfigFactoryInterface $config_factory, StorageInterface $active_storage, TypedConfigManagerInterface $typed_config, ConfigManagerInterface $config_manager, EventDispatcherInterface $event_dispatcher, $install_profile, ExtensionPathResolver $extension_path_resolver = NULL) {
     $this->configFactory = $config_factory;
     $this->activeStorages[$active_storage->getCollectionName()] = $active_storage;
     $this->typedConfig = $typed_config;
     $this->configManager = $config_manager;
     $this->eventDispatcher = $event_dispatcher;
     $this->installProfile = $install_profile;
+    if (!$extension_path_resolver) {
+      @trigger_error('Calling ConfigInstaller::__construct() without the $extension_path_resolver argument is deprecated in drupal:9.3.0 and is removed from drupal:10.0.0. See https://www.drupal.org/node/2940438', E_USER_DEPRECATED);
+      $extension_path_resolver = \Drupal::service('extension.path.resolver');
+    }
+    $this->extensionPathResolver = $extension_path_resolver;
   }
 
   /**
    * {@inheritdoc}
    */
   public function installDefaultConfig($type, $name) {
-    $extension_path = $this->drupalGetPath($type, $name);
+    $extension_path = $this->extensionPathResolver->getPath($type, $name);
     // Refresh the schema cache if the extension provides configuration schema
     // or is a theme.
     if (is_dir($extension_path . '/' . InstallStorage::CONFIG_SCHEMA_DIRECTORY) || $type == 'theme') {
@@ -122,10 +138,14 @@ class ConfigInstaller implements ConfigInstallerInterface {
       $collection_info = $this->configManager->getConfigCollectionInfo();
       foreach ($collection_info->getCollectionNames() as $collection) {
         $config_to_create = $this->getConfigToCreate($storage, $collection, $prefix, $profile_storages);
-        // If we're installing a profile ensure configuration that is overriding
-        // is excluded.
         if ($name == $this->drupalGetProfile()) {
-          $existing_configuration = $this->getActiveStorages($collection)->listAll();
+          // If we're installing a profile ensure simple configuration that
+          // already exists is excluded as it will have already been written.
+          // This means that if the configuration is changed by something else
+          // during the install it will not be overwritten again.
+          $existing_configuration = array_filter($this->getActiveStorages($collection)->listAll(), function ($config_name) {
+            return !$this->configManager->getEntityTypeIdByName($config_name);
+          });
           $config_to_create = array_diff_key($config_to_create, array_flip($existing_configuration));
         }
         if (!empty($config_to_create)) {
@@ -135,9 +155,11 @@ class ConfigInstaller implements ConfigInstallerInterface {
     }
 
     // During a drupal installation optional configuration is installed at the
-    // end of the installation process.
+    // end of the installation process. Once the install profile is installed
+    // optional configuration should be installed as usual.
     // @see install_install_profile()
-    if (!$this->isSyncing() && !$this->drupalInstallationAttempted()) {
+    $profile_installed = in_array($this->drupalGetProfile(), $this->getEnabledExtensions(), TRUE);
+    if (!$this->isSyncing() && (!InstallerKernel::installationAttempted() || $profile_installed)) {
       $optional_install_path = $extension_path . '/' . InstallStorage::CONFIG_OPTIONAL_DIRECTORY;
       if (is_dir($optional_install_path)) {
         // Install any optional config the module provides.
@@ -172,7 +194,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
     }
     elseif (!empty($profile)) {
       // Creates a profile storage to search for overrides.
-      $profile_install_path = $this->drupalGetPath('module', $profile) . '/' . InstallStorage::CONFIG_OPTIONAL_DIRECTORY;
+      $profile_install_path = $this->extensionPathResolver->getPath('module', $profile) . '/' . InstallStorage::CONFIG_OPTIONAL_DIRECTORY;
       $profile_storage = new FileStorage($profile_install_path, StorageInterface::DEFAULT_COLLECTION);
     }
     else {
@@ -265,12 +287,35 @@ class ConfigInstaller implements ConfigInstallerInterface {
     }
     $data = $storage->readMultiple($storage->listAll($prefix));
 
-    // Check to see if the corresponding override storage has any overrides.
+    // Check to see if configuration provided by the install profile has any
+    // overrides.
     foreach ($profile_storages as $profile_storage) {
       if ($profile_storage->getCollectionName() != $collection) {
         $profile_storage = $profile_storage->createCollection($collection);
       }
-      $data = $profile_storage->readMultiple(array_keys($data)) + $data;
+      $profile_overrides = $profile_storage->readMultiple(array_keys($data));
+      if (InstallerKernel::installationAttempted()) {
+        // During installation overrides of simple configuration are applied
+        // immediately. Configuration entities that are overridden will be
+        // updated when the profile is installed. This allows install profiles
+        // to provide configuration entity overrides that have dependencies that
+        // cannot be met when the module provided configuration entity is
+        // created.
+        foreach ($profile_overrides as $name => $override_data) {
+          // The only way to determine if they are configuration entities is the
+          // presence of a dependencies key.
+          if (!isset($override_data['dependencies'])) {
+            $data[$name] = $override_data;
+          }
+        }
+      }
+      else {
+        // Allow install profiles to provide overridden configuration for new
+        // extensions that are being enabled after Drupal has already been
+        // installed. This allows profiles to ship new extensions in version
+        // updates without requiring additional code to apply the overrides.
+        $data = $profile_overrides + $data;
+      }
     }
     return $data;
   }
@@ -306,13 +351,17 @@ class ConfigInstaller implements ConfigInstallerInterface {
         $new_config = new Config($name, $this->getActiveStorages($collection), $this->eventDispatcher, $this->typedConfig);
       }
       if ($config_to_create[$name] !== FALSE) {
-        $new_config->setData($config_to_create[$name]);
         // Add a hash to configuration created through the installer so it is
         // possible to know if the configuration was created by installing an
         // extension and to track which version of the default config was used.
         if (!$this->isSyncing() && $collection == StorageInterface::DEFAULT_COLLECTION) {
-          $new_config->set('_core.default_config_hash', Crypt::hashBase64(serialize($config_to_create[$name])));
+          $config_to_create[$name] = [
+            '_core' => [
+              'default_config_hash' => Crypt::hashBase64(serialize($config_to_create[$name])),
+            ],
+          ] + $config_to_create[$name];
         }
+        $new_config->setData($config_to_create[$name]);
       }
       if ($collection == StorageInterface::DEFAULT_COLLECTION && $entity_type = $this->configManager->getEntityTypeIdByName($name)) {
         // If we are syncing do not create configuration entities. Pluggable
@@ -326,7 +375,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
         }
         /** @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface $entity_storage */
         $entity_storage = $this->configManager
-          ->getEntityManager()
+          ->getEntityTypeManager()
           ->getStorage($entity_type);
 
         $id = $entity_storage->getIDFromConfigName($name, $entity_storage->getEntityType()->getConfigPrefix());
@@ -356,7 +405,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
    * {@inheritdoc}
    */
   public function installCollectionDefaultConfig($collection) {
-    $storage = new ExtensionInstallStorage($this->getActiveStorages(StorageInterface::DEFAULT_COLLECTION), InstallStorage::CONFIG_INSTALL_DIRECTORY, $collection, $this->drupalInstallationAttempted(), $this->installProfile);
+    $storage = new ExtensionInstallStorage($this->getActiveStorages(StorageInterface::DEFAULT_COLLECTION), InstallStorage::CONFIG_INSTALL_DIRECTORY, $collection, InstallerKernel::installationAttempted(), $this->installProfile);
     // Only install configuration for enabled extensions.
     $enabled_extensions = $this->getEnabledExtensions();
     $config_to_install = array_filter($storage->listAll(), function ($config_name) use ($enabled_extensions) {
@@ -379,11 +428,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
   }
 
   /**
-   * Gets the configuration storage that provides the default configuration.
-   *
-   * @return \Drupal\Core\Config\StorageInterface|null
-   *   The configuration storage that provides the default configuration.
-   *   Returns null if the source storage has not been set.
+   * {@inheritdoc}
    */
   public function getSourceStorage() {
     return $this->sourceStorage;
@@ -480,7 +525,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
     $profile_storages = $this->getProfileStorages($name);
 
     // Check the dependencies of configuration provided by the module.
-    list($invalid_default_config, $missing_dependencies) = $this->findDefaultConfigWithUnmetDependencies($storage, $enabled_extensions, $profile_storages);
+    [$invalid_default_config, $missing_dependencies] = $this->findDefaultConfigWithUnmetDependencies($storage, $enabled_extensions, $profile_storages);
     if (!empty($invalid_default_config)) {
       throw UnmetDependenciesException::create($name, array_unique($missing_dependencies, SORT_REGULAR));
     }
@@ -548,7 +593,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
   protected function validateDependencies($config_name, array $data, array $enabled_extensions, array $all_config) {
     if (!isset($data['dependencies'])) {
       // Simple config or a config entity without dependencies.
-      list($provider) = explode('.', $config_name, 2);
+      [$provider] = explode('.', $config_name, 2);
       return in_array($provider, $enabled_extensions, TRUE);
     }
 
@@ -574,7 +619,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
   protected function getMissingDependencies($config_name, array $data, array $enabled_extensions, array $all_config) {
     $missing = [];
     if (isset($data['dependencies'])) {
-      list($provider) = explode('.', $config_name, 2);
+      [$provider] = explode('.', $config_name, 2);
       $all_dependencies = $data['dependencies'];
 
       // Ensure enforced dependencies are included.
@@ -595,6 +640,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
           case 'theme':
             $list_to_check = $enabled_extensions;
             break;
+
           case 'config':
             $list_to_check = $all_config;
             break;
@@ -645,7 +691,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
     $profile = $this->drupalGetProfile();
     $profile_storages = [];
     if ($profile && $profile != $installing_name) {
-      $profile_path = $this->drupalGetPath('module', $profile);
+      $profile_path = $this->extensionPathResolver->getPath('module', $profile);
       foreach ([InstallStorage::CONFIG_INSTALL_DIRECTORY, InstallStorage::CONFIG_OPTIONAL_DIRECTORY] as $directory) {
         if (is_dir($profile_path . '/' . $directory)) {
           $profile_storages[] = new FileStorage($profile_path . '/' . $directory, StorageInterface::DEFAULT_COLLECTION);
@@ -667,7 +713,7 @@ class ConfigInstaller implements ConfigInstallerInterface {
    *   The extension's default configuration directory.
    */
   protected function getDefaultConfigDirectory($type, $name) {
-    return $this->drupalGetPath($type, $name) . '/' . InstallStorage::CONFIG_INSTALL_DIRECTORY;
+    return $this->extensionPathResolver->getPath($type, $name) . '/' . InstallStorage::CONFIG_INSTALL_DIRECTORY;
   }
 
   /**
@@ -683,9 +729,15 @@ class ConfigInstaller implements ConfigInstallerInterface {
    * @return string
    *   The path to the requested item or an empty string if the item is not
    *   found.
+   *
+   * @deprecated in drupal:9.3.0 and is removed from drupal:10.0.0. Use
+   *   \Drupal\Core\Extension\ExtensionList::getPath() instead.
+   *
+   * @see https://www.drupal.org/node/2940438
    */
   protected function drupalGetPath($type, $name) {
-    return drupal_get_path($type, $name);
+    @trigger_error(__METHOD__ . ' is deprecated in drupal:9.3.0 and is removed from drupal:10.0.0. Use \Drupal\Core\Extension\ExtensionPathResolver::getPath() instead. See https://www.drupal.org/node/2940438', E_USER_DEPRECATED);
+    return $this->extensionPathResolver->getPath($type, $name);
   }
 
   /**
@@ -698,16 +750,6 @@ class ConfigInstaller implements ConfigInstallerInterface {
    */
   protected function drupalGetProfile() {
     return $this->installProfile;
-  }
-
-  /**
-   * Wrapper for drupal_installation_attempted().
-   *
-   * @return bool
-   *   TRUE if a Drupal installation is currently being attempted.
-   */
-  protected function drupalInstallationAttempted() {
-    return drupal_installation_attempted();
   }
 
 }

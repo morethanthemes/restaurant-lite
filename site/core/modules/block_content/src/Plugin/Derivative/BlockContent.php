@@ -33,9 +33,9 @@ class BlockContent extends DeriverBase implements ContainerDeriverInterface {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, $base_plugin_id) {
-    $entity_manager = $container->get('entity.manager');
+    $entity_type_manager = $container->get('entity_type.manager');
     return new static(
-      $entity_manager->getStorage('block_content')
+      $entity_type_manager->getStorage('block_content')
     );
   }
 
@@ -46,7 +46,7 @@ class BlockContent extends DeriverBase implements ContainerDeriverInterface {
     $block_contents = $this->blockContentStorage->loadByProperties(['reusable' => TRUE]);
     // Reset the discovered definitions.
     $this->derivatives = [];
-    /** @var $block_content \Drupal\block_content\Entity\BlockContent */
+    /** @var \Drupal\block_content\Entity\BlockContent $block_content */
     foreach ($block_contents as $block_content) {
       $this->derivatives[$block_content->uuid()] = $base_plugin_definition;
       $this->derivatives[$block_content->uuid()]['admin_label'] = $block_content->label();

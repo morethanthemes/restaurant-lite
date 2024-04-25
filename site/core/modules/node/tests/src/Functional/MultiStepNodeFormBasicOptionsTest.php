@@ -13,6 +13,11 @@ use Drupal\field\Entity\FieldStorageConfig;
 class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * The field name to create.
    *
    * @var string
@@ -24,7 +29,10 @@ class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
    */
   public function testMultiStepNodeFormBasicOptions() {
     // Prepare a user to create the node.
-    $web_user = $this->drupalCreateUser(['administer nodes', 'create page content']);
+    $web_user = $this->drupalCreateUser([
+      'administer nodes',
+      'create page content',
+    ]);
     $this->drupalLogin($web_user);
 
     // Create an unlimited cardinality field.
@@ -43,7 +51,8 @@ class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
       'bundle' => 'page',
       'label' => $this->randomMachineName() . '_label',
     ])->save();
-    entity_get_form_display('node', 'page', 'default')
+    \Drupal::service('entity_display.repository')
+      ->getFormDisplay('node', 'page')
       ->setComponent($this->fieldName, [
         'type' => 'text_textfield',
       ])
@@ -55,9 +64,10 @@ class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
       'sticky[value]' => 1,
       "{$this->fieldName}[0][value]" => $this->randomString(32),
     ];
-    $this->drupalPostForm('node/add/page', $edit, t('Add another item'));
-    $this->assertNoFieldChecked('edit-promote-value', 'Promote stayed unchecked');
-    $this->assertFieldChecked('edit-sticky-value', 'Sticky stayed checked');
+    $this->drupalGet('node/add/page');
+    $this->submitForm($edit, 'Add another item');
+    $this->assertSession()->checkboxNotChecked('edit-promote-value');
+    $this->assertSession()->checkboxChecked('edit-sticky-value');
   }
 
 }

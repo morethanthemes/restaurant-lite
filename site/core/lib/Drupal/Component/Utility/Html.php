@@ -45,8 +45,8 @@ class Html {
    *   <command> tag anymore.
    *  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/command.
    * - The 'manifest' attribute is omitted because it only exists for the <html>
-   *   tag. That tag only makes sense in a HTML-served-as-HTML context, in which
-   *   case relative URLs are guaranteed to work.
+   *   tag. That tag only makes sense in an HTML-served-as-HTML context, in
+   *   which case relative URLs are guaranteed to work.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
    * @see https://stackoverflow.com/questions/2725156/complete-list-of-html-tag-attributes-which-have-a-url-value
@@ -286,7 +286,7 @@ EOD;
 
     $dom = new \DOMDocument();
     // Ignore warnings during HTML soup loading.
-    @$dom->loadHTML($document);
+    @$dom->loadHTML($document, LIBXML_NOBLANKS);
 
     return $dom;
   }
@@ -382,7 +382,11 @@ EOD;
    * @see html_entity_decode()
    * @see \Drupal\Component\Utility\Html::escape()
    */
-  public static function decodeEntities($text) {
+  public static function decodeEntities($text): string {
+    if (is_null($text)) {
+      @trigger_error('Passing NULL to ' . __METHOD__ . ' is deprecated in drupal:9.5.0 and will trigger a PHP error from drupal:11.0.0. Pass a string instead. See https://www.drupal.org/node/3318826', E_USER_DEPRECATED);
+      return '';
+    }
     return html_entity_decode($text, ENT_QUOTES, 'UTF-8');
   }
 
@@ -420,7 +424,11 @@ EOD;
    *
    * @ingroup sanitization
    */
-  public static function escape($text) {
+  public static function escape($text): string {
+    if (is_null($text)) {
+      @trigger_error('Passing NULL to ' . __METHOD__ . ' is deprecated in drupal:9.5.0 and will trigger a PHP error from drupal:11.0.0. Pass a string instead. See https://www.drupal.org/node/3318826', E_USER_DEPRECATED);
+      return '';
+    }
     return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
   }
 

@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\file\FunctionalJavascript;
 
-use Drupal\Core\Database\Database;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 
 /**
@@ -18,6 +17,11 @@ class FileManagedFileElementTest extends WebDriverTestBase {
   protected static $modules = ['node', 'file', 'file_module_test', 'field_ui'];
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * A user with administration permissions.
    *
    * @var \Drupal\user\UserInterface
@@ -27,9 +31,20 @@ class FileManagedFileElementTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
-    $this->adminUser = $this->drupalCreateUser(['access content', 'access administration pages', 'administer site configuration', 'administer users', 'administer permissions', 'administer content types', 'administer node fields', 'administer node display', 'administer nodes', 'bypass node access']);
+    $this->adminUser = $this->drupalCreateUser([
+      'access content',
+      'access administration pages',
+      'administer site configuration',
+      'administer users',
+      'administer permissions',
+      'administer content types',
+      'administer node fields',
+      'administer node display',
+      'administer nodes',
+      'bypass node access',
+    ]);
     $this->drupalLogin($this->adminUser);
     $this->drupalCreateContentType(['type' => 'article', 'name' => 'Article']);
   }
@@ -58,10 +73,10 @@ class FileManagedFileElementTest extends WebDriverTestBase {
           $this->assertNotEmpty($uploaded_file);
           $last_fid = $this->getLastFileId();
           $this->assertGreaterThan($last_fid_prior, $last_fid, 'New file got uploaded.');
-          $this->drupalPostForm(NULL, [], t('Save'));
+          $this->submitForm([], 'Save');
 
           // Remove, then Submit.
-          $remove_button_title = $multiple ? t('Remove selected') : t('Remove');
+          $remove_button_title = $multiple ? 'Remove selected' : 'Remove';
           $this->drupalGet($path . '/' . $last_fid);
           if ($multiple) {
             $selected_checkbox = ($tree ? 'nested[file]' : 'file') . '[file_' . $last_fid . '][selected]';
@@ -69,8 +84,8 @@ class FileManagedFileElementTest extends WebDriverTestBase {
           }
           $this->getSession()->getPage()->pressButton($remove_button_title);
           $this->assertSession()->assertWaitOnAjaxRequest();
-          $this->drupalPostForm(NULL, [], t('Save'));
-          $this->assertSession()->responseContains(t('The file ids are %fids.', ['%fids' => '']));
+          $this->submitForm([], 'Save');
+          $this->assertSession()->pageTextContains('The file ids are .');
 
           // Upload, then Remove, then Submit.
           $this->drupalGet($path);
@@ -84,8 +99,8 @@ class FileManagedFileElementTest extends WebDriverTestBase {
           $this->getSession()->getPage()->pressButton($remove_button_title);
           $this->assertSession()->assertWaitOnAjaxRequest();
 
-          $this->drupalPostForm(NULL, [], t('Save'));
-          $this->assertSession()->responseContains(t('The file ids are %fids.', ['%fids' => '']));
+          $this->submitForm([], 'Save');
+          $this->assertSession()->pageTextContains('The file ids are .');
         }
       }
     }
@@ -95,7 +110,10 @@ class FileManagedFileElementTest extends WebDriverTestBase {
    * Retrieves the fid of the last inserted file.
    */
   protected function getLastFileId() {
-    return (int) Database::getConnection()->query('SELECT MAX(fid) FROM {file_managed}')->fetchField();
+    return (int) \Drupal::entityQueryAggregate('file')
+      ->accessCheck(FALSE)
+      ->aggregate('fid', 'max')
+      ->execute()[0]['fid_max'];
   }
 
 }

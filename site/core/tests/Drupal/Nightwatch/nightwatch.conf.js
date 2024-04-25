@@ -7,17 +7,21 @@ const collectedFolders = {
   Tests: [],
   Commands: [],
   Assertions: [],
+  Pages: [],
 };
 const searchDirectory = process.env.DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY || '';
+const defaultIgnore = ['vendor/**'];
 
 glob
   .sync('**/tests/**/Nightwatch/**/*.js', {
     cwd: path.resolve(process.cwd(), `../${searchDirectory}`),
     ignore: process.env.DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES
-      ? process.env.DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES.split(',')
-      : [],
+      ? process.env.DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES.split(',').concat(
+          defaultIgnore,
+        )
+      : defaultIgnore,
   })
-  .forEach(file => {
+  .forEach((file) => {
     let m = regex.exec(file);
     while (m !== null) {
       // This is necessary to avoid infinite loops with zero-width matches.
@@ -26,7 +30,7 @@ glob
       }
 
       const key = `../${m[1]}`;
-      Object.keys(collectedFolders).forEach(folder => {
+      Object.keys(collectedFolders).forEach((folder) => {
         if (file.includes(`Nightwatch/${folder}`)) {
           collectedFolders[folder].push(`${searchDirectory}${key}/${folder}`);
         }
@@ -36,7 +40,7 @@ glob
   });
 
 // Remove duplicate folders.
-Object.keys(collectedFolders).forEach(folder => {
+Object.keys(collectedFolders).forEach((folder) => {
   collectedFolders[folder] = Array.from(new Set(collectedFolders[folder]));
 });
 
@@ -45,8 +49,8 @@ module.exports = {
   output_folder: process.env.DRUPAL_NIGHTWATCH_OUTPUT,
   custom_commands_path: collectedFolders.Commands,
   custom_assertions_path: collectedFolders.Assertions,
-  page_objects_path: '',
-  globals_path: 'tests/Drupal/Nightwatch/globals.js',
+  page_objects_path: collectedFolders.Pages,
+  globals_path: 'globals.js',
   selenium: {
     start_process: false,
   },
@@ -59,6 +63,7 @@ module.exports = {
         browserName: 'chrome',
         acceptSslCerts: true,
         chromeOptions: {
+          w3c: false,
           args: process.env.DRUPAL_TEST_WEBDRIVER_CHROME_ARGS
             ? process.env.DRUPAL_TEST_WEBDRIVER_CHROME_ARGS.split(' ')
             : [],
@@ -71,6 +76,34 @@ module.exports = {
         path: `${process.env.DRUPAL_NIGHTWATCH_OUTPUT}/screenshots`,
       },
       end_session_on_fail: false,
+      skip_testcases_on_fail: false,
+    },
+    local: {
+      webdriver: {
+        start_process: process.env.DRUPAL_TEST_CHROMEDRIVER_AUTOSTART,
+        port: process.env.DRUPAL_TEST_WEBDRIVER_PORT,
+        cli_args: process.env.DRUPAL_TEST_WEBDRIVER_CLI_ARGS
+          ? process.env.DRUPAL_TEST_WEBDRIVER_CLI_ARGS.split(' ')
+          : [],
+      },
+      desiredCapabilities: {
+        browserName: 'chrome',
+        acceptSslCerts: true,
+        chromeOptions: {
+          w3c: false,
+          args: process.env.DRUPAL_TEST_WEBDRIVER_CHROME_ARGS
+            ? process.env.DRUPAL_TEST_WEBDRIVER_CHROME_ARGS.split(' ')
+            : [],
+        },
+      },
+      screenshots: {
+        enabled: true,
+        on_failure: true,
+        on_error: true,
+        path: `${process.env.DRUPAL_NIGHTWATCH_OUTPUT}/screenshots`,
+      },
+      end_session_on_fail: false,
+      skip_testcases_on_fail: false,
     },
   },
 };

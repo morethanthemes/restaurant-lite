@@ -3,7 +3,7 @@
  * Attaches the behaviors for the Field UI module.
  */
 
-(function($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings) {
   /**
    * @type {Drupal~behavior}
    *
@@ -12,10 +12,13 @@
    */
   Drupal.behaviors.fieldUIFieldStorageAddForm = {
     attach(context) {
-      const $form = $(context)
-        .find('[data-drupal-selector="field-ui-field-storage-add-form"]')
-        .once('field_ui_add');
-      if ($form.length) {
+      const form = once(
+        'field_ui_add',
+        '[data-drupal-selector="field-ui-field-storage-add-form"]',
+        context,
+      );
+      if (form.length) {
+        const $form = $(form);
         // Add a few 'js-form-required' and 'form-required' css classes here.
         // We can not use the Form API '#required' property because both label
         // elements for "add new" and "re-use existing" can never be filled and
@@ -39,28 +42,33 @@
 
         // When the user selects a new field type, clear the "existing field"
         // selection.
-        $newFieldType.on('change', function() {
-          if ($(this).val() !== '') {
+        $newFieldType.on('change', function () {
+          if (this.value !== '') {
             // Reset the "existing storage name" selection.
-            $existingStorageName.val('').trigger('change');
+            if ($existingStorageName.length) {
+              $existingStorageName[0].value = '';
+              $existingStorageName.trigger('change');
+            }
           }
         });
 
         // When the user selects an existing storage name, clear the "new field
         // type" selection and populate the 'existing_storage_label' element.
-        $existingStorageName.on('change', function() {
-          const value = $(this).val();
+        $existingStorageName.on('change', function () {
+          const { value } = this;
           if (value !== '') {
-            // Reset the "new field type" selection.
-            $newFieldType.val('').trigger('change');
+            if ($newFieldType.length) {
+              // Reset the "new field type" selection.
+              $newFieldType[0].value = '';
+              $newFieldType.trigger('change');
+            }
 
             // Pre-populate the "existing storage label" element.
             if (
               typeof drupalSettings.existingFieldLabels[value] !== 'undefined'
             ) {
-              $existingStorageLabel.val(
-                drupalSettings.existingFieldLabels[value],
-              );
+              $existingStorageLabel[0].value =
+                drupalSettings.existingFieldLabels[value];
             }
           }
         });
@@ -80,16 +88,17 @@
    */
   Drupal.behaviors.fieldUIDisplayOverview = {
     attach(context, settings) {
-      $(context)
-        .find('table#field-display-overview')
-        .once('field-display-overview')
-        .each(function() {
-          Drupal.fieldUIOverview.attach(
-            this,
-            settings.fieldUIRowsData,
-            Drupal.fieldUIDisplayOverview,
-          );
-        });
+      once(
+        'field-display-overview',
+        'table#field-display-overview',
+        context,
+      ).forEach((overview) => {
+        Drupal.fieldUIOverview.attach(
+          overview,
+          settings.fieldUIRowsData,
+          Drupal.fieldUIDisplayOverview,
+        );
+      });
     },
   };
 
@@ -119,7 +128,7 @@
       // Create row handlers.
       $(table)
         .find('tr.draggable')
-        .each(function() {
+        .each(function () {
           // Extract server-side data for the row.
           const row = this;
           if (row.id in rowsData) {
@@ -148,8 +157,11 @@
       // Handle region change.
       const region = rowHandler.getRegion();
       if (region !== rowHandler.region) {
-        // Remove parenting.
-        $row.find('select.js-field-parent').val('');
+        const $fieldParent = $row.find('select.js-field-parent');
+        if ($fieldParent.length) {
+          // Remove parenting.
+          $fieldParent[0].value = '';
+        }
         // Let the row handler deal with the region change.
         $.extend(refreshRows, rowHandler.regionChange(region));
         // Update the row region.
@@ -198,7 +210,7 @@
       const rowObject = this;
       $(rowObject.table)
         .find('tr.region-message')
-        .each(function() {
+        .each(function () {
           const $this = $(this);
           // If the dragged row is in this region, but above the message row, swap
           // it down one space.
@@ -246,7 +258,7 @@
       // Separate keys and values.
       const rowNames = [];
       const ajaxElements = [];
-      Object.keys(rows || {}).forEach(rowName => {
+      Object.keys(rows || {}).forEach((rowName) => {
         rowNames.push(rowName);
         ajaxElements.push(rows[rowName]);
       });
@@ -254,9 +266,50 @@
       if (rowNames.length) {
         // Add a throbber next each of the ajaxElements.
         $(ajaxElements).after(Drupal.theme.ajaxProgressThrobber());
+        const $refreshRows = $('input[name=refresh_rows]');
+        if ($refreshRows.length) {
+          // Fire the Ajax update.
+          $refreshRows[0].value = rowNames.join(' ');
+        }
+        once(
+          'edit-refresh',
+          'input[data-drupal-selector="edit-refresh"]',
+        ).forEach((input) => {
+          // Keep track of the element that was focused prior to triggering the
+          // mousedown event on the hidden submit button.
+          let returnFocus = {
+            drupalSelector: null,
+            scrollY: null,
+          };
+          // Use jQuery on to listen as the mousedown event is propagated by
+          // jQuery trigger().
+          $(input).on('mousedown', () => {
+            returnFocus = {
+              drupalSelector: document.activeElement.getAttribute(
+                'data-drupal-selector',
+              ),
+              scrollY: window.scrollY,
+            };
+          });
+          input.addEventListener('focus', () => {
+            if (returnFocus.drupalSelector) {
+              // Refocus the element that lost focus due to this hidden submit
+              // button being triggered by a mousedown event.
+              document
+                .querySelector(
+                  `[data-drupal-selector="${returnFocus.drupalSelector}"]`,
+                )
+                .focus();
 
-        // Fire the Ajax update.
-        $('input[name=refresh_rows]').val(rowNames.join(' '));
+              // Ensure the scroll position is the same as when the input was
+              // initially changed.
+              window.scrollTo({
+                top: returnFocus.scrollY,
+              });
+              returnFocus = {};
+            }
+          });
+        });
         $('input[data-drupal-selector="edit-refresh"]').trigger('mousedown');
 
         // Disabled elements do not appear in POST ajax data, so we mark the
@@ -288,7 +341,7 @@
    * @return {Drupal.fieldUIDisplayOverview.field}
    *   The field row handler constructed.
    */
-  Drupal.fieldUIDisplayOverview.field = function(row, data) {
+  Drupal.fieldUIDisplayOverview.field = function (row, data) {
     this.row = row;
     this.name = data.name;
     this.region = data.region;
@@ -314,7 +367,9 @@
      *   Either 'hidden' or 'content'.
      */
     getRegion() {
-      return this.$regionSelect.val();
+      if (this.$regionSelect.length) {
+        return this.$regionSelect[0].value;
+      }
     },
 
     /**
@@ -340,20 +395,28 @@
       // Replace dashes with underscores.
       region = region.replace(/-/g, '_');
 
-      // Set the region of the select list.
-      this.$regionSelect.val(region);
+      if (this.$regionSelect.length) {
+        // Set the region of the select list.
+        this.$regionSelect[0].value = region;
+      }
 
       // Restore the formatter back to the default formatter only if it was
       // disabled previously. Pseudo-fields do not have default formatters,
       // we just return to 'visible' for those.
       if (this.region === 'hidden') {
+        const pluginSelect =
+          typeof this.$pluginSelect.find('option')[0] !== 'undefined'
+            ? this.$pluginSelect.find('option')[0].value
+            : undefined;
         const value =
           typeof this.defaultPlugin !== 'undefined'
             ? this.defaultPlugin
-            : this.$pluginSelect.find('option').val();
+            : pluginSelect;
 
         if (typeof value !== 'undefined') {
-          this.$pluginSelect.val(value);
+          if (this.$pluginSelect.length) {
+            this.$pluginSelect[0].value = value;
+          }
         }
       }
 

@@ -13,7 +13,7 @@ use Drupal\shortcut\ShortcutInterface;
 /**
  * Defines the shortcut entity class.
  *
- * @property \Drupal\link\LinkItemInterface link
+ * @property \Drupal\link\LinkItemInterface $link
  *
  * @ContentEntityType(
  *   id = "shortcut",
@@ -34,7 +34,6 @@ use Drupal\shortcut\ShortcutInterface;
  *       "edit" = "Drupal\shortcut\ShortcutForm",
  *       "delete" = "Drupal\shortcut\Form\ShortcutDeleteForm"
  *     },
- *     "translation" = "Drupal\content_translation\ContentTranslationHandler"
  *   },
  *   base_table = "shortcut",
  *   data_table = "shortcut_field_data",
@@ -186,7 +185,7 @@ class Shortcut extends ContentEntityBase implements ShortcutInterface {
     if ($a_weight == $b_weight) {
       return strnatcasecmp($a->getTitle(), $b->getTitle());
     }
-    return ($a_weight < $b_weight) ? -1 : 1;
+    return $a_weight <=> $b_weight;
   }
 
 }

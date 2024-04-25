@@ -21,6 +21,11 @@ class SearchNumbersTest extends BrowserTestBase {
   protected static $modules = ['dblog', 'node', 'search'];
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * A user with permission to administer nodes.
    *
    * @var \Drupal\user\UserInterface
@@ -60,12 +65,20 @@ class SearchNumbersTest extends BrowserTestBase {
    */
   protected $nodes;
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalCreateContentType(['type' => 'page', 'name' => 'Basic page']);
 
-    $this->testUser = $this->drupalCreateUser(['search content', 'access content', 'administer nodes', 'access site reports']);
+    $this->testUser = $this->drupalCreateUser([
+      'search content',
+      'access content',
+      'administer nodes',
+      'access site reports',
+    ]);
     $this->drupalLogin($this->testUser);
 
     foreach ($this->numbers as $doc => $num) {
@@ -81,7 +94,7 @@ class SearchNumbersTest extends BrowserTestBase {
     // Run cron to ensure the content is indexed.
     $this->cronRun();
     $this->drupalGet('admin/reports/dblog');
-    $this->assertText(t('Cron run completed'), 'Log shows cron run completed');
+    $this->assertSession()->pageTextContains('Cron run completed');
   }
 
   /**
@@ -99,17 +112,15 @@ class SearchNumbersTest extends BrowserTestBase {
 
       // Verify that the node title does not appear on the search page
       // with a dummy search.
-      $this->drupalPostForm('search/node',
-        ['keys' => 'foo'],
-        t('Search'));
-      $this->assertNoText($node->label(), $type . ': node title not shown in dummy search');
+      $this->drupalGet('search/node');
+      $this->submitForm(['keys' => 'foo'], 'Search');
+      $this->assertSession()->pageTextNotContains($node->label());
 
       // Verify that the node title does appear as a link on the search page
       // when searching for the number.
-      $this->drupalPostForm('search/node',
-        ['keys' => $number],
-        t('Search'));
-      $this->assertText($node->label(), format_string('%type: node title shown (search found the node) in search for number %number.', ['%type' => $type, '%number' => $number]));
+      $this->drupalGet('search/node');
+      $this->submitForm(['keys' => $number], 'Search');
+      $this->assertSession()->pageTextContains($node->label());
     }
   }
 

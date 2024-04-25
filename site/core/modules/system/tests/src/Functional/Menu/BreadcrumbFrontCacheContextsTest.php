@@ -18,12 +18,17 @@ class BreadcrumbFrontCacheContextsTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'block',
     'node',
     'path',
     'user',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'starterkit_theme';
 
   /**
    * A test node with path alias.
@@ -35,7 +40,7 @@ class BreadcrumbFrontCacheContextsTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalPlaceBlock('system_breadcrumb_block');
@@ -84,8 +89,8 @@ class BreadcrumbFrontCacheContextsTest extends BrowserTestBase {
     $this->drupalGet($this->nodeWithAlias->path->alias);
     $breadcrumbs = $this->assertSession()->elementExists('css', '.block-system-breadcrumb-block');
     $crumbs = $breadcrumbs->findAll('css', 'ol li');
-    $this->assertTrue(count($crumbs) === 1);
-    $this->assertTrue($crumbs[0]->getText() === 'Home');
+    $this->assertCount(1, $crumbs);
+    $this->assertSame('Home', $crumbs[0]->getText());
   }
 
 }

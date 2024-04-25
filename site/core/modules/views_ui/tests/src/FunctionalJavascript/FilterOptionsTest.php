@@ -14,12 +14,22 @@ class FilterOptionsTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['node', 'views', 'views_ui', 'views_ui_test_field'];
+  protected static $modules = [
+    'node',
+    'views',
+    'views_ui',
+    'views_ui_test_field',
+  ];
 
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp(): void {
     parent::setUp();
 
     $admin_user = $this->drupalCreateUser([

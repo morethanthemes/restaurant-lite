@@ -26,7 +26,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 class DbCommandBaseTest extends KernelTestBase {
 
   /**
-   * Test specifying a database key.
+   * Tests specifying a database key.
    */
   public function testSpecifyDatabaseKey() {
     $command = new DbCommandBaseTester();
@@ -50,12 +50,12 @@ class DbCommandBaseTest extends KernelTestBase {
     $command_tester->execute([
       '--database' => 'dne',
     ]);
-    $this->setExpectedException(ConnectionNotDefinedException::class);
+    $this->expectException(ConnectionNotDefinedException::class);
     $command->getDatabaseConnection($command_tester->getInput());
   }
 
   /**
-   * Test supplying database connection as a url.
+   * Tests supplying database connection as a url.
    */
   public function testSpecifyDbUrl() {
     $command = new DbCommandBaseTester();
@@ -73,7 +73,7 @@ class DbCommandBaseTest extends KernelTestBase {
   }
 
   /**
-   * Test specifying a prefix for different connections.
+   * Tests specifying a prefix for different connections.
    */
   public function testPrefix() {
     if (Database::getConnection()->driver() == 'sqlite') {
@@ -96,10 +96,12 @@ class DbCommandBaseTest extends KernelTestBase {
     $this->assertEquals('extra2', $command->getDatabaseConnection($command_tester->getInput())->tablePrefix());
 
     // This breaks simpletest cleanup.
+    // @code
     //    $command_tester->execute([
     //      '--prefix' => 'notsimpletest',
     //    ]);
     //    $this->assertEquals('notsimpletest', $command->getDatabaseConnection($command_tester->getInput())->tablePrefix());
+    // @endcode
   }
 
 }
@@ -129,6 +131,7 @@ class DbCommandBaseTester extends DbCommandBase {
    */
   protected function execute(InputInterface $input, OutputInterface $output) {
     // Empty implementation for testing.
+    return 0;
   }
 
 }

@@ -39,6 +39,10 @@ abstract class ImageEffectFormBase extends FormBase {
   /**
    * {@inheritdoc}
    *
+   * @param array $form
+   *   A nested array form elements comprising the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    * @param \Drupal\image\ImageStyleInterface $image_style
    *   The image style.
    * @param string $image_effect
@@ -92,7 +96,7 @@ abstract class ImageEffectFormBase extends FormBase {
     $form['actions']['cancel'] = [
       '#type' => 'link',
       '#title' => $this->t('Cancel'),
-      '#url' => $this->imageStyle->urlInfo('edit-form'),
+      '#url' => $this->imageStyle->toUrl('edit-form'),
       '#attributes' => ['class' => ['button']],
     ];
     return $form;
@@ -124,7 +128,7 @@ abstract class ImageEffectFormBase extends FormBase {
     $this->imageStyle->save();
 
     $this->messenger()->addStatus($this->t('The image effect was successfully applied.'));
-    $form_state->setRedirectUrl($this->imageStyle->urlInfo('edit-form'));
+    $form_state->setRedirectUrl($this->imageStyle->toUrl('edit-form'));
   }
 
   /**

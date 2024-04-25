@@ -15,6 +15,11 @@ class FileUploadJsonCookieTest extends FileUploadResourceTestBase {
   /**
    * {@inheritdoc}
    */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
   protected static $format = 'json';
 
   /**
@@ -26,5 +31,12 @@ class FileUploadJsonCookieTest extends FileUploadResourceTestBase {
    * {@inheritdoc}
    */
   protected static $auth = 'cookie';
+
+  /**
+   * Entity type ID for this storage.
+   *
+   * @var string
+   */
+  protected static $entityTypeId;
 
 }

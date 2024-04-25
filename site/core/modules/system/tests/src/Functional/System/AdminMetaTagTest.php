@@ -12,13 +12,18 @@ use Drupal\Tests\BrowserTestBase;
 class AdminMetaTagTest extends BrowserTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Verify that the meta tag HTML is generated correctly.
    */
   public function testMetaTag() {
-    list($version,) = explode('.', \Drupal::VERSION);
+    [$version] = explode('.', \Drupal::VERSION);
     $string = '<meta name="Generator" content="Drupal ' . $version . ' (https://www.drupal.org)" />';
     $this->drupalGet('node');
-    $this->assertRaw($string, 'Fingerprinting meta tag generated correctly.', 'System');
+    $this->assertSession()->responseContains($string);
   }
 
 }

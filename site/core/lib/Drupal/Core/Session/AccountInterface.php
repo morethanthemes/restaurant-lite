@@ -108,22 +108,6 @@ interface AccountInterface {
    * @return string
    *   An unsanitized plain-text string with the name of this account that is
    *   used to log in. Only display this name to admins and to the user who owns
-   *   this account, and only in the context of the name used to log in. For
-   *   any other display purposes, use
-   *   \Drupal\Core\Session\AccountInterface::getDisplayName() instead.
-   *
-   * @deprecated in Drupal 8.0.0, will be removed before Drupal 9.0.0.
-   *   Use \Drupal\Core\Session\AccountInterface::getAccountName() or
-   *   \Drupal\user\UserInterface::getDisplayName() instead.
-   */
-  public function getUsername();
-
-  /**
-   * Returns the unaltered login name of this account.
-   *
-   * @return string
-   *   An unsanitized plain-text string with the name of this account that is
-   *   used to log in. Only display this name to admins and to the user who owns
    *   this account, and only in the context of the name used to login. For
    *   any other display purposes, use
    *   \Drupal\Core\Session\AccountInterface::getDisplayName() instead.

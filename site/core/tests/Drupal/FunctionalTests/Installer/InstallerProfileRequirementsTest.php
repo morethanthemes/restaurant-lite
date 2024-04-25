@@ -12,6 +12,11 @@ class InstallerProfileRequirementsTest extends InstallerTestBase {
   /**
    * {@inheritdoc}
    */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
   protected $profile = 'testing_requirements';
 
   /**
@@ -19,6 +24,15 @@ class InstallerProfileRequirementsTest extends InstallerTestBase {
    */
   protected function setUpSettings() {
     // This form will never be reached.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUpRequirementsProblem() {
+    // The parent method asserts that there are no requirements errors, but
+    // this test expects a requirements error in the test method below.
+    // Therefore, we override this method to suppress the parent's assertions.
   }
 
   /**

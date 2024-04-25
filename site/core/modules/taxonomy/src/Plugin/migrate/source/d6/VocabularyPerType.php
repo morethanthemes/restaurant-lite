@@ -5,7 +5,12 @@ namespace Drupal\taxonomy\Plugin\migrate\source\d6;
 use Drupal\migrate\Row;
 
 /**
- * Gets all the vocabularies based on the node types that have Taxonomy enabled.
+ * Drupal 6 vocabularies with associated node types source from database.
+ *
+ * For available configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBase
  *
  * @MigrateSource(
  *   id = "d6_taxonomy_vocabulary_per_type",
@@ -19,7 +24,7 @@ class VocabularyPerType extends Vocabulary {
    */
   public function query() {
     $query = parent::query();
-    $query->join('vocabulary_node_types', 'nt', 'v.vid = nt.vid');
+    $query->join('vocabulary_node_types', 'nt', '[v].[vid] = [nt].[vid]');
     $query->fields('nt', ['type']);
     return $query;
   }
@@ -34,7 +39,7 @@ class VocabularyPerType extends Vocabulary {
     // 2 - Predefined language for a vocabulary and its terms.
     // 3 - Per-language terms, translatable (referencing terms with different
     // languages) but not localizable.
-    $i18ntaxonomy_vocab = $this->variableGet('i18ntaxonomy_vocabulary', NULL);
+    $i18ntaxonomy_vocab = $this->variableGet('i18ntaxonomy_vocabulary', []);
     $vid = $row->getSourceProperty('vid');
     $i18ntaxonomy_vocabulary = FALSE;
     if (array_key_exists($vid, $i18ntaxonomy_vocab)) {

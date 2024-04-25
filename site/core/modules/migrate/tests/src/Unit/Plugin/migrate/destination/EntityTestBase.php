@@ -2,12 +2,12 @@
 
 /**
  * @file
- * Contains \Drupal\Tests\migrate\Unit\Plugin\migrate\destination\EntityTestBase
+ * Contains \Drupal\Tests\migrate\Unit\Plugin\migrate\destination\EntityTestBase.
  */
 
 namespace Drupal\Tests\migrate\Unit\Plugin\migrate\destination;
 
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -15,7 +15,7 @@ use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\Tests\UnitTestCase;
 
 /**
- * Base test class forentity migration destination functionality.
+ * Base test class for entity migration destination functionality.
  */
 class EntityTestBase extends UnitTestCase {
 
@@ -33,11 +33,10 @@ class EntityTestBase extends UnitTestCase {
    * @var \Drupal\Core\Entity\EntityTypeInterface
    */
   protected $entityType;
-
   /**
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
    */
-  protected $entityManager;
+  protected $entityFieldManager;
 
   /**
    * {@inheritdoc}
@@ -49,11 +48,11 @@ class EntityTestBase extends UnitTestCase {
     $this->storage = $this->prophesize(EntityStorageInterface::class);
 
     $this->entityType = $this->prophesize(EntityTypeInterface::class);
-    $this->entityType->getPluralLabel()->willReturn('wonkiness');
+    $this->entityType->getPluralLabel()->willReturn('foo');
     $this->storage->getEntityType()->willReturn($this->entityType->reveal());
     $this->storage->getEntityTypeId()->willReturn('foo');
 
-    $this->entityManager = $this->prophesize(EntityManagerInterface::class);
+    $this->entityFieldManager = $this->prophesize(EntityFieldManagerInterface::class);
   }
 
 }

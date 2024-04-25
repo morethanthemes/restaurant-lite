@@ -16,12 +16,12 @@ class WhosOnlineBlockTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system', 'user', 'block', 'views'];
+  protected static $modules = ['system', 'user', 'block', 'views'];
 
   /**
    * The block being tested.
    *
-   * @var \Drupal\block\Entity\BlockInterface
+   * @var \Drupal\block\BlockInterface
    */
   protected $block;
 
@@ -42,7 +42,7 @@ class WhosOnlineBlockTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installConfig(['system', 'block', 'views', 'user']);
     $this->installSchema('system', ['sequences']);
@@ -69,7 +69,7 @@ class WhosOnlineBlockTest extends KernelTestBase {
   }
 
   /**
-   * Test the Who's Online block.
+   * Tests the Who's Online block.
    */
   public function testWhosOnlineBlock() {
     $request_time = \Drupal::time()->getRequestTime();
@@ -106,13 +106,16 @@ class WhosOnlineBlockTest extends KernelTestBase {
 
     // Test the rendering of a block.
     $entity = Block::load('views_block__who_s_online_who_s_online_block');
-    $output = entity_view($entity, 'block');
+    $output = \Drupal::entityTypeManager()
+      ->getViewBuilder($entity->getEntityTypeId())
+      ->view($entity, 'block');
     $this->setRawContent($this->renderer->renderRoot($output));
     $this->assertRaw('2 users', 'Correct number of online users (2 users).');
-    $this->assertText($user1->getUsername(), 'Active user 1 found in online list.');
-    $this->assertText($user2->getUsername(), 'Active user 2 found in online list.');
-    $this->assertNoText($user3->getUsername(), 'Inactive user not found in online list.');
-    $this->assertTrue(strpos($this->getRawContent(), $user1->getUsername()) > strpos($this->getRawContent(), $user2->getUsername()), 'Online users are ordered correctly.');
+    $this->assertText($user1->getAccountName(), 'Active user 1 found in online list.');
+    $this->assertText($user2->getAccountName(), 'Active user 2 found in online list.');
+    $this->assertNoText($user3->getAccountName(), 'Inactive user not found in online list.');
+    // Verify that online users are ordered correctly.
+    $this->assertGreaterThan(strpos($this->getRawContent(), $user2->getAccountName()), strpos($this->getRawContent(), $user1->getAccountName()));
   }
 
 }

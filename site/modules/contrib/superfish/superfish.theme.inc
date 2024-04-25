@@ -5,12 +5,12 @@
  * Preprocessors and theme functions of the Superfish module.
  */
 
-use Drupal\Core\Url;
-use Drupal\Core\Menu\InaccessibleMenuLink;
-use Drupal\Core\Language\LanguageInterface;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Menu\InaccessibleMenuLink;
 use Drupal\Core\Template\Attribute;
+use Drupal\Core\Url;
 
 /**
  * Prepares variables for the Superfish menu template.
@@ -55,7 +55,7 @@ function template_preprocess_superfish(array &$variables) {
   else {
     $menu_classes[] = Html::cleanCssIdentifier($element['#settings']['ulclass']);
   }
-  $menu_classes = implode(' ', sf_array_filter($menu_classes));
+  $menu_classes = implode(' ', superfish_array_filter($menu_classes));
 
   $variables['id'] = $element['#html_id'];
   $variables['menu_classes'] = $menu_classes;
@@ -85,7 +85,6 @@ function template_preprocess_superfish_menu_items(array &$variables) {
 
   // Keep $sfsettings untouched as we need to pass it to the child menus.
   $settings = $sfsettings = $element['#settings'];
-  $multicolumn = $multicolumn_below = $settings['multicolumn'];
 
   $variables['menu_items'] = [];
 
@@ -101,16 +100,15 @@ function template_preprocess_superfish_menu_items(array &$variables) {
   $active_trails = \Drupal::service('menu.active_trail')
     ->getActiveTrailIds($element['#menu_name']);
 
-  foreach ($menu as $key => $menu_item) {
+  foreach ($menu as $menu_item) {
+    // Menu link properties.
+    $link = $menu_item->link->getPluginDefinition();
 
     if (NULL !== $menu_item->link &&
-        !($menu_item->link instanceof InaccessibleMenuLink)) {
+        !($menu_item->link instanceof InaccessibleMenuLink) && $link['enabled']) {
 
       $item_class = $link_class = [];
       $multicolumn_wrapper = $multicolumn_column = $multicolumn_content = $nolink = FALSE;
-
-      // Menu link properties.
-      $link = $menu_item->link->getPluginDefinition();
 
       $item = [
         'id'            => $link['id'],
@@ -134,8 +132,8 @@ function template_preprocess_superfish_menu_items(array &$variables) {
         $current_path = $current_url->toString();
         $link_url = $item['url']->toString();
         // Anchor links.
-        if ( strpos( $link_url, '#' ) !== FALSE ) {
-          $link_url = explode( '#', $link_url );
+        if (strpos($link_url, '#') !== FALSE) {
+          $link_url = explode('#', $link_url);
           $link_url = $link_url[0];
         }
 
@@ -213,25 +211,10 @@ function template_preprocess_superfish_menu_items(array &$variables) {
 
         // Multi-column sub-menus.
         if ($settings['multicolumn']) {
-          if ($item['depth'] == $settings['multicolumn_depth']) {
-            $multicolumn_wrapper = TRUE;
-          }
-          else {
-            $multicolumn_wrapper = FALSE;
-          }
-          if ($item['depth'] == $settings['multicolumn_depth'] + 1) {
-            $multicolumn_column = TRUE;
-          }
-          else {
-            $multicolumn_column = FALSE;
-          }
-          if ($item['depth'] >= $settings['multicolumn_depth'] &&
-              $item['depth'] <= $settings['multicolumn_levels']) {
-            $multicolumn_content = TRUE;
-          }
-          else {
-            $multicolumn_content = FALSE;
-          }
+          $multicolumn_wrapper = $item['depth'] == $settings['multicolumn_depth'];
+          $multicolumn_column = $item['depth'] == $settings['multicolumn_depth'] + 1;
+          $multicolumn_content = $item['depth'] >= $settings['multicolumn_depth'] &&
+            $item['depth'] <= $settings['multicolumn_levels'];
         }
 
         // sfTouchscreen.
@@ -265,7 +248,7 @@ function template_preprocess_superfish_menu_items(array &$variables) {
       }
 
       // Preparing <li> classes for the theme.
-      $item_class = implode(' ', sf_array_filter($item_class));
+      $item_class = implode(' ', superfish_array_filter($item_class));
 
       // Merging link classes.
       if (isset($item['options']['attributes']['class'])) {
@@ -275,26 +258,27 @@ function template_preprocess_superfish_menu_items(array &$variables) {
         }
         $link_class = array_merge(
           $link_class_current,
-          sf_array_filter($link_class)
+          superfish_array_filter($link_class)
         );
       }
-      $item['options']['attributes']['class'] = sf_array_filter($link_class);
+      $item['options']['attributes']['class'] = superfish_array_filter($link_class);
 
       // Dirty fix! to only add a "menuparent" class.
       $item['options_menuparent'] = $item['options'];
       $item['options_menuparent']['attributes']['class'][] = 'menuparent';
       if ($nolink) {
         $item['options_menuparent']['attributes']['class'][] = 'nolink';
+        $item['options']['attributes']['class'][] = 'nolink';
       }
       $link_element = [
         '#type' => 'link',
-        '#title' => SafeMarkup::format($link_text, $link_text_replace),
+        '#title' => new FormattableMarkup($link_text, $link_text_replace),
         '#url' => $item['url'],
         '#options' => $item['options'],
       ];
       $link_element_menuparent = [
         '#type' => 'link',
-        '#title' => SafeMarkup::format($link_text, $link_text_replace),
+        '#title' => new FormattableMarkup($link_text, $link_text_replace),
         '#url' => $item['url'],
         '#options' => $item['options_menuparent'],
       ];

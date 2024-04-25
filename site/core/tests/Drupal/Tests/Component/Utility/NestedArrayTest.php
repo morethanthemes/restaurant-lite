@@ -28,12 +28,12 @@ class NestedArrayTest extends TestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a form structure with a nested element.
     $this->form['details']['element'] = [
-     '#value' => 'Nested element',
+      '#value' => 'Nested element',
     ];
 
     // Set up parent array.

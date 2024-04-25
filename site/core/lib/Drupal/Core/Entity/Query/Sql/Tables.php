@@ -44,11 +44,18 @@ class Tables implements TablesInterface {
   protected $fieldTables = [];
 
   /**
-   * The entity manager.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManager
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
+
+  /**
+   * The entity field manager.
+   *
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  protected $entityFieldManager;
 
   /**
    * List of case sensitive fields.
@@ -59,10 +66,12 @@ class Tables implements TablesInterface {
 
   /**
    * @param \Drupal\Core\Database\Query\SelectInterface $sql_query
+   *   The SQL query.
    */
   public function __construct(SelectInterface $sql_query) {
     $this->sqlQuery = $sql_query;
-    $this->entityManager = \Drupal::entityManager();
+    $this->entityTypeManager = \Drupal::entityTypeManager();
+    $this->entityFieldManager = \Drupal::service('entity_field.manager');
   }
 
   /**
@@ -85,9 +94,9 @@ class Tables implements TablesInterface {
     // This will contain the definitions of the last specifier seen by the
     // system.
     $propertyDefinitions = [];
-    $entity_type = $this->entityManager->getDefinition($entity_type_id);
+    $entity_type = $this->entityTypeManager->getActiveDefinition($entity_type_id);
 
-    $field_storage_definitions = $this->entityManager->getFieldStorageDefinitions($entity_type_id);
+    $field_storage_definitions = $this->entityFieldManager->getActiveFieldStorageDefinitions($entity_type_id);
     for ($key = 0; $key <= $count; $key++) {
       // This can either be the name of an entity base field or a configurable
       // field.
@@ -101,13 +110,14 @@ class Tables implements TablesInterface {
         $column = NULL;
       }
 
-      // If there is revision support, only the current revisions are being
-      // queried, and the field is revisionable then use the revision id.
-      // Otherwise, the entity id will do.
-      if (($revision_key = $entity_type->getKey('revision')) && $all_revisions && $field_storage && $field_storage->isRevisionable()) {
+      // If there is revision support, all the revisions are being queried, and
+      // the field is revisionable or the revision ID field itself, then use the
+      // revision ID. Otherwise, the entity ID will do.
+      $query_revisions = $all_revisions && $field_storage && ($field_storage->isRevisionable() || $field_storage->getName() === $entity_type->getKey('revision'));
+      if ($query_revisions) {
         // This contains the relevant SQL field to be used when joining entity
         // tables.
-        $entity_id_field = $revision_key;
+        $entity_id_field = $entity_type->getKey('revision');
         // This contains the relevant SQL field to be used when joining field
         // tables.
         $field_id_field = 'revision_id';
@@ -118,7 +128,7 @@ class Tables implements TablesInterface {
       }
 
       /** @var \Drupal\Core\Entity\Sql\DefaultTableMapping $table_mapping */
-      $table_mapping = $this->entityManager->getStorage($entity_type_id)->getTableMapping();
+      $table_mapping = $this->entityTypeManager->getStorage($entity_type_id)->getTableMapping();
 
       // Check whether this field is stored in a dedicated table.
       if ($field_storage && $table_mapping->requiresDedicatedTableStorage($field_storage)) {
@@ -185,7 +195,7 @@ class Tables implements TablesInterface {
         // it gets added before the base table.
         $entity_tables = [];
         $revision_table = NULL;
-        if ($all_revisions && $field_storage && $field_storage->isRevisionable()) {
+        if ($query_revisions) {
           $data_table = $entity_type->getRevisionDataTable();
           $entity_base_table = $entity_type->getRevisionTable();
         }
@@ -227,7 +237,7 @@ class Tables implements TablesInterface {
           // field no other value than 0 makes sense.
           if (is_numeric($next)) {
             if ($next > 0) {
-              $this->sqlQuery->condition('1 <> 1');
+              $this->sqlQuery->alwaysFalse();
             }
             $key++;
             $next = $specifiers[$key + 1];
@@ -239,6 +249,14 @@ class Tables implements TablesInterface {
             $sql_column = $table_mapping->getFieldColumnName($field_storage, $next);
             // Do not process it again.
             $key++;
+          }
+        }
+        // If there are no additional specifiers but the field has a main
+        // property, use that to look up the column name.
+        elseif ($field_storage && $column) {
+          $columns = $field_storage->getColumns();
+          if (isset($columns[$column])) {
+            $sql_column = $table_mapping->getFieldColumnName($field_storage, $column);
           }
         }
 
@@ -267,7 +285,7 @@ class Tables implements TablesInterface {
         // Relationship specifier can also contain the entity type ID, i.e.
         // entity:node, entity:user or entity:taxonomy.
         if (strpos($relationship_specifier, ':') !== FALSE) {
-          list($relationship_specifier, $entity_type_id) = explode(':', $relationship_specifier, 2);
+          [$relationship_specifier, $entity_type_id] = explode(':', $relationship_specifier, 2);
         }
         // Check for a valid relationship.
         if (isset($propertyDefinitions[$relationship_specifier]) && $propertyDefinitions[$relationship_specifier] instanceof DataReferenceDefinitionInterface) {
@@ -277,8 +295,8 @@ class Tables implements TablesInterface {
           if (!$entity_type_id && $target_definition instanceof EntityDataDefinitionInterface) {
             $entity_type_id = $target_definition->getEntityTypeId();
           }
-          $entity_type = $this->entityManager->getDefinition($entity_type_id);
-          $field_storage_definitions = $this->entityManager->getFieldStorageDefinitions($entity_type_id);
+          $entity_type = $this->entityTypeManager->getActiveDefinition($entity_type_id);
+          $field_storage_definitions = $this->entityFieldManager->getActiveFieldStorageDefinitions($entity_type_id);
           // Add the new entity base table using the table and sql column.
           $base_table = $this->addNextBaseTable($entity_type, $table, $sql_column, $field_storage);
           $propertyDefinitions = [];
@@ -343,7 +361,7 @@ class Tables implements TablesInterface {
         // each join gets a separate alias.
         $key = $index_prefix . ($base_table === 'base_table' ? $table : $base_table);
         if (!isset($this->entityTables[$key])) {
-          $this->entityTables[$key] = $this->addJoin($type, $table, "%alias.$id_field = $base_table.$id_field", $langcode);
+          $this->entityTables[$key] = $this->addJoin($type, $table, "[%alias].[$id_field] = [$base_table].[$id_field]", $langcode);
         }
         return $this->entityTables[$key];
       }
@@ -352,24 +370,44 @@ class Tables implements TablesInterface {
   }
 
   /**
-   * Join field table if necessary.
+   * Ensure the field table is joined if necessary.
    *
-   * @param $field_name
-   *   Name of the field.
+   * @param string $index_prefix
+   *   The table array index prefix. For a base table this will be empty,
+   *   for a target entity reference like 'field_tags.entity:taxonomy_term.name'
+   *   this will be 'entity:taxonomy_term.target_id.'.
+   * @param \Drupal\Core\Field\FieldStorageDefinitionInterface &$field
+   *   The field storage definition for the field being joined.
+   * @param string $type
+   *   The join type.
+   * @param string $langcode
+   *   The langcode we use on the join.
+   * @param string $base_table
+   *   The table to join to. It can be either the table name, its alias or the
+   *   'base_table' placeholder.
+   * @param string $entity_id_field
+   *   The name of the ID field/property for the current entity. For instance:
+   *   tid, nid, etc.
+   * @param string $field_id_field
+   *   The column representing the id for the field. For example, 'revision_id'
+   *   or 'entity_id'.
+   * @param string $delta
+   *   A delta which should be used as additional condition.
+   *
    * @return string
-   * @throws \Drupal\Core\Entity\Query\QueryException
+   *   The alias of the joined table.
    */
   protected function ensureFieldTable($index_prefix, &$field, $type, $langcode, $base_table, $entity_id_field, $field_id_field, $delta) {
     $field_name = $field->getName();
     if (!isset($this->fieldTables[$index_prefix . $field_name])) {
       $entity_type_id = $this->sqlQuery->getMetaData('entity_type');
       /** @var \Drupal\Core\Entity\Sql\DefaultTableMapping $table_mapping */
-      $table_mapping = $this->entityManager->getStorage($entity_type_id)->getTableMapping();
+      $table_mapping = $this->entityTypeManager->getStorage($entity_type_id)->getTableMapping();
       $table = !$this->sqlQuery->getMetaData('all_revisions') ? $table_mapping->getDedicatedDataTableName($field) : $table_mapping->getDedicatedRevisionTableName($field);
       if ($field->getCardinality() != 1) {
         $this->sqlQuery->addMetaData('simple_query', FALSE);
       }
-      $this->fieldTables[$index_prefix . $field_name] = $this->addJoin($type, $table, "%alias.$field_id_field = $base_table.$entity_id_field", $langcode, $delta);
+      $this->fieldTables[$index_prefix . $field_name] = $this->addJoin($type, $table, "[%alias].[$field_id_field] = [$base_table].[$entity_id_field]", $langcode, $delta);
     }
     return $this->fieldTables[$index_prefix . $field_name];
   }
@@ -395,17 +433,17 @@ class Tables implements TablesInterface {
     $arguments = [];
     if ($langcode) {
       $entity_type_id = $this->sqlQuery->getMetaData('entity_type');
-      $entity_type = $this->entityManager->getDefinition($entity_type_id);
+      $entity_type = $this->entityTypeManager->getActiveDefinition($entity_type_id);
       // Only the data table follows the entity language key, dedicated field
-      // tables have an hard-coded 'langcode' column.
+      // tables have a hard-coded 'langcode' column.
       $langcode_key = $entity_type->getDataTable() == $table ? $entity_type->getKey('langcode') : 'langcode';
       $placeholder = ':langcode' . $this->sqlQuery->nextPlaceholder();
-      $join_condition .= ' AND %alias.' . $langcode_key . ' = ' . $placeholder;
+      $join_condition .= ' AND [%alias].[' . $langcode_key . '] = ' . $placeholder;
       $arguments[$placeholder] = $langcode;
     }
     if (isset($delta)) {
       $placeholder = ':delta' . $this->sqlQuery->nextPlaceholder();
-      $join_condition .= ' AND %alias.delta = ' . $placeholder;
+      $join_condition .= ' AND [%alias].[delta] = ' . $placeholder;
       $arguments[$placeholder] = $delta;
     }
     return $this->sqlQuery->addJoin($type, $table, NULL, $join_condition, $arguments);
@@ -416,6 +454,8 @@ class Tables implements TablesInterface {
    *
    * @param string $table
    *   The table name.
+   * @param string $entity_type_id
+   *   The entity type ID.
    *
    * @return array|false
    *   An associative array of table field mapping for the given table, keyed by
@@ -423,7 +463,7 @@ class Tables implements TablesInterface {
    *   mapping is not available, FALSE is returned.
    */
   protected function getTableMapping($table, $entity_type_id) {
-    $storage = $this->entityManager->getStorage($entity_type_id);
+    $storage = $this->entityTypeManager->getStorage($entity_type_id);
     if ($storage instanceof SqlEntityStorageInterface) {
       $mapping = $storage->getTableMapping()->getAllColumns($table);
     }
@@ -456,7 +496,7 @@ class Tables implements TablesInterface {
    *   The alias of the next entity table joined in.
    */
   protected function addNextBaseTable(EntityType $entity_type, $table, $sql_column, FieldStorageDefinitionInterface $field_storage) {
-    $join_condition = '%alias.' . $entity_type->getKey('id') . " = $table.$sql_column";
+    $join_condition = '[%alias].[' . $entity_type->getKey('id') . "] = [$table].[$sql_column]";
     return $this->sqlQuery->leftJoin($entity_type->getBaseTable(), NULL, $join_condition);
   }
 

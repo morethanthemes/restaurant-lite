@@ -29,19 +29,26 @@ class DeleteMultipleFormTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['entity_test', 'user', 'language'];
+  protected static $modules = ['entity_test', 'user', 'language'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'starterkit_theme';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     EntityTestBundle::create([
       'id' => 'default',
       'label' => 'Default',
     ])->save();
-    $this->account = $this->drupalCreateUser(['administer entity_test content']);
+    $this->account = $this->drupalCreateUser([
+      'administer entity_test content',
+    ]);
     $this->drupalLogin($this->account);
   }
 

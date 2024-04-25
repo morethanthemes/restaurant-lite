@@ -9,6 +9,8 @@ use Drupal\Core\Entity\EntityTypeRepositoryInterface;
 use Drupal\Core\Field\FieldConfigInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\Field\FormatterPluginManager;
+use Drupal\Core\Logger\LoggerChannelTrait;
+use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -18,10 +20,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Provides entity field block definitions for every field.
  *
  * @internal
+ *   Plugin derivers are internal.
  */
 class FieldBlockDeriver extends DeriverBase implements ContainerDeriverInterface {
 
   use StringTranslationTrait;
+  use LoggerChannelTrait;
 
   /**
    * The entity type repository.
@@ -97,7 +101,12 @@ class FieldBlockDeriver extends DeriverBase implements ContainerDeriverInterface
 
         foreach ($field_info['bundles'] as $bundle) {
           $derivative = $base_plugin_definition;
-          $field_definition = $this->entityFieldManager->getFieldDefinitions($entity_type_id, $bundle)[$field_name];
+          $field_definitions = $this->entityFieldManager->getFieldDefinitions($entity_type_id, $bundle);
+          if (empty($field_definitions[$field_name])) {
+            $this->getLogger('field')->error('Field %field_name exists but is missing a corresponding field definition and may be misconfigured.', ['%field_name' => "$entity_type_id.$bundle.$field_name"]);
+            continue;
+          }
+          $field_definition = $field_definitions[$field_name];
 
           // Store the default formatter on the definition.
           $derivative['default_formatter'] = '';
@@ -120,8 +129,9 @@ class FieldBlockDeriver extends DeriverBase implements ContainerDeriverInterface
 
           $context_definition = EntityContextDefinition::fromEntityTypeId($entity_type_id)->setLabel($entity_type_labels[$entity_type_id]);
           $context_definition->addConstraint('Bundle', [$bundle]);
-          $derivative['context'] = [
+          $derivative['context_definitions'] = [
             'entity' => $context_definition,
+            'view_mode' => new ContextDefinition('string'),
           ];
 
           $derivative_id = $entity_type_id . PluginBase::DERIVATIVE_SEPARATOR . $bundle . PluginBase::DERIVATIVE_SEPARATOR . $field_name;

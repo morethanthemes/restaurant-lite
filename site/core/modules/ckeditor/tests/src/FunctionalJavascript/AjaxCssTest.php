@@ -10,18 +10,24 @@ use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
  * Tests delivery of CSS to CKEditor via AJAX.
  *
  * @group ckeditor
+ * @group legacy
  */
 class AjaxCssTest extends WebDriverTestBase {
 
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['ckeditor', 'ckeditor_test'];
+  protected static $modules = ['ckeditor', 'ckeditor_test'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     FilterFormat::create([
@@ -114,7 +120,7 @@ class AjaxCssTest extends WebDriverTestBase {
           && typeof CKEDITOR.instances["$instance_id"] !== 'undefined'
           && CKEDITOR.instances["$instance_id"].instanceReady
         );
-      }());
+      }())
 JS;
 
     $this->getSession()->wait($timeout, $condition);

@@ -5,8 +5,15 @@ namespace Drupal\rdf\Plugin\migrate\source\d7;
 use Drupal\migrate\Row;
 use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 
+// cspell:ignore rdftype
+
 /**
  * Drupal 7 rdf source from database.
+ *
+ * For available configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBase
  *
  * @MigrateSource(
  *   id = "d7_rdf_mapping",
@@ -45,7 +52,7 @@ class RdfMapping extends DrupalSqlBase {
    */
   public function fields() {
     return [
-      'type' => $this->t('The name of the entity type a mapping applies to (node, user, comment, etc.'),
+      'type' => $this->t('The name of the entity type a mapping applies to (node, user, comment, etc.)'),
       'bundle' => $this->t('The name of the bundle a mapping applies to.'),
       'mapping' => $this->t('The serialized mapping of the bundle type and fields to RDF terms.'),
       'types' => $this->t('RDF types.'),

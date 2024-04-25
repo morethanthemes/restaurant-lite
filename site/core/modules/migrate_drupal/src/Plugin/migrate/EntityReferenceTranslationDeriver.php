@@ -66,9 +66,9 @@ class EntityReferenceTranslationDeriver extends DeriverBase implements Container
    *
    * @param string $base_plugin_id
    *   The base plugin ID.
-   * @param \Drupal\core\Entity\EntityFieldManagerInterface $entity_field_manager
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
    *   The entity field manager.
-   * @param \Drupal\core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
   public function __construct($base_plugin_id, EntityFieldManagerInterface $entity_field_manager, EntityTypeManagerInterface $entity_type_manager) {
@@ -153,7 +153,7 @@ class EntityReferenceTranslationDeriver extends DeriverBase implements Container
             'plugin' => 'sub_process',
             'source' => $field_name,
             'process' => [
-              'target_id' => [
+              'translation_target_id' => [
                 [
                   'plugin' => 'migration_lookup',
                   'source' => 'target_id',
@@ -162,11 +162,20 @@ class EntityReferenceTranslationDeriver extends DeriverBase implements Container
                 ],
                 [
                   'plugin' => 'skip_on_empty',
-                  'method' => 'row',
+                  'method' => 'process',
                 ],
                 [
                   'plugin' => 'extract',
                   'index' => [0],
+                ],
+              ],
+              'target_id' => [
+                [
+                  'plugin' => 'null_coalesce',
+                  'source' => [
+                    '@translation_target_id',
+                    'target_id',
+                  ],
                 ],
               ],
             ],

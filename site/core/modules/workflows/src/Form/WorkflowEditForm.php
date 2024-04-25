@@ -52,7 +52,7 @@ class WorkflowEditForm extends EntityForm {
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
 
-    /* @var \Drupal\workflows\WorkflowInterface $workflow */
+    /** @var \Drupal\workflows\WorkflowInterface $workflow */
     $workflow = $this->entity;
     $workflow_type = $workflow->getTypePlugin();
     $form['#title'] = $this->t('Edit %label workflow', ['%label' => $workflow->label()]);
@@ -83,7 +83,6 @@ class WorkflowEditForm extends EntityForm {
       '#type' => 'details',
       '#title' => $this->t('States'),
       '#open' => TRUE,
-      '#collapsible' => 'FALSE',
     ];
     $form['states_container']['states'] = [
       '#type' => 'table',
@@ -121,7 +120,7 @@ class WorkflowEditForm extends EntityForm {
       ];
       if ($this->entity->access('delete-state:' . $state->id())) {
         $links['delete'] = [
-          'title' => t('Delete'),
+          'title' => $this->t('Delete'),
           'url' => Url::fromRoute('entity.workflow.delete_state_form', [
             'workflow' => $workflow->id(),
             'workflow_state' => $state->id(),
@@ -134,7 +133,7 @@ class WorkflowEditForm extends EntityForm {
         '#weight' => $state->weight(),
         'weight' => [
           '#type' => 'weight',
-          '#title' => t('Weight for @title', ['@title' => $state->label()]),
+          '#title' => $this->t('Weight for @title', ['@title' => $state->label()]),
           '#title_display' => 'invisible',
           '#default_value' => $state->weight(),
           '#attributes' => ['class' => ['state-weight']],
@@ -184,7 +183,7 @@ class WorkflowEditForm extends EntityForm {
         'url' => Url::fromRoute('entity.workflow.edit_transition_form', ['workflow' => $workflow->id(), 'workflow_transition' => $transition->id()]),
       ];
       $links['delete'] = [
-        'title' => t('Delete'),
+        'title' => $this->t('Delete'),
         'url' => Url::fromRoute('entity.workflow.delete_transition_form', ['workflow' => $workflow->id(), 'workflow_transition' => $transition->id()]),
       ];
       $form['transitions_container']['transitions'][$transition->id()] = [
@@ -193,7 +192,7 @@ class WorkflowEditForm extends EntityForm {
         '#weight' => $transition->weight(),
         'weight' => [
           '#type' => 'weight',
-          '#title' => t('Weight for @title', ['@title' => $transition->label()]),
+          '#title' => $this->t('Weight for @title', ['@title' => $transition->label()]),
           '#title_display' => 'invisible',
           '#default_value' => $transition->weight(),
           '#attributes' => ['class' => ['transition-weight']],
@@ -232,7 +231,7 @@ class WorkflowEditForm extends EntityForm {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    /* @var \Drupal\workflows\WorkflowInterface $workflow */
+    /** @var \Drupal\workflows\WorkflowInterface $workflow */
     $workflow = $this->entity;
     $workflow_type = $workflow->getTypePlugin();
 
@@ -248,7 +247,7 @@ class WorkflowEditForm extends EntityForm {
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    /* @var \Drupal\workflows\WorkflowInterface $workflow */
+    /** @var \Drupal\workflows\WorkflowInterface $workflow */
     $workflow = $this->entity;
     $workflow_type = $workflow->getTypePlugin();
 

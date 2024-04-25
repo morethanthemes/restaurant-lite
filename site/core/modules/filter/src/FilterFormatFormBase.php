@@ -88,9 +88,9 @@ abstract class FilterFormatFormBase extends EntityForm {
       '#title' => $this->t('Filter processing order'),
       '#tabledrag' => [
         [
-         'action' => 'order',
-         'relationship' => 'sibling',
-         'group' => 'filter-order-weight',
+          'action' => 'order',
+          'relationship' => 'sibling',
+          'group' => 'filter-order-weight',
         ],
       ],
       '#tree' => FALSE,
@@ -219,8 +219,6 @@ abstract class FilterFormatFormBase extends EntityForm {
         user_role_change_permissions($rid, [$permission => $enabled]);
       }
     }
-
-    $form_state->setRedirect('filter.admin_overview');
 
     return $this->entity;
   }

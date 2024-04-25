@@ -11,14 +11,13 @@ use Drupal\block_content\BlockContentTypeInterface;
  * @ConfigEntityType(
  *   id = "block_content_type",
  *   label = @Translation("Custom block type"),
- *   label_collection = @Translation("Custom block types"),
+ *   label_collection = @Translation("Custom block library"),
  *   label_singular = @Translation("custom block type"),
  *   label_plural = @Translation("custom block types"),
  *   label_count = @PluralTranslation(
  *     singular = "@count custom block type",
  *     plural = "@count custom block types",
  *   ),
- *   label_collection = @Translation("Custom block library"),
  *   handlers = {
  *     "form" = {
  *       "default" = "Drupal\block_content\BlockContentTypeForm",
@@ -27,7 +26,8 @@ use Drupal\block_content\BlockContentTypeInterface;
  *       "delete" = "Drupal\block_content\Form\BlockContentTypeDeleteForm"
  *     },
  *     "route_provider" = {
- *       "html" = "Drupal\Core\Entity\Routing\AdminHtmlRouteProvider"
+ *       "html" = "Drupal\Core\Entity\Routing\AdminHtmlRouteProvider",
+ *       "permissions" = "Drupal\user\Entity\EntityPermissionsRouteProviderWithCheck",
  *     },
  *     "list_builder" = "Drupal\block_content\BlockContentTypeListBuilder"
  *   },
@@ -41,6 +41,7 @@ use Drupal\block_content\BlockContentTypeInterface;
  *   links = {
  *     "delete-form" = "/admin/structure/block/block-content/manage/{block_content_type}/delete",
  *     "edit-form" = "/admin/structure/block/block-content/manage/{block_content_type}",
+ *     "entity-permissions-form" = "/admin/structure/block/block-content/manage/{block_content_type}/permissions",
  *     "collection" = "/admin/structure/block/block-content/types",
  *   },
  *   config_export = {

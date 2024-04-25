@@ -18,12 +18,12 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class FormAjaxResponseBuilderTest extends UnitTestCase {
 
   /**
-   * @var \Drupal\Core\Render\MainContent\MainContentRendererInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Render\MainContent\MainContentRendererInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $renderer;
 
   /**
-   * @var \Drupal\Core\Routing\RouteMatchInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Routing\RouteMatchInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $routeMatch;
 
@@ -35,10 +35,10 @@ class FormAjaxResponseBuilderTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
-    $this->renderer = $this->getMock('Drupal\Core\Render\MainContent\MainContentRendererInterface');
-    $this->routeMatch = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $this->renderer = $this->createMock('Drupal\Core\Render\MainContent\MainContentRendererInterface');
+    $this->routeMatch = $this->createMock('Drupal\Core\Routing\RouteMatchInterface');
     $this->formAjaxResponseBuilder = new FormAjaxResponseBuilder($this->renderer, $this->routeMatch);
   }
 
@@ -54,8 +54,7 @@ class FormAjaxResponseBuilderTest extends UnitTestCase {
     $form_state = new FormState();
     $commands = [];
 
-    $expected = [];
-    $this->setExpectedException(HttpException::class);
+    $this->expectException(HttpException::class);
     $this->formAjaxResponseBuilder->buildResponse($request, $form, $form_state, $commands);
   }
 
@@ -73,8 +72,7 @@ class FormAjaxResponseBuilderTest extends UnitTestCase {
     $form_state->setTriggeringElement($triggering_element);
     $commands = [];
 
-    $expected = [];
-    $this->setExpectedException(HttpException::class);
+    $this->expectException(HttpException::class);
     $this->formAjaxResponseBuilder->buildResponse($request, $form, $form_state, $commands);
   }
 

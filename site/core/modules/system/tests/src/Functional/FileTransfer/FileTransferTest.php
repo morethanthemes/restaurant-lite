@@ -7,8 +7,7 @@ use Drupal\Core\StreamWrapper\PublicStream;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Tests that the jail is respected and that protocols using recursive file move
- * operations work.
+ * Tests recursive file copy operations with the file transfer jail.
  *
  * @group FileTransfer
  */
@@ -18,7 +17,20 @@ class FileTransferTest extends BrowserTestBase {
   protected $password = 'password';
   protected $port = '42';
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * @var \Drupal\Tests\system\Functional\FileTransfer\TestFileTransfer
+   */
+  protected $testConnection;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->testConnection = TestFileTransfer::factory($this->root, ['hostname' => $this->hostname, 'username' => $this->username, 'password' => $this->password, 'port' => $this->port]);
   }

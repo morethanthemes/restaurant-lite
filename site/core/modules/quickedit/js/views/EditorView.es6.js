@@ -3,7 +3,7 @@
  * An abstract Backbone View that controls an in-place editor.
  */
 
-(function($, Backbone, Drupal) {
+(function ($, Backbone, Drupal) {
   Drupal.quickedit.EditorView = Backbone.View.extend(
     /** @lends Drupal.quickedit.EditorView# */ {
       /**
@@ -41,7 +41,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        */
       remove() {
         // The el property is the field, which should not be removed. Remove the
@@ -124,12 +124,12 @@
             break;
 
           case 'activating': {
-            // The user has indicated he wants to do in-place editing: if
+            // The user is in the process of activating in-place editing: if
             // something needs to be loaded (CSS/JavaScript/server data/…), then
             // do so at this stage, and once the in-place editor is ready,
             // set the 'active' state. A "loading" indicator will be shown in the
             // UI for as long as the field remains in this state.
-            const loadDependencies = function(callback) {
+            const loadDependencies = function (callback) {
               // Do the loading here.
               callback();
             };
@@ -149,11 +149,10 @@
             break;
 
           case 'saving':
-            // When the user has indicated he wants to save his changes to this
-            // field, this state will be entered. If the previous saving attempt
-            // resulted in validation errors, the previous state will be
-            // 'invalid'. Clean up those validation errors while the user is
-            // saving.
+            // When the user has triggered a save to this field, this state will
+            // be entered. If the previous saving attempt resulted in validation
+            // errors, the previous state will be 'invalid'. Clean up those
+            // validation errors while the user is saving.
             if (from === 'invalid') {
               this.removeValidationErrors();
             }
@@ -199,6 +198,7 @@
           const $form = $(`#${backstageId}`).find('form');
           // Fill in the value in any <input> that isn't hidden or a submit
           // button.
+          // eslint-disable-next-line jquery/no-val
           $form
             .find(':input[type!="hidden"][type!="submit"]:not(select)')
             // Don't mess with the node summary.
@@ -251,7 +251,7 @@
           }
 
           // Successfully saved.
-          self.formSaveAjax.commands.quickeditFieldFormSaved = function(
+          self.formSaveAjax.commands.quickeditFieldFormSaved = function (
             ajax,
             response,
             status,
@@ -270,15 +270,12 @@
           };
 
           // Unsuccessfully saved; validation errors.
-          self.formSaveAjax.commands.quickeditFieldFormValidationErrors = function(
-            ajax,
-            response,
-            status,
-          ) {
-            removeHiddenForm();
-            editorModel.set('validationErrors', response.data);
-            fieldModel.set('state', 'invalid');
-          };
+          self.formSaveAjax.commands.quickeditFieldFormValidationErrors =
+            function (ajax, response, status) {
+              removeHiddenForm();
+              editorModel.set('validationErrors', response.data);
+              fieldModel.set('state', 'invalid');
+            };
 
           // The quickeditFieldForm AJAX command is only called upon loading the
           // form for the first time, and when there are validation errors in the
@@ -286,7 +283,7 @@
           // useful for the form-based in-place editor, but pointless for any
           // other: the form itself won't be visible at all anyway! So, we just
           // ignore it.
-          self.formSaveAjax.commands.quickeditFieldForm = function() {};
+          self.formSaveAjax.commands.quickeditFieldForm = function () {};
 
           fillAndSubmitForm(editorModel.get('currentValue'));
         });

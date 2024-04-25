@@ -16,7 +16,12 @@ use Drupal\Tests\BrowserTestBase;
  */
 class ConditionFormTest extends BrowserTestBase {
 
-  public static $modules = ['node', 'condition_test'];
+  protected static $modules = ['node', 'condition_test'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Submit the condition_node_type_test_form to test condition forms.
@@ -32,13 +37,21 @@ class ConditionFormTest extends BrowserTestBase {
     $article->save();
 
     $this->drupalGet('condition_test');
-    $this->assertField('bundles[article]', 'There is an article bundle selector.');
-    $this->assertField('bundles[page]', 'There is a page bundle selector.');
-    $this->drupalPostForm(NULL, ['bundles[page]' => 'page', 'bundles[article]' => 'article'], t('Submit'));
+    $this->assertSession()->fieldExists('entity_bundle[bundles][article]');
+    $this->assertSession()->fieldExists('entity_bundle[bundles][page]');
+    $this->submitForm(['entity_bundle[bundles][page]' => 'page', 'entity_bundle[bundles][article]' => 'article'], 'Submit');
     // @see \Drupal\condition_test\FormController::submitForm()
-    $this->assertText('Bundle: page');
-    $this->assertText('Bundle: article');
-    $this->assertText('Executed successfully.', 'The form configured condition executed properly.');
+    $this->assertSession()->pageTextContains('Bundle: page');
+    $this->assertSession()->pageTextContains('Bundle: article');
+    $this->assertSession()->pageTextContains('Executed successfully.');
+
+    $this->assertSession()->pageTextContains('The current theme is stark');
+    /** @var \Drupal\Core\Extension\ThemeInstallerInterface $theme_installer */
+    $theme_installer = $this->container->get('theme_installer');
+    $theme_installer->install(['olivero']);
+    $this->drupalGet('condition_test');
+    $this->submitForm(['current_theme[theme]' => 'olivero', 'current_theme[negate]' => TRUE], 'Submit');
+    $this->assertSession()->pageTextContains('The current theme is not olivero');
   }
 
 }

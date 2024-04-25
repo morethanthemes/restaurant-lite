@@ -23,10 +23,21 @@ class FieldUIDeleteTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['node', 'field_ui', 'field_test', 'block', 'field_test_views'];
+  protected static $modules = [
+    'node',
+    'field_ui',
+    'field_test',
+    'block',
+    'field_test_views',
+  ];
 
   /**
-   * Test views to enable
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * Test views to enable.
    *
    * @var string[]
    */
@@ -35,7 +46,7 @@ class FieldUIDeleteTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalPlaceBlock('system_breadcrumb_block');
@@ -43,7 +54,17 @@ class FieldUIDeleteTest extends BrowserTestBase {
     $this->drupalPlaceBlock('page_title_block');
 
     // Create a test user.
-    $admin_user = $this->drupalCreateUser(['access content', 'administer content types', 'administer node fields', 'administer node form display', 'administer node display', 'administer users', 'administer account settings', 'administer user display', 'bypass node access']);
+    $admin_user = $this->drupalCreateUser([
+      'access content',
+      'administer content types',
+      'administer node fields',
+      'administer node form display',
+      'administer node display',
+      'administer users',
+      'administer account settings',
+      'administer user display',
+      'bypass node access',
+    ]);
     $this->drupalLogin($admin_user);
   }
 
@@ -74,21 +95,21 @@ class FieldUIDeleteTest extends BrowserTestBase {
     $this->fieldUIAddExistingField($bundle_path2, $field_name, $field_label);
 
     \Drupal::service('module_installer')->install(['views']);
-    ViewTestData::createTestViews(get_class($this), ['field_test_views']);
+    ViewTestData::createTestViews(static::class, ['field_test_views']);
 
     $view = View::load('test_view_field_delete');
     $this->assertNotNull($view);
     $this->assertTrue($view->status());
     // Test that the View depends on the field.
     $dependencies = $view->getDependencies() + ['config' => []];
-    $this->assertTrue(in_array("field.storage.node.$field_name", $dependencies['config']));
+    $this->assertContains("field.storage.node.$field_name", $dependencies['config']);
 
     // Check the config dependencies of the first field, the field storage must
     // not be shown as being deleted yet.
     $this->drupalGet("$bundle_path1/fields/node.$type_name1.$field_name/delete");
-    $this->assertNoText(t('The listed configuration will be deleted.'));
-    $this->assertNoText(t('View'));
-    $this->assertNoText('test_view_field_delete');
+    $this->assertSession()->pageTextNotContains('The listed configuration will be deleted.');
+    $this->assertSession()->elementNotExists('xpath', '//ul[@data-drupal-selector="edit-view"]');
+    $this->assertSession()->pageTextNotContains('test_view_field_delete');
 
     // Delete the first field.
     $this->fieldUIDeleteField($bundle_path1, "node.$type_name1.$field_name", $field_label, $type_name1);
@@ -100,13 +121,11 @@ class FieldUIDeleteTest extends BrowserTestBase {
 
     // Check the config dependencies of the first field.
     $this->drupalGet("$bundle_path2/fields/node.$type_name2.$field_name/delete");
-    $this->assertText(t('The listed configuration will be updated.'));
-    $this->assertText(t('View'));
-    $this->assertText('test_view_field_delete');
+    $this->assertSession()->pageTextContains('The listed configuration will be updated.');
+    $this->assertSession()->elementTextEquals('xpath', '//ul[@data-drupal-selector="edit-view"]', 'test_view_field_delete');
 
-    $xml = $this->cssSelect('#edit-entity-deletes');
     // Test that nothing is scheduled for deletion.
-    $this->assertFalse(isset($xml[0]), 'The field currently being deleted is not shown in the entity deletions.');
+    $this->assertSession()->elementNotExists('css', '#edit-entity-deletes');
 
     // Delete the second field.
     $this->fieldUIDeleteField($bundle_path2, "node.$type_name2.$field_name", $field_label, $type_name2);
@@ -122,7 +141,7 @@ class FieldUIDeleteTest extends BrowserTestBase {
     $this->assertFalse($view->status());
     // Test that the View no longer depends on the deleted field.
     $dependencies = $view->getDependencies() + ['config' => []];
-    $this->assertFalse(in_array("field.storage.node.$field_name", $dependencies['config']));
+    $this->assertNotContains("field.storage.node.$field_name", $dependencies['config']);
   }
 
 }

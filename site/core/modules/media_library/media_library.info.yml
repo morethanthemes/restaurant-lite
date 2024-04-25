@@ -1,16 +1,15 @@
-name: 'Media library'
+name: 'Media Library'
 type: module
-description: 'Enhances the media list with additional features to easier find and use existing media items.'
-package: Core (Experimental)
+description: 'Enhances the media list with additional features to more easily find and use existing media items.'
+package: Core
 # version: VERSION
-# core: 8.x
+configure: media_library.settings
 dependencies:
   - drupal:media
   - drupal:views
   - drupal:user
 
-# Information added by Drupal.org packaging script on 2018-12-05
-version: '8.6.4'
-core: '8.x'
+# Information added by Drupal.org packaging script on 2023-09-20
+version: '9.5.11'
 project: 'drupal'
-datestamp: 1544011727
+datestamp: 1695228127

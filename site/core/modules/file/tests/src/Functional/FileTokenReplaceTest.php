@@ -2,25 +2,32 @@
 
 namespace Drupal\Tests\file\Functional;
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\file\Entity\File;
 
 /**
- * Generates text using placeholders for dummy content to check file token
- * replacement.
+ * Tests file token replacement.
  *
  * @group file
  */
 class FileTokenReplaceTest extends FileFieldTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Creates a file, then tests the tokens generated from it.
    */
   public function testFileTokenReplacement() {
-    $node_storage = $this->container->get('entity.manager')->getStorage('node');
+    $node_storage = $this->container->get('entity_type.manager')->getStorage('node');
     $token_service = \Drupal::token();
     $language_interface = \Drupal::languageManager()->getCurrentLanguage();
+    /** @var \Drupal\Core\Datetime\DateFormatterInterface $date_formatter */
+    $date_formatter = $this->container->get('date.formatter');
 
     // Create file field.
     $type_name = 'article';
@@ -29,8 +36,9 @@ class FileTokenReplaceTest extends FileFieldTestBase {
 
     $test_file = $this->getTestFile('text');
     // Coping a file to test uploads with non-latin filenames.
-    $filename = drupal_dirname($test_file->getFileUri()) . '/текстовый файл.txt';
-    $test_file = file_copy($test_file, $filename);
+    // cSpell:disable-next-line
+    $filename = \Drupal::service('file_system')->dirname($test_file->getFileUri()) . '/текстовый файл.txt';
+    $test_file = \Drupal::service('file.repository')->copy($test_file, $filename);
 
     // Create a new node with the uploaded file.
     $nid = $this->uploadNodeFile($test_file, $field_name, $type_name);
@@ -47,11 +55,11 @@ class FileTokenReplaceTest extends FileFieldTestBase {
     $tests['[file:path]'] = Html::escape($file->getFileUri());
     $tests['[file:mime]'] = Html::escape($file->getMimeType());
     $tests['[file:size]'] = format_size($file->getSize());
-    $tests['[file:url]'] = Html::escape(file_create_url($file->getFileUri()));
-    $tests['[file:created]'] = format_date($file->getCreatedTime(), 'medium', '', NULL, $language_interface->getId());
-    $tests['[file:created:short]'] = format_date($file->getCreatedTime(), 'short', '', NULL, $language_interface->getId());
-    $tests['[file:changed]'] = format_date($file->getChangedTime(), 'medium', '', NULL, $language_interface->getId());
-    $tests['[file:changed:short]'] = format_date($file->getChangedTime(), 'short', '', NULL, $language_interface->getId());
+    $tests['[file:url]'] = Html::escape($file->createFileUrl(FALSE));
+    $tests['[file:created]'] = $date_formatter->format($file->getCreatedTime(), 'medium', '', NULL, $language_interface->getId());
+    $tests['[file:created:short]'] = $date_formatter->format($file->getCreatedTime(), 'short', '', NULL, $language_interface->getId());
+    $tests['[file:changed]'] = $date_formatter->format($file->getChangedTime(), 'medium', '', NULL, $language_interface->getId());
+    $tests['[file:changed:short]'] = $date_formatter->format($file->getChangedTime(), 'short', '', NULL, $language_interface->getId());
     $tests['[file:owner]'] = Html::escape($this->adminUser->getDisplayName());
     $tests['[file:owner:uid]'] = $file->getOwnerId();
 
@@ -74,13 +82,13 @@ class FileTokenReplaceTest extends FileFieldTestBase {
     $metadata_tests['[file:owner:uid]'] = $bubbleable_metadata;
 
     // Test to make sure that we generated something for each token.
-    $this->assertFalse(in_array(0, array_map('strlen', $tests)), 'No empty tokens generated.');
+    $this->assertNotContains(0, array_map('strlen', $tests), 'No empty tokens generated.');
 
     foreach ($tests as $input => $expected) {
       $bubbleable_metadata = new BubbleableMetadata();
       $output = $token_service->replace($input, ['file' => $file], ['langcode' => $language_interface->getId()], $bubbleable_metadata);
-      $this->assertEqual($output, $expected, format_string('Sanitized file token %token replaced.', ['%token' => $input]));
-      $this->assertEqual($bubbleable_metadata, $metadata_tests[$input]);
+      $this->assertEquals($expected, $output, new FormattableMarkup('Sanitized file token %token replaced.', ['%token' => $input]));
+      $this->assertEquals($metadata_tests[$input], $bubbleable_metadata);
     }
 
     // Generate and test unsanitized tokens.
@@ -91,7 +99,7 @@ class FileTokenReplaceTest extends FileFieldTestBase {
 
     foreach ($tests as $input => $expected) {
       $output = $token_service->replace($input, ['file' => $file], ['langcode' => $language_interface->getId(), 'sanitize' => FALSE]);
-      $this->assertEqual($output, $expected, format_string('Unsanitized file token %token replaced.', ['%token' => $input]));
+      $this->assertEquals($expected, $output, new FormattableMarkup('Unsanitized file token %token replaced.', ['%token' => $input]));
     }
   }
 

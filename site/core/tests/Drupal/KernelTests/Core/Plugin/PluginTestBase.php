@@ -20,7 +20,7 @@ abstract class PluginTestBase extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['plugin_test'];
+  protected static $modules = ['plugin_test'];
 
   protected $testPluginManager;
   protected $testPluginExpectedDefinitions;
@@ -29,6 +29,9 @@ abstract class PluginTestBase extends KernelTestBase {
   protected $defaultsTestPluginManager;
   protected $defaultsTestPluginExpectedDefinitions;
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
 
@@ -92,7 +95,7 @@ abstract class PluginTestBase extends KernelTestBase {
         'id' => 'user_name',
         'label' => 'User name',
         'class' => 'Drupal\plugin_test\Plugin\plugin_test\mock_block\MockUserNameBlock',
-        'context' => [
+        'context_definitions' => [
           'user' => EntityContextDefinition::fromEntityTypeId('user')->setLabel('User'),
         ],
       ],
@@ -100,7 +103,7 @@ abstract class PluginTestBase extends KernelTestBase {
         'id' => 'user_name_optional',
         'label' => 'User name optional',
         'class' => 'Drupal\plugin_test\Plugin\plugin_test\mock_block\MockUserNameBlock',
-        'context' => [
+        'context_definitions' => [
           'user' => EntityContextDefinition::fromEntityTypeId('user')->setLabel('User')->setRequired(FALSE),
         ],
       ],
@@ -113,7 +116,7 @@ abstract class PluginTestBase extends KernelTestBase {
         'id' => 'complex_context',
         'label' => 'Complex context',
         'class' => 'Drupal\plugin_test\Plugin\plugin_test\mock_block\MockComplexContextBlock',
-        'context' => [
+        'context_definitions' => [
           'user' => EntityContextDefinition::fromEntityTypeId('user')->setLabel('User'),
           'node' => EntityContextDefinition::fromEntityTypeId('node')->setLabel('Node'),
         ],

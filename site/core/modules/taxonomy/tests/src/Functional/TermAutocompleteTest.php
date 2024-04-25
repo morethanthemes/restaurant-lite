@@ -21,7 +21,12 @@ class TermAutocompleteTest extends TaxonomyTestBase {
    *
    * @var array
    */
-  public static $modules = ['node'];
+  protected static $modules = ['node'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * The vocabulary.
@@ -61,7 +66,7 @@ class TermAutocompleteTest extends TaxonomyTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a vocabulary.
@@ -134,8 +139,8 @@ class TermAutocompleteTest extends TaxonomyTestBase {
 
     // Retrieve the autocomplete url.
     $this->drupalGet('node/add/article');
-    $result = $this->xpath('//input[@name="' . $this->fieldName . '[0][target_id]"]');
-    $this->autocompleteUrl = $this->getAbsoluteUrl($result[0]->getAttribute('data-autocomplete-path'));
+    $field = $this->assertSession()->fieldExists("{$this->fieldName}[0][target_id]");
+    $this->autocompleteUrl = $this->getAbsoluteUrl($field->getAttribute('data-autocomplete-path'));
   }
 
   /**
@@ -144,7 +149,7 @@ class TermAutocompleteTest extends TaxonomyTestBase {
    * @param string|\Drupal\Core\Url $path
    *   Drupal path or URL to load into Mink controlled browser.
    * @param array $options
-   *   (optional) Options to be forwarded to the url generator.
+   *   (optional) Options to be forwarded to the URL generator.
    * @param string[] $headers
    *   (optional) An array containing additional HTTP request headers.
    *
@@ -167,21 +172,21 @@ class TermAutocompleteTest extends TaxonomyTestBase {
       $this->autocompleteUrl,
       ['query' => ['q' => 'zzz']]
     );
-    $this->assertTrue(empty($data), 'Autocomplete returned no results');
+    $this->assertEmpty($data, 'Autocomplete returned no results');
 
     // Test that only one matching term found, when only one matches.
     $data = $this->drupalGetJson(
       $this->autocompleteUrl,
       ['query' => ['q' => 'aaa 10']]
     );
-    $this->assertEqual(1, count($data), 'Autocomplete returned 1 result');
+    $this->assertCount(1, $data, 'Autocomplete returned 1 result');
 
     // Test the correct number of matches when multiple are partial matches.
     $data = $this->drupalGetJson(
       $this->autocompleteUrl,
       ['query' => ['q' => 'aaa 1']]
     );
-    $this->assertEqual(3, count($data), 'Autocomplete returned 3 results');
+    $this->assertCount(3, $data, 'Autocomplete returned 3 results');
 
     // Tests that only 10 results are returned, even if there are more than 10
     // matches.
@@ -189,7 +194,7 @@ class TermAutocompleteTest extends TaxonomyTestBase {
       $this->autocompleteUrl,
       ['query' => ['q' => 'aaa']]
     );
-    $this->assertEqual(10, count($data), 'Autocomplete returned only 10 results (for over 10 matches)');
+    $this->assertCount(10, $data, 'Autocomplete returned only 10 results (for over 10 matches)');
   }
 
   /**
@@ -223,7 +228,7 @@ class TermAutocompleteTest extends TaxonomyTestBase {
       ['query' => ['q' => 'bbb']]
     );
 
-    $this->assertIdentical($expected, $data);
+    $this->assertSame($expected, $data);
   }
 
 }

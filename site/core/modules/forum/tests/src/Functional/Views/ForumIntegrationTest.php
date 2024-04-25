@@ -5,7 +5,6 @@ namespace Drupal\Tests\forum\Functional\Views;
 use Drupal\node\NodeInterface;
 use Drupal\views\Views;
 use Drupal\Tests\views\Functional\ViewTestBase;
-use Drupal\views\Tests\ViewTestData;
 
 /**
  * Tests the forum integration into views.
@@ -19,7 +18,12 @@ class ForumIntegrationTest extends ViewTestBase {
    *
    * @var array
    */
-  public static $modules = ['forum_test_views'];
+  protected static $modules = ['forum_test_views'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Views used by this test.
@@ -28,10 +32,11 @@ class ForumIntegrationTest extends ViewTestBase {
    */
   public static $testViews = ['test_forum_index'];
 
-  protected function setUp($import_test_views = TRUE) {
-    parent::setUp($import_test_views);
-
-    ViewTestData::createTestViews(get_class($this), ['forum_test_views']);
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp($import_test_views = TRUE, $modules = ['forum_test_views']): void {
+    parent::setUp($import_test_views, $modules);
   }
 
   /**
@@ -39,11 +44,11 @@ class ForumIntegrationTest extends ViewTestBase {
    */
   public function testForumIntegration() {
     // Create a forum.
-    $entity_manager = $this->container->get('entity.manager');
-    $term = $entity_manager->getStorage('taxonomy_term')->create(['vid' => 'forums', 'name' => $this->randomMachineName()]);
+    $entity_type_manager = $this->container->get('entity_type.manager');
+    $term = $entity_type_manager->getStorage('taxonomy_term')->create(['vid' => 'forums', 'name' => $this->randomMachineName()]);
     $term->save();
 
-    $comment_storage = $entity_manager->getStorage('comment');
+    $comment_storage = $entity_type_manager->getStorage('comment');
 
     // Create some nodes which are part of this forum with some comments.
     $nodes = [];

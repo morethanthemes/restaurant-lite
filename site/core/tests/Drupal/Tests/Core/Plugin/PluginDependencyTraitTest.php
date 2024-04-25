@@ -5,6 +5,8 @@ namespace Drupal\Tests\Core\Plugin;
 use Drupal\Component\Plugin\Definition\PluginDefinitionInterface;
 use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Plugin\Definition\DependentPluginDefinitionInterface;
 use Drupal\Core\Plugin\PluginDependencyTrait;
 use Drupal\Tests\UnitTestCase;
@@ -23,6 +25,16 @@ class PluginDependencyTraitTest extends UnitTestCase {
    */
   public function testGetPluginDependencies(ProphecyInterface $plugin, $definition, array $expected) {
     $test_class = new TestPluginDependency();
+
+    $module_handler = $this->prophesize(ModuleHandlerInterface::class);
+    $module_handler->moduleExists('test_module1')->willReturn(TRUE);
+    $module_handler->moduleExists('test_theme1')->willReturn(FALSE);
+    $test_class->setModuleHandler($module_handler->reveal());
+
+    $theme_handler = $this->prophesize(ThemeHandlerInterface::class);
+    $theme_handler->themeExists('test_module1')->willReturn(FALSE);
+    $theme_handler->themeExists('test_theme1')->willReturn(TRUE);
+    $test_class->setThemeHandler($theme_handler->reveal());
 
     $plugin->getPluginDefinition()->willReturn($definition);
 
@@ -46,6 +58,16 @@ class PluginDependencyTraitTest extends UnitTestCase {
   public function testCalculatePluginDependencies(ProphecyInterface $plugin, $definition, array $expected) {
     $test_class = new TestPluginDependency();
 
+    $module_handler = $this->prophesize(ModuleHandlerInterface::class);
+    $module_handler->moduleExists('test_module1')->willReturn(TRUE);
+    $module_handler->moduleExists('test_theme1')->willReturn(FALSE);
+    $test_class->setModuleHandler($module_handler->reveal());
+
+    $theme_handler = $this->prophesize(ThemeHandlerInterface::class);
+    $theme_handler->themeExists('test_module1')->willReturn(FALSE);
+    $theme_handler->themeExists('test_theme1')->willReturn(TRUE);
+    $test_class->setThemeHandler($theme_handler->reveal());
+
     $plugin->getPluginDefinition()->willReturn($definition);
 
     $test_class->calculatePluginDependencies($plugin->reveal());
@@ -65,13 +87,35 @@ class PluginDependencyTraitTest extends UnitTestCase {
       'module' => ['test_module2'],
     ]);
 
-    $data['dependent_plugin'] = [
+    $data['dependent_plugin_from_module'] = [
       $dependent_plugin,
       ['provider' => 'test_module1'],
       [
         'module' => [
           'test_module1',
           'test_module2',
+        ],
+      ],
+    ];
+    $data['dependent_plugin_from_core'] = [
+      $dependent_plugin,
+      ['provider' => 'core'],
+      [
+        'module' => [
+          'core',
+          'test_module2',
+        ],
+      ],
+    ];
+    $data['dependent_plugin_from_theme'] = [
+      $dependent_plugin,
+      ['provider' => 'test_theme1'],
+      [
+        'module' => [
+          'test_module2',
+        ],
+        'theme' => [
+          'test_theme1',
         ],
       ],
     ];
@@ -127,6 +171,26 @@ class TestPluginDependency {
   use PluginDependencyTrait {
     calculatePluginDependencies as public;
     getPluginDependencies as public;
+  }
+
+  protected $moduleHandler;
+
+  protected $themeHandler;
+
+  public function setModuleHandler(ModuleHandlerInterface $module_handler) {
+    $this->moduleHandler = $module_handler;
+  }
+
+  public function setThemeHandler(ThemeHandlerInterface $theme_handler) {
+    $this->themeHandler = $theme_handler;
+  }
+
+  protected function moduleHandler() {
+    return $this->moduleHandler;
+  }
+
+  protected function themeHandler() {
+    return $this->themeHandler;
   }
 
   /**

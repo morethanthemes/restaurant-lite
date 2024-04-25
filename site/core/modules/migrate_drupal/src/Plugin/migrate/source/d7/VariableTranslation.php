@@ -2,13 +2,33 @@
 
 namespace Drupal\migrate_drupal\Plugin\migrate\source\d7;
 
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 
 /**
- * Gets Drupal variable_store source from database.
+ * Drupal 7 variable_store source from database.
+ *
+ * Available configuration keys:
+ * - variables: (required) The list of variable translations to retrieve from
+ *   the source database. All translations are retrieved in a single row.
+ *
+ * Example:
+ *
+ * @code
+ * plugin: d7_variable_translation
+ * variables:
+ *   - site_name
+ *   - site_slogan
+ * @endcode
+ * In this example the translations for site_name and site_slogan variables are
+ * retrieved from the source database.
+ *
+ * For additional configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBase
  *
  * @MigrateSource(
  *   id = "d7_variable_translation",
@@ -26,8 +46,8 @@ class VariableTranslation extends DrupalSqlBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, StateInterface $state, EntityManagerInterface $entity_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $migration, $state, $entity_manager);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, StateInterface $state, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $migration, $state, $entity_type_manager);
     $this->variables = $this->configuration['variables'];
   }
 
@@ -74,7 +94,7 @@ class VariableTranslation extends DrupalSqlBase {
   /**
    * {@inheritdoc}
    */
-  public function count($refresh = FALSE) {
+  protected function doCount() {
     return $this->initializeIterator()->count();
   }
 

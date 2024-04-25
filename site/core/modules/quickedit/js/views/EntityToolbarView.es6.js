@@ -3,7 +3,7 @@
  * A Backbone View that provides an entity level toolbar.
  */
 
-(function($, _, Backbone, Drupal, debounce) {
+(function ($, _, Backbone, Drupal, debounce, Popper) {
   Drupal.quickedit.EntityToolbarView = Backbone.View.extend(
     /** @lends Drupal.quickedit.EntityToolbarView# */ {
       /**
@@ -88,7 +88,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        *
        * @return {Drupal.quickedit.EntityToolbarView}
        *   The entity toolbar view.
@@ -100,8 +100,8 @@
           if ($body.children('#quickedit-entity-toolbar').length === 0) {
             $body.append(this.$el);
           }
-          // The fence will define a area on the screen that the entity toolbar
-          // will be position within.
+          // The fence will define an area on the screen that the entity toolbar
+          // will be positioned within.
           if ($body.children('#quickedit-toolbar-fence').length === 0) {
             this.$fence = $(Drupal.theme('quickeditEntityToolbarFence'))
               .css(Drupal.displace())
@@ -127,18 +127,18 @@
           case 'opened':
             // The saving throbber is not managed by AJAX system. The
             // EntityToolbarView manages this visual element.
+            $button[0].textContent = Drupal.t('Save');
             $button
               .removeClass('action-saving icon-throbber icon-end')
-              .text(Drupal.t('Save'))
               .removeAttr('disabled')
               .attr('aria-hidden', !isDirty);
             break;
 
           // The changes to the fields of the entity are being committed.
           case 'committing':
+            $button[0].textContent = Drupal.t('Saving');
             $button
               .addClass('action-saving icon-throbber icon-end')
-              .text(Drupal.t('Saving'))
               .attr('disabled', 'disabled');
             break;
 
@@ -151,7 +151,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        */
       remove() {
         // Remove additional DOM elements controlled by this View.
@@ -198,7 +198,7 @@
       },
 
       /**
-       * Uses the jQuery.ui.position() method to position the entity toolbar.
+       * Uses the Popper() method to position the entity toolbar.
        *
        * @param {HTMLElement} [element]
        *   The element against which the entity toolbar is positioned.
@@ -258,9 +258,8 @@
 
             case 3:
               // Position against a highlighted field.
-              highlightedField = Drupal.quickedit.app.model.get(
-                'highlightedField',
-              );
+              highlightedField =
+                Drupal.quickedit.app.model.get('highlightedField');
               of =
                 highlightedField &&
                 highlightedField.editorView &&
@@ -274,8 +273,9 @@
               let topMostField = null;
               // Position against the topmost field.
               for (let i = 0; i < fieldModels.length; i++) {
-                const pos = fieldModels[i].get('el').getBoundingClientRect()
-                  .top;
+                const pos = fieldModels[i]
+                  .get('el')
+                  .getBoundingClientRect().top;
                 if (pos < topMostPosition) {
                   topMostPosition = pos;
                   topMostField = fieldModels[i];
@@ -291,82 +291,75 @@
         } while (!of);
 
         /**
-         * Refines the positioning algorithm of jquery.ui.position().
+         * Refines popper positioning.
          *
-         * Invoked as the 'using' callback of jquery.ui.position() in
-         * positionToolbar().
-         *
-         * @param {*} view
-         *   The view the positions will be calculated from.
-         * @param {object} suggested
-         *   A hash of top and left values for the position that should be set. It
-         *   can be forwarded to .css() or .animate().
-         * @param {object} info
-         *   The position and dimensions of both the 'my' element and the 'of'
-         *   elements, as well as calculations to their relative position. This
-         *   object contains the following properties:
-         * @param {object} info.element
-         *   A hash that contains information about the HTML element that will be
-         *   positioned. Also known as the 'my' element.
-         * @param {object} info.target
-         *   A hash that contains information about the HTML element that the
-         *   'my' element will be positioned against. Also known as the 'of'
-         *   element.
+         * @param {object} data
+         *   Data object containing popper and target data.
          */
-        function refinePosition(view, suggested, info) {
+        function refinePopper({ state }) {
           // Determine if the pointer should be on the top or bottom.
-          const isBelow = suggested.top > info.target.top;
-          info.element.element.toggleClass(
+          const isBelow = state.placement.split('-')[0] === 'bottom';
+          const classListMethod = isBelow ? 'add' : 'remove';
+          state.elements.popper.classList[classListMethod](
             'quickedit-toolbar-pointer-top',
-            isBelow,
           );
-          // Don't position the toolbar past the first or last editable field if
-          // the entity is the target.
-          if (view.$entity[0] === info.target.element[0]) {
-            // Get the first or last field according to whether the toolbar is
-            // above or below the entity.
-            const $field = view.$entity
-              .find('.quickedit-editable')
-              .eq(isBelow ? -1 : 0);
-            if ($field.length > 0) {
-              suggested.top = isBelow
-                ? $field.offset().top + $field.outerHeight(true)
-                : $field.offset().top - info.element.element.outerHeight(true);
-            }
-          }
-          // Don't let the toolbar go outside the fence.
-          const fenceTop = view.$fence.offset().top;
-          const fenceHeight = view.$fence.height();
-          const toolbarHeight = info.element.element.outerHeight(true);
-          if (suggested.top < fenceTop) {
-            suggested.top = fenceTop;
-          } else if (suggested.top + toolbarHeight > fenceTop + fenceHeight) {
-            suggested.top = fenceTop + fenceHeight - toolbarHeight;
-          }
-          // Position the toolbar.
-          info.element.element.css({
-            left: Math.floor(suggested.left),
-            top: Math.floor(suggested.top),
-          });
         }
-
         /**
-         * Calls the jquery.ui.position() method on the $el of this view.
+         * Calls the Popper() method on the $el of this view.
          */
         function positionToolbar() {
+          const popperElement = that.el;
+          const referenceElement = of;
+          const boundariesElement = that.$fence[0];
+          const popperedge = edge === 'left' ? 'start' : 'end';
+          if (referenceElement !== undefined) {
+            if (!popperElement.classList.contains('js-popper-processed')) {
+              that.popper = Popper.createPopper(
+                referenceElement,
+                popperElement,
+                {
+                  placement: `top-${popperedge}`,
+                  modifiers: [
+                    {
+                      name: 'flip',
+                      options: {
+                        boundary: boundariesElement,
+                      },
+                    },
+                    {
+                      name: 'preventOverflow',
+                      options: {
+                        boundary: boundariesElement,
+                        tether: false,
+                        altAxis: true,
+                        padding: { top: 5, bottom: 5 },
+                      },
+                    },
+                    {
+                      name: 'computeStyles',
+                      options: {
+                        adaptive: false,
+                      },
+                    },
+                    {
+                      name: 'refinePopper',
+                      phase: 'write',
+                      enabled: true,
+                      fn: refinePopper,
+                    },
+                  ],
+                },
+              );
+              popperElement.classList.add('js-popper-processed');
+            } else {
+              that.popper.state.elements.reference = referenceElement[0]
+                ? referenceElement[0]
+                : referenceElement;
+              that.popper.forceUpdate();
+            }
+          }
+
           that.$el
-            .position({
-              my: `${edge} bottom`,
-              // Move the toolbar 1px towards the start edge of the 'of' element,
-              // plus any horizontal padding that may have been added to the
-              // element that is being added, to prevent unwanted horizontal
-              // movement.
-              at: `${edge}+${1 + horizontalPadding} top`,
-              of,
-              collision: 'flipfit',
-              using: refinePosition.bind(null, that),
-              within: that.$fence,
-            })
             // Resize the toolbar to match the dimensions of the field, up to a
             // maximum width that is equal to 90% of the field's width.
             .css({
@@ -503,9 +496,8 @@
         const activeFieldLabel =
           activeField && activeField.get('metadata').label;
         // Label of a highlighted field, if it exists.
-        const highlightedField = Drupal.quickedit.app.model.get(
-          'highlightedField',
-        );
+        const highlightedField =
+          Drupal.quickedit.app.model.get('highlightedField');
         const highlightedFieldLabel =
           highlightedField && highlightedField.get('metadata').label;
         // The label is constructed in a priority order.
@@ -579,4 +571,4 @@
       },
     },
   );
-})(jQuery, _, Backbone, Drupal, Drupal.debounce);
+})(jQuery, _, Backbone, Drupal, Drupal.debounce, Popper);

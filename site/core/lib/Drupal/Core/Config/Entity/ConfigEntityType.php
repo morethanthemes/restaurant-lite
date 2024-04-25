@@ -14,6 +14,8 @@ class ConfigEntityType extends EntityType implements ConfigEntityTypeInterface {
   /**
    * The config prefix set in the configuration entity type annotation.
    *
+   * @var string
+   *
    * @see \Drupal\Core\Config\Entity\ConfigEntityTypeInterface::getConfigPrefix()
    */
   protected $config_prefix;
@@ -143,6 +145,9 @@ class ConfigEntityType extends EntityType implements ConfigEntityTypeInterface {
    * {@inheritdoc}
    */
   public function getPropertiesToExport($id = NULL) {
+    // @todo https://www.drupal.org/project/drupal/issues/3113620 Make the
+    //   config_export annotation required earlier, remove the possibility of
+    //   returning NULL and deprecate the $id argument.
     if (!empty($this->mergedConfigExport)) {
       return $this->mergedConfigExport;
     }
@@ -166,14 +171,7 @@ class ConfigEntityType extends EntityType implements ConfigEntityTypeInterface {
       }
     }
     else {
-      // @todo https://www.drupal.org/project/drupal/issues/2949021 Deprecate
-      //   fallback to schema.
-      $config_name = $this->getConfigPrefix() . '.' . $id;
-      $definition = \Drupal::service('config.typed')->getDefinition($config_name);
-      if (!isset($definition['mapping'])) {
-        return NULL;
-      }
-      $this->mergedConfigExport = array_combine(array_keys($definition['mapping']), array_keys($definition['mapping']));
+      return NULL;
     }
     return $this->mergedConfigExport;
   }

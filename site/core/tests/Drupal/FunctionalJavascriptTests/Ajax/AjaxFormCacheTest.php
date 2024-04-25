@@ -2,8 +2,6 @@
 
 namespace Drupal\FunctionalJavascriptTests\Ajax;
 
-use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
-use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 
@@ -17,7 +15,12 @@ class AjaxFormCacheTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['ajax_test', 'ajax_forms_test'];
+  protected static $modules = ['ajax_test', 'ajax_forms_test'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Tests the usage of form cache for AJAX forms.
@@ -28,7 +31,7 @@ class AjaxFormCacheTest extends WebDriverTestBase {
     $this->drupalLogin($this->rootUser);
 
     // Ensure that the cache is empty.
-    $this->assertEqual(0, count($key_value_expirable->getAll()));
+    $this->assertCount(0, $key_value_expirable->getAll());
 
     // Visit an AJAX form that is not cached, 3 times.
     $uncached_form_url = Url::fromRoute('ajax_forms_test.commands_form');
@@ -37,7 +40,7 @@ class AjaxFormCacheTest extends WebDriverTestBase {
     $this->drupalGet($uncached_form_url);
 
     // The number of cache entries should not have changed.
-    $this->assertEqual(0, count($key_value_expirable->getAll()));
+    $this->assertCount(0, $key_value_expirable->getAll());
   }
 
   /**
@@ -46,7 +49,6 @@ class AjaxFormCacheTest extends WebDriverTestBase {
   public function testBlockForms() {
     $this->container->get('module_installer')->install(['block', 'search']);
     $this->rebuildContainer();
-    $this->container->get('router.builder')->rebuild();
     $this->drupalLogin($this->rootUser);
 
     $this->drupalPlaceBlock('search_form_block', ['weight' => -5]);
@@ -99,10 +101,8 @@ class AjaxFormCacheTest extends WebDriverTestBase {
 
     $url->setOption('query', [
       'foo' => 'bar',
-      FormBuilderInterface::AJAX_FORM_REQUEST => 1,
-      MainContentViewSubscriber::WRAPPER_FORMAT => 'drupal_ajax',
     ]);
-    $this->assertUrl($url);
+    $this->assertSession()->addressEquals($url);
   }
 
 }

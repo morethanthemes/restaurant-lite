@@ -14,9 +14,14 @@ class BackwardCompatibilityTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'js_ajax_test',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Ensures Drupal.Ajax.element_settings BC layer.

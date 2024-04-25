@@ -5,9 +5,11 @@ namespace Drupal\Core\Update;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Site\Settings;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
+use Drupal\Core\StackMiddleware\ReverseProxyMiddleware;
+use Drupal\Core\Routing\RouteObjectInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -53,12 +55,13 @@ class UpdateKernel extends DrupalKernel {
   /**
    * {@inheritdoc}
    */
-  public function handle(Request $request, $type = self::MASTER_REQUEST, $catch = TRUE) {
+  public function handle(Request $request, $type = self::MASTER_REQUEST, $catch = TRUE): Response {
     try {
       static::bootEnvironment();
 
       // First boot up basic things, like loading the include files.
       $this->initializeSettings($request);
+      ReverseProxyMiddleware::setSettingsOnRequest($request, Settings::getInstance());
       $this->boot();
       $container = $this->getContainer();
       /** @var \Symfony\Component\HttpFoundation\RequestStack $request_stack */

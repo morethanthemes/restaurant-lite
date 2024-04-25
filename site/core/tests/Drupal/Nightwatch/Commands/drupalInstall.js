@@ -5,34 +5,44 @@ import { commandAsWebserver } from '../globals';
 /**
  * Installs a Drupal test site.
  *
- * @param {oject} [settings={}]
+ * @param {object} [settings={}]
  *   Settings object
  * @param {string} [settings.setupFile='']
  *   Setup file used by TestSiteApplicationTest
+ * @param {string} [settings.installProfile='']
+ *   The install profile to use.
+ * @param {string} [settings.langcode='']
+ *   The language to install the site in.
  * @param {function} callback
  *   A callback which will be called, when the installation is finished.
  * @return {object}
  *   The 'browser' object.
  */
-exports.command = function drupalInstall({ setupFile = '' } = {}, callback) {
+exports.command = function drupalInstall(
+  { setupFile = '', installProfile = 'nightwatch_testing', langcode = '' } = {},
+  callback,
+) {
   const self = this;
+
+  // Ensure no session cookie exists anymore; they won't work on this newly installed Drupal site anyway.
+  this.deleteCookies();
 
   try {
     setupFile = setupFile ? `--setup-file "${setupFile}"` : '';
+    installProfile = `--install-profile "${installProfile}"`;
+    const langcodeOption = langcode ? `--langcode "${langcode}"` : '';
     const dbOption =
       process.env.DRUPAL_TEST_DB_URL.length > 0
         ? `--db-url ${process.env.DRUPAL_TEST_DB_URL}`
         : '';
     const install = execSync(
       commandAsWebserver(
-        `php ./scripts/test-site.php install ${setupFile} --base-url ${
-          process.env.DRUPAL_TEST_BASE_URL
-        } ${dbOption} --json`,
+        `php ./scripts/test-site.php install ${setupFile} ${installProfile} ${langcodeOption} --base-url ${process.env.DRUPAL_TEST_BASE_URL} ${dbOption} --json`,
       ),
     );
     const installData = JSON.parse(install.toString());
-    this.drupalDbPrefix = installData.db_prefix;
-    this.drupalSitePath = installData.site_path;
+    this.globals.drupalDbPrefix = installData.db_prefix;
+    this.globals.drupalSitePath = installData.site_path;
     const url = new URL(process.env.DRUPAL_TEST_BASE_URL);
     this.url(process.env.DRUPAL_TEST_BASE_URL).setCookie({
       name: 'SIMPLETEST_USER_AGENT',

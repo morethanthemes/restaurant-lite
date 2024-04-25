@@ -13,6 +13,7 @@ use Drupal\Tests\contextual\FunctionalJavascript\ContextualLinkClickTrait;
  * Tests quickedit.
  *
  * @group quickedit
+ * @group legacy
  */
 class FieldTest extends WebDriverTestBase {
 
@@ -21,7 +22,7 @@ class FieldTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'node',
     'ckeditor',
     'contextual',
@@ -31,7 +32,12 @@ class FieldTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a text format and associate CKEditor.
@@ -68,7 +74,7 @@ class FieldTest extends WebDriverTestBase {
    * Tests that quickeditor works correctly for field with CKEditor.
    */
   public function testFieldWithCkeditor() {
-    $body_value = '<p>Sapere aude</p>';
+    $body_value = '<p>Dare to be wise</p>';
     $node = Node::create([
       'type' => 'page',
       'title' => 'Page node',
@@ -92,22 +98,9 @@ class FieldTest extends WebDriverTestBase {
     // Wait and click by "Save" button after body field was changed.
     $this->assertSession()->waitForElementVisible('css', '.quickedit-toolgroup.ops [type="submit"][aria-hidden="false"]')->click();
     // Wait until the save occurs and the editor UI disappears.
-    $this->waitForNoElement('.cke_button.cke_button__blockquote');
+    $this->assertSession()->assertNoElementAfterWait('css', '.cke_button.cke_button__blockquote');
     // Ensure that the changes take effect.
     $assert->responseMatches("|<blockquote>\s*$body_value\s*</blockquote>|");
-  }
-
-  /**
-   * Waits for an element to be removed from the page.
-   *
-   * @param string $selector
-   *   CSS selector.
-   * @param int $timeout
-   *   (optional) Timeout in milliseconds, defaults to 10000.
-   */
-  protected function waitForNoElement($selector, $timeout = 10000) {
-    $condition = "(typeof jQuery !== 'undefined' && jQuery('$selector').length === 0)";
-    $this->assertJsCondition($condition, $timeout);
   }
 
 }

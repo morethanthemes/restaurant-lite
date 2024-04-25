@@ -22,7 +22,7 @@ class TestSiteUserLoginCommand extends Command {
   /**
    * The class loader to use for installation and initialization of setup.
    *
-   * @var \Symfony\Component\Classloader\Classloader
+   * @var \Composer\Autoload\ClassLoader
    */
   protected $classLoader;
 
@@ -42,7 +42,7 @@ class TestSiteUserLoginCommand extends Command {
    * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
    */
   protected function execute(InputInterface $input, OutputInterface $output) {
-    $root = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+    $root = dirname(__DIR__, 5);
     chdir($root);
 
     $this->classLoader = require 'autoload.php';
@@ -52,9 +52,9 @@ class TestSiteUserLoginCommand extends Command {
     Settings::initialize($kernel->getAppRoot(), $kernel->getSitePath(), $this->classLoader);
 
     $request = Request::createFromGlobals();
-    $kernel->prepareLegacyRequest($request);
 
     $kernel->boot();
+    $kernel->preHandle($request);
 
     $container = $kernel->getContainer();
     $uid = $input->getArgument('uid');
@@ -66,6 +66,8 @@ class TestSiteUserLoginCommand extends Command {
       ->load($uid);
     $url = user_pass_reset_url($userEntity) . '/login';
     $output->writeln($url);
+
+    return 0;
   }
 
 }

@@ -3,6 +3,7 @@
 namespace Drupal\Tests\media\Functional;
 
 use Drupal\media\OEmbed\ProviderException;
+use GuzzleHttp\Psr7\Utils;
 
 /**
  * Tests the oEmbed provider repository.
@@ -14,6 +15,11 @@ use Drupal\media\OEmbed\ProviderException;
 class ProviderRepositoryTest extends MediaFunctionalTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Tests that provider discovery fails if the provider database is empty.
    *
    * @param string $content
@@ -23,13 +29,14 @@ class ProviderRepositoryTest extends MediaFunctionalTestBase {
    */
   public function testEmptyProviderList($content) {
     $response = $this->prophesize('\GuzzleHttp\Psr7\Response');
-    $response->getBody()->willReturn($content);
+    $response->getBody()->willReturn(Utils::streamFor($content));
 
     $client = $this->createMock('\GuzzleHttp\Client');
     $client->method('request')->withAnyParameters()->willReturn($response->reveal());
     $this->container->set('http_client', $client);
 
-    $this->setExpectedException(ProviderException::class, 'Remote oEmbed providers database returned invalid or empty list.');
+    $this->expectException(ProviderException::class);
+    $this->expectExceptionMessage('Remote oEmbed providers database returned invalid or empty list.');
     $this->container->get('media.oembed.provider_repository')->getAll();
   }
 
@@ -62,7 +69,8 @@ class ProviderRepositoryTest extends MediaFunctionalTestBase {
       ->set('oembed_providers_url', $providers_url)
       ->save();
 
-    $this->setExpectedException(ProviderException::class, $exception_message);
+    $this->expectException(ProviderException::class);
+    $this->expectExceptionMessage($exception_message);
     $this->container->get('media.oembed.provider_repository')->getAll();
   }
 

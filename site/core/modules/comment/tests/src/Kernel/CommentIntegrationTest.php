@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\comment\Kernel;
 
+use Drupal\comment\Entity\Comment;
 use Drupal\comment\Entity\CommentType;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
@@ -9,6 +10,7 @@ use Drupal\Core\Entity\Entity\EntityViewMode;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 
 /**
  * Tests integration of comment with other components.
@@ -17,25 +19,36 @@ use Drupal\KernelTests\KernelTestBase;
  */
 class CommentIntegrationTest extends KernelTestBase {
 
-  /**
-   * {@inheritdoc}
-   */
-  public static $modules = ['comment', 'field', 'entity_test', 'user', 'system', 'dblog'];
+  use UserCreationTrait;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected static $modules = [
+    'comment',
+    'field',
+    'entity_test',
+    'user',
+    'system',
+    'dblog',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('entity_test');
     $this->installEntitySchema('user');
     $this->installEntitySchema('comment');
     $this->installSchema('dblog', ['watchdog']);
+    $this->installSchema('system', ['sequences']);
 
     // Create a new 'comment' comment-type.
     CommentType::create([
       'id' => 'comment',
       'label' => $this->randomString(),
+      'target_entity_type_id' => 'entity_test',
     ])->save();
   }
 
@@ -106,14 +119,13 @@ class CommentIntegrationTest extends KernelTestBase {
       '@display' => EntityViewMode::load("comment.$mode")->label(),
       '@mode' => $mode,
     ];
-    $logged = (bool) Database::getConnection()->select('watchdog')
-      ->fields('watchdog', ['wid'])
+    $logged = Database::getConnection()->select('watchdog')
+      ->fields('watchdog', ['variables'])
       ->condition('type', 'system')
       ->condition('message', "View display '@id': Comment field formatter '@name' was disabled because it is using the comment view display '@display' (@mode) that was just disabled.")
-      ->condition('variables', serialize($arguments))
       ->execute()
       ->fetchField();
-    $this->assertTrue($logged);
+    $this->assertEquals(serialize($arguments), $logged);
 
     // Re-enable the comment view display.
     EntityViewDisplay::load($comment_display_id)->setStatus(TRUE)->save();
@@ -132,6 +144,23 @@ class CommentIntegrationTest extends KernelTestBase {
     // Check that the field formatter has been disabled on host view display.
     $this->assertNull($host_display->getComponent($field_name));
     $this->assertTrue($host_display->get('hidden')[$field_name]);
+  }
+
+  /**
+   * Tests the default owner of comment entities.
+   */
+  public function testCommentDefaultOwner() {
+    $comment = Comment::create([
+      'comment_type' => 'comment',
+    ]);
+    $this->assertEquals(0, $comment->getOwnerId());
+
+    $user = $this->createUser();
+    $this->container->get('current_user')->setAccount($user);
+    $comment = Comment::create([
+      'comment_type' => 'comment',
+    ]);
+    $this->assertEquals($user->id(), $comment->getOwnerId());
   }
 
 }

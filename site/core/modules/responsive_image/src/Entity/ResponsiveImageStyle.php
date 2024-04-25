@@ -34,6 +34,13 @@ use Drupal\responsive_image\ResponsiveImageStyleInterface;
  *     "id" = "id",
  *     "label" = "label"
  *   },
+ *   config_export = {
+ *     "id",
+ *     "label",
+ *     "image_style_mappings",
+ *     "breakpoint_group",
+ *     "fallback_image_style",
+ *   },
  *   links = {
  *     "edit-form" = "/admin/config/media/responsive-image-style/{responsive_image_style}",
  *     "duplicate-form" = "/admin/config/media/responsive-image-style/{responsive_image_style}/duplicate",
@@ -230,6 +237,7 @@ class ResponsiveImageStyle extends ConfigEntityBase implements ResponsiveImageSt
             return FALSE;
           }
           break;
+
         case 'image_style':
           // The image style mapping must have an image style selected.
           if ($image_style_mapping['image_mapping']) {
@@ -263,6 +271,7 @@ class ResponsiveImageStyle extends ConfigEntityBase implements ResponsiveImageSt
           case 'image_style':
             $image_styles[] = $image_style_mapping['image_mapping'];
             break;
+
           case 'sizes':
             $image_styles = array_merge($image_styles, $image_style_mapping['image_mapping']['sizes_image_styles']);
             break;

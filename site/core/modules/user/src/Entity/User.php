@@ -48,7 +48,6 @@ use Drupal\user\UserInterface;
  *   admin_permission = "administer users",
  *   base_table = "users",
  *   data_table = "users_field_data",
- *   label_callback = "user_format_name",
  *   translatable = TRUE,
  *   entity_keys = {
  *     "id" = "uid",
@@ -81,6 +80,13 @@ class User extends ContentEntityBase implements UserInterface {
    */
   public function isNew() {
     return !empty($this->enforceIsNew) || $this->id() === NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function label() {
+    return $this->getDisplayName();
   }
 
   /**
@@ -366,13 +372,6 @@ class User extends ContentEntityBase implements UserInterface {
   /**
    * {@inheritdoc}
    */
-  public function getUsername() {
-    return $this->getAccountName();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function getAccountName() {
     return $this->get('name')->value ?: '';
   }
@@ -399,13 +398,16 @@ class User extends ContentEntityBase implements UserInterface {
    */
   public function setExistingPassword($password) {
     $this->get('pass')->existing = $password;
+    return $this;
   }
 
   /**
    * {@inheritdoc}
    */
   public function checkExistingPassword(UserInterface $account_unchanged) {
-    return strlen($this->get('pass')->existing) > 0 && \Drupal::service('password')->check(trim($this->get('pass')->existing), $account_unchanged->getPassword());
+    $existing = $this->get('pass')->existing;
+    return $existing !== NULL && strlen($existing) > 0 &&
+      \Drupal::service('password')->check(trim($existing), $account_unchanged->getPassword());
   }
 
   /**
@@ -419,8 +421,8 @@ class User extends ContentEntityBase implements UserInterface {
 
       // @todo Use the entity factory once available, see
       //   https://www.drupal.org/node/1867228.
-      $entity_manager = \Drupal::entityManager();
-      $entity_type = $entity_manager->getDefinition('user');
+      $entity_type_manager = \Drupal::entityTypeManager();
+      $entity_type = $entity_type_manager->getDefinition('user');
       $class = $entity_type->getClass();
 
       static::$anonymousUser = new $class([
@@ -556,7 +558,7 @@ class User extends ContentEntityBase implements UserInterface {
    *   The role storage object.
    */
   protected function getRoleStorage() {
-    return \Drupal::entityManager()->getStorage('user_role');
+    return \Drupal::entityTypeManager()->getStorage('user_role');
   }
 
   /**

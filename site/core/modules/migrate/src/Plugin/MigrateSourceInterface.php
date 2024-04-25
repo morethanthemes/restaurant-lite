@@ -18,6 +18,11 @@ use Drupal\migrate\Row;
 interface MigrateSourceInterface extends \Countable, \Iterator, PluginInspectionInterface {
 
   /**
+   * Indicates that the source is not countable.
+   */
+  const NOT_COUNTABLE = -1;
+
+  /**
    * Returns available fields on the source.
    *
    * @return array
@@ -29,7 +34,7 @@ interface MigrateSourceInterface extends \Countable, \Iterator, PluginInspection
   /**
    * Adds additional data to the row.
    *
-   * @param \Drupal\Migrate\Row $row
+   * @param \Drupal\migrate\Row $row
    *   The row object.
    *
    * @return bool

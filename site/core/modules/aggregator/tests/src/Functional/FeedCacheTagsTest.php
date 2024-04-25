@@ -11,18 +11,24 @@ use Drupal\user\RoleInterface;
  * Tests the Feed entity's cache tags.
  *
  * @group aggregator
+ * @group legacy
  */
 class FeedCacheTagsTest extends EntityWithUriCacheTagsTestBase {
 
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['aggregator'];
+  protected static $modules = ['aggregator'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Give anonymous users permission to access feeds, so that we can verify

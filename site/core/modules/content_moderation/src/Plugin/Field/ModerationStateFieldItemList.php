@@ -75,12 +75,14 @@ class ModerationStateFieldItemList extends FieldItemList {
     $content_moderation_storage = \Drupal::entityTypeManager()->getStorage('content_moderation_state');
 
     $revisions = $content_moderation_storage->getQuery()
+      ->accessCheck(FALSE)
       ->condition('content_entity_type_id', $entity->getEntityTypeId())
       ->condition('content_entity_id', $entity->id())
       // Ensure the correct revision is loaded in scenarios where a revision is
       // being reverted.
       ->condition('content_entity_revision_id', $entity->isNewRevision() ? $entity->getLoadedRevisionId() : $entity->getRevisionId())
       ->condition('workflow', $moderation_info->getWorkflowForEntity($entity)->id())
+      ->condition('langcode', $entity->language()->getId())
       ->allRevisions()
       ->sort('revision_id', 'DESC')
       ->execute();
@@ -157,11 +159,13 @@ class ModerationStateFieldItemList extends FieldItemList {
 
       // This entity is default if it is new, the default revision state, or the
       // default revision is not published.
-      $update_default_revision = $entity->isNew()
-        || $current_state->isDefaultRevisionState()
-        || !$content_moderation_info->isDefaultRevisionPublished($entity);
+      if (!$entity->isSyncing()) {
+        $update_default_revision = $entity->isNew()
+          || $current_state->isDefaultRevisionState()
+          || !$content_moderation_info->isDefaultRevisionPublished($entity);
 
-      $entity->isDefaultRevision($update_default_revision);
+        $entity->isDefaultRevision($update_default_revision);
+      }
 
       // Update publishing status if it can be updated and if it needs updating.
       $published_state = $current_state->isPublishedState();
@@ -169,6 +173,14 @@ class ModerationStateFieldItemList extends FieldItemList {
         $published_state ? $entity->setPublished() : $entity->setUnpublished();
       }
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function generateSampleItems($count = 1) {
+    // No sample items generated since the starting moderation state is always
+    // computed based on the default state of the associated workflow.
   }
 
 }

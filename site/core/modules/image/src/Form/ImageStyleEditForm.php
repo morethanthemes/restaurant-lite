@@ -42,7 +42,7 @@ class ImageStyleEditForm extends ImageStyleFormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity.manager')->getStorage('image_style'),
+      $container->get('entity_type.manager')->getStorage('image_style'),
       $container->get('plugin.manager.image.effect')
     );
   }
@@ -84,7 +84,7 @@ class ImageStyleEditForm extends ImageStyleFormBase {
       '#attributes' => [
         'id' => 'image-style-effects',
       ],
-      '#empty' => t('There are currently no effects in this style. Add one by selecting an option below.'),
+      '#empty' => $this->t('There are currently no effects in this style. Add one by selecting an option below.'),
       // Render effects below parent elements.
       '#weight' => 5,
     ];
@@ -153,7 +153,7 @@ class ImageStyleEditForm extends ImageStyleFormBase {
     }
     $form['effects']['new'] = [
       '#tree' => FALSE,
-      '#weight' => isset($user_input['weight']) ? $user_input['weight'] : NULL,
+      '#weight' => $user_input['weight'] ?? NULL,
       '#attributes' => ['class' => ['draggable']],
     ];
     $form['effects']['new']['effect'] = [

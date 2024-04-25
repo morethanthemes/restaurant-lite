@@ -9,7 +9,7 @@ use Drupal\Core\Routing\RequestContext;
 use Drupal\Core\Utility\UnroutedUrlAssemblerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -24,6 +24,11 @@ class RedirectResponseSubscriber implements EventSubscriberInterface {
    * @var \Drupal\Core\Utility\UnroutedUrlAssemblerInterface
    */
   protected $unroutedUrlAssembler;
+
+  /**
+   * The request context.
+   */
+  protected $requestContext;
 
   /**
    * Constructs a RedirectResponseSubscriber object.
@@ -41,10 +46,10 @@ class RedirectResponseSubscriber implements EventSubscriberInterface {
   /**
    * Allows manipulation of the response object when performing a redirect.
    *
-   * @param \Symfony\Component\HttpKernel\Event\FilterResponseEvent $event
+   * @param \Symfony\Component\HttpKernel\Event\ResponseEvent $event
    *   The Event to process.
    */
-  public function checkRedirectUrl(FilterResponseEvent $event) {
+  public function checkRedirectUrl(ResponseEvent $event) {
     $response = $event->getResponse();
     if ($response instanceof RedirectResponse) {
       $request = $event->getRequest();

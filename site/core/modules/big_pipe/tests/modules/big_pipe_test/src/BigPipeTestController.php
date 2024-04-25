@@ -4,16 +4,17 @@ namespace Drupal\big_pipe_test;
 
 use Drupal\big_pipe\Render\BigPipeMarkup;
 use Drupal\big_pipe_test\EventSubscriber\BigPipeTestSubscriber;
+use Drupal\Core\Security\TrustedCallbackInterface;
 
-class BigPipeTestController {
+class BigPipeTestController implements TrustedCallbackInterface {
 
   /**
-   * Returns a all BigPipe placeholder test case render arrays.
+   * Returns all BigPipe placeholder test case render arrays.
    *
    * @return array
    */
   public function test() {
-    $has_session = \Drupal::service('session_configuration')->hasSession(\Drupal::requestStack()->getMasterRequest());
+    $has_session = \Drupal::service('session_configuration')->hasSession(\Drupal::requestStack()->getMainRequest());
 
     $build = [];
 
@@ -155,6 +156,13 @@ class BigPipeTestController {
       '#markup' => BigPipeMarkup::create("<p>The count is $count.</p>"),
       '#cache' => ['max-age' => 0],
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function trustedCallbacks() {
+    return ['currentTime', 'helloOrYarhar', 'exception', 'responseException', 'counter'];
   }
 
 }

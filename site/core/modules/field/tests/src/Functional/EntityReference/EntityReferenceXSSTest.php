@@ -24,6 +24,11 @@ class EntityReferenceXSSTest extends BrowserTestBase {
   protected static $modules = ['node'];
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Tests markup is escaped in the entity reference select and label formatter.
    */
   public function testEntityReferenceXSS() {
@@ -55,24 +60,24 @@ class EntityReferenceXSSTest extends BrowserTestBase {
     // Create a node and reference the node with markup in the title.
     $this->drupalLogin($this->rootUser);
     $this->drupalGet('node/add/article');
-    $this->assertEscaped($referenced_node->getTitle());
-    $this->assertEscaped($node_type_two->label());
+    $this->assertSession()->assertEscaped($referenced_node->getTitle());
+    $this->assertSession()->assertEscaped($node_type_two->label());
 
     $edit = [
       'title[0][value]' => $this->randomString(),
       'entity_reference_test' => $referenced_node->id(),
     ];
-    $this->drupalPostForm(NULL, $edit, 'Save');
-    $this->assertEscaped($referenced_node->getTitle());
+    $this->submitForm($edit, 'Save');
+    $this->assertSession()->assertEscaped($referenced_node->getTitle());
 
     // Test the options_buttons type.
     EntityFormDisplay::load('node.article.default')
       ->setComponent('entity_reference_test', ['type' => 'options_buttons'])
       ->save();
     $this->drupalGet('node/add/article');
-    $this->assertEscaped($referenced_node->getTitle());
+    $this->assertSession()->assertEscaped($referenced_node->getTitle());
     // options_buttons does not support optgroups.
-    $this->assertNoText('bundle with markup');
+    $this->assertSession()->pageTextNotContains('bundle with markup');
   }
 
 }

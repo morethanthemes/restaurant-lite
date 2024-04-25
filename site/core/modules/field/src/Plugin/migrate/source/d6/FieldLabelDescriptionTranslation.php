@@ -5,7 +5,12 @@ namespace Drupal\field\Plugin\migrate\source\d6;
 use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 
 /**
- * Gets field label and description translations.
+ * Drupal 6 i18n field label and description source from database.
+ *
+ * For available configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBase
  *
  * @MigrateSource(
  *   id = "d6_field_instance_label_description_translation",
@@ -22,14 +27,12 @@ class FieldLabelDescriptionTranslation extends DrupalSqlBase {
     $query = $this->select('i18n_strings', 'i18n')
       ->fields('i18n', ['property', 'objectid', 'type'])
       ->fields('lt', ['lid', 'translation', 'language'])
-      ->condition('i18n.type', 'field')
-      ->isNotNull('language')
-      ->isNotNull('translation');
+      ->condition('i18n.type', 'field');
     $condition = $query->orConditionGroup()
       ->condition('property', 'widget_label')
       ->condition('property', 'widget_description');
     $query->condition($condition);
-    $query->leftJoin('locales_target', 'lt', 'lt.lid = i18n.lid');
+    $query->innerJoin('locales_target', 'lt', '[lt].[lid] = [i18n].[lid]');
 
     return $query;
   }

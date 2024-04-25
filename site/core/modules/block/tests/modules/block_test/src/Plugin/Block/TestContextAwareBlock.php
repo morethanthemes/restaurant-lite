@@ -12,8 +12,10 @@ use Drupal\user\UserInterface;
  * @Block(
  *   id = "test_context_aware",
  *   admin_label = @Translation("Test context-aware block"),
- *   context = {
- *     "user" = @ContextDefinition("entity:user", required = FALSE)
+ *   context_definitions = {
+ *     "user" = @ContextDefinition("entity:user", required = FALSE,
+ *       label = @Translation("User Context"), constraints = { "NotNull" = {} }
+ *     ),
  *   }
  * )
  */
@@ -23,12 +25,12 @@ class TestContextAwareBlock extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    /** @var $user \Drupal\user\UserInterface */
+    /** @var \Drupal\user\UserInterface $user */
     $user = $this->getContextValue('user');
     return [
       '#prefix' => '<div id="' . $this->getPluginId() . '--username">',
       '#suffix' => '</div>',
-      '#markup' => $user ? $user->getUsername() : 'No context mapping selected.' ,
+      '#markup' => $user ? $user->getAccountName() : 'No context mapping selected.',
     ];
   }
 

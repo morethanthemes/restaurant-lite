@@ -5,7 +5,7 @@
  * @ignore
  */
 
-(function($, Drupal, drupalSettings, CKEDITOR) {
+(function ($, Drupal, drupalSettings, CKEDITOR) {
   function parseAttributes(editor, element) {
     const parsedAttributes = {};
 
@@ -41,7 +41,7 @@
 
   function getAttributes(editor, data) {
     const set = {};
-    Object.keys(data || {}).forEach(attributeName => {
+    Object.keys(data || {}).forEach((attributeName) => {
       set[attributeName] = data[attributeName];
     });
 
@@ -51,7 +51,7 @@
 
     // Remove all attributes which are not currently set.
     const removed = {};
-    Object.keys(set).forEach(s => {
+    Object.keys(set).forEach((s) => {
       delete removed[s];
     });
 
@@ -59,6 +59,35 @@
       set,
       removed: CKEDITOR.tools.objectKeys(removed),
     };
+  }
+
+  const registeredLinkableWidgets = [];
+
+  /**
+   * Registers a widget name as linkable.
+   *
+   * @param {string} widgetName
+   *   The name of the widget to register as linkable.
+   */
+  function registerLinkableWidget(widgetName) {
+    registeredLinkableWidgets.push(widgetName);
+  }
+
+  /**
+   * Gets the focused widget, if one of the registered linkable widget names.
+   *
+   * @param {CKEDITOR.editor} editor
+   *   A CKEditor instance.
+   *
+   * @return {?CKEDITOR.plugins.widget}
+   *   The focused linkable widget instance, or null.
+   */
+  function getFocusedLinkableWidget(editor) {
+    const widget = editor.widgets.focused;
+    if (widget && registeredLinkableWidgets.indexOf(widget.name) !== -1) {
+      return widget;
+    }
+    return null;
   }
 
   /**
@@ -121,9 +150,7 @@
         modes: { wysiwyg: 1 },
         canUndo: true,
         exec(editor) {
-          const drupalImageUtils = CKEDITOR.plugins.drupalimage;
-          const focusedImageWidget =
-            drupalImageUtils && drupalImageUtils.getFocusedWidget(editor);
+          const focusedLinkableWidget = getFocusedLinkableWidget(editor);
           let linkElement = getSelectedLink(editor);
 
           // Set existing values based on selected element.
@@ -133,20 +160,22 @@
           }
           // Or, if an image widget is focused, we're editing a link wrapping
           // an image widget.
-          else if (focusedImageWidget && focusedImageWidget.data.link) {
-            existingValues = CKEDITOR.tools.clone(focusedImageWidget.data.link);
+          else if (focusedLinkableWidget && focusedLinkableWidget.data.link) {
+            existingValues = CKEDITOR.tools.clone(
+              focusedLinkableWidget.data.link,
+            );
           }
 
           // Prepare a save callback to be used upon saving the dialog.
-          const saveCallback = function(returnValues) {
+          const saveCallback = function (returnValues) {
             // If an image widget is focused, we're not editing an independent
             // link, but we're wrapping an image widget in a link.
-            if (focusedImageWidget) {
-              focusedImageWidget.setData(
+            if (focusedLinkableWidget) {
+              focusedLinkableWidget.setData(
                 'link',
                 CKEDITOR.tools.extend(
                   returnValues.attributes,
-                  focusedImageWidget.data.link,
+                  focusedLinkableWidget.data.link,
                 ),
               );
               editor.fire('saveSnapshot');
@@ -185,7 +214,7 @@
             }
             // Update the link properties.
             else if (linkElement) {
-              Object.keys(returnValues.attributes || {}).forEach(attrName => {
+              Object.keys(returnValues.attributes || {}).forEach((attrName) => {
                 // Update the property if a value is specified.
                 if (returnValues.attributes[attrName].length > 0) {
                   const value = returnValues.attributes[attrName];
@@ -270,7 +299,7 @@
         });
       }
 
-      editor.on('doubleclick', evt => {
+      editor.on('doubleclick', (evt) => {
         const element = getSelectedLink(editor) || evt.data.element;
 
         if (!element.isReadOnly()) {
@@ -330,5 +359,6 @@
   CKEDITOR.plugins.drupallink = {
     parseLinkAttributes: parseAttributes,
     getLinkAttributes: getAttributes,
+    registerLinkableWidget,
   };
 })(jQuery, Drupal, drupalSettings, CKEDITOR);

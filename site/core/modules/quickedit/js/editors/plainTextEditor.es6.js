@@ -3,7 +3,7 @@
  * ContentEditable-based in-place editor for plain text content.
  */
 
-(function($, _, Drupal) {
+(function ($, _, Drupal) {
   Drupal.quickedit.editors.plain_text = Drupal.quickedit.EditorView.extend(
     /** @lends Drupal.quickedit.editors.plain_text# */ {
       /**
@@ -30,12 +30,15 @@
         const $fieldItems = this.$el.find('.quickedit-field');
         const $textElement = $fieldItems.length ? $fieldItems.eq(0) : this.$el;
         this.$textElement = $textElement;
-        editorModel.set('originalValue', $.trim(this.$textElement.text()));
+        editorModel.set(
+          'originalValue',
+          this.$textElement[0].textContent.trim(),
+        );
 
         // Sets the state to 'changed' whenever the value changes.
         let previousText = editorModel.get('originalValue');
-        $textElement.on('keyup paste', event => {
-          const currentText = $.trim($textElement.text());
+        $textElement.on('keyup paste', (event) => {
+          const currentText = $textElement[0].textContent.trim();
           if (previousText !== currentText) {
             previousText = currentText;
             editorModel.set('currentValue', currentText);
@@ -45,7 +48,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        *
        * @return {jQuery}
        *   The text element for the plain text editor.
@@ -55,7 +58,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        *
        * @param {object} fieldModel
        *   The field model that holds the state.
@@ -115,7 +118,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        *
        * @return {object}
        *   A settings object for the quick edit UI.
@@ -130,7 +133,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        */
       revert() {
         this.$textElement.html(this.model.get('originalValue'));

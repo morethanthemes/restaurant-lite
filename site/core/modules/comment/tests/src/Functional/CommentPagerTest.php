@@ -14,6 +14,11 @@ use Drupal\node\Entity\Node;
 class CommentPagerTest extends CommentTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Confirms comment paging works correctly with flat and threaded comments.
    */
   public function testCommentPaging() {
@@ -40,7 +45,7 @@ class CommentPagerTest extends CommentTestBase {
     // Check the first page of the node, and confirm the correct comments are
     // shown.
     $this->drupalGet('node/' . $node->id());
-    $this->assertRaw(t('next'), 'Paging links found.');
+    $this->assertSession()->pageTextContains('next');
     $this->assertTrue($this->commentExists($comments[0]), 'Comment 1 appears on page 1.');
     $this->assertFalse($this->commentExists($comments[1]), 'Comment 2 does not appear on page 1.');
     $this->assertFalse($this->commentExists($comments[2]), 'Comment 3 does not appear on page 1.');
@@ -205,8 +210,10 @@ class CommentPagerTest extends CommentTestBase {
    *   An array of comments, must be of the type CommentInterface.
    * @param array $expected_order
    *   An array of keys from $comments describing the expected order.
+   *
+   * @internal
    */
-  public function assertCommentOrder(array $comments, array $expected_order) {
+  public function assertCommentOrder(array $comments, array $expected_order): void {
     $expected_cids = [];
 
     // First, rekey the expected order by cid.
@@ -214,12 +221,12 @@ class CommentPagerTest extends CommentTestBase {
       $expected_cids[] = $comments[$key]->id();
     }
 
-    $comment_anchors = $this->xpath('//a[starts-with(@id,"comment-")]');
+    $comment_anchors = $this->xpath('//article[starts-with(@id,"comment-")]');
     $result_order = [];
     foreach ($comment_anchors as $anchor) {
       $result_order[] = substr($anchor->getAttribute('id'), 8);
     }
-    return $this->assertEqual($expected_cids, $result_order, format_string('Comment order: expected @expected, returned @returned.', ['@expected' => implode(',', $expected_cids), '@returned' => implode(',', $result_order)]));
+    $this->assertEquals($expected_cids, $result_order, new FormattableMarkup('Comment order: expected @expected, returned @returned.', ['@expected' => implode(',', $expected_cids), '@returned' => implode(',', $result_order)]));
   }
 
   /**
@@ -283,9 +290,9 @@ class CommentPagerTest extends CommentTestBase {
 
     $node = Node::load($node->id());
     foreach ($expected_pages as $new_replies => $expected_page) {
-      $returned_page = \Drupal::entityManager()->getStorage('comment')
+      $returned_page = \Drupal::entityTypeManager()->getStorage('comment')
         ->getNewCommentPageNumber($node->get('comment')->comment_count, $new_replies, $node, 'comment');
-      $this->assertIdentical($expected_page, $returned_page, format_string('Flat mode, @new replies: expected page @expected, returned page @returned.', ['@new' => $new_replies, '@expected' => $expected_page, '@returned' => $returned_page]));
+      $this->assertSame($expected_page, $returned_page, new FormattableMarkup('Flat mode, @new replies: expected page @expected, returned page @returned.', ['@new' => $new_replies, '@expected' => $expected_page, '@returned' => $returned_page]));
     }
 
     $this->setCommentSettings('default_mode', CommentManagerInterface::COMMENT_MODE_THREADED, 'Switched to threaded mode.');
@@ -305,12 +312,12 @@ class CommentPagerTest extends CommentTestBase {
       6 => 0,
     ];
 
-    \Drupal::entityManager()->getStorage('node')->resetCache([$node->id()]);
+    \Drupal::entityTypeManager()->getStorage('node')->resetCache([$node->id()]);
     $node = Node::load($node->id());
     foreach ($expected_pages as $new_replies => $expected_page) {
-      $returned_page = \Drupal::entityManager()->getStorage('comment')
+      $returned_page = \Drupal::entityTypeManager()->getStorage('comment')
         ->getNewCommentPageNumber($node->get('comment')->comment_count, $new_replies, $node, 'comment');
-      $this->assertEqual($expected_page, $returned_page, format_string('Threaded mode, @new replies: expected page @expected, returned page @returned.', ['@new' => $new_replies, '@expected' => $expected_page, '@returned' => $returned_page]));
+      $this->assertEquals($expected_page, $returned_page, new FormattableMarkup('Threaded mode, @new replies: expected page @expected, returned page @returned.', ['@new' => $new_replies, '@expected' => $expected_page, '@returned' => $returned_page]));
     }
   }
 
@@ -321,7 +328,8 @@ class CommentPagerTest extends CommentTestBase {
     // Add another field to article content-type.
     $this->addDefaultCommentField('node', 'article', 'comment_2');
     // Set default to display comment list with unique pager id.
-    entity_get_display('node', 'article', 'default')
+    \Drupal::service('entity_display.repository')
+      ->getViewDisplay('node', 'article')
       ->setComponent('comment_2', [
         'label' => 'hidden',
         'type' => 'comment_default',
@@ -337,16 +345,18 @@ class CommentPagerTest extends CommentTestBase {
     $account = $this->drupalCreateUser(['administer node display']);
     $this->drupalLogin($account);
     $this->drupalGet('admin/structure/types/manage/article/display');
-    $this->assertNoText(t('Pager ID: @id', ['@id' => 0]), 'No summary for standard pager');
-    $this->assertText(t('Pager ID: @id', ['@id' => 1]));
-    $this->drupalPostForm(NULL, [], 'comment_settings_edit');
+    // No summary for standard pager.
+    $this->assertSession()->pageTextNotContains('Pager ID: 0');
+    $this->assertSession()->pageTextContains('Pager ID: 1');
+    $this->submitForm([], 'comment_settings_edit');
     // Change default pager to 2.
-    $this->drupalPostForm(NULL, ['fields[comment][settings_edit_form][settings][pager_id]' => 2], t('Save'));
-    $this->assertText(t('Pager ID: @id', ['@id' => 2]));
+    $this->submitForm(['fields[comment][settings_edit_form][settings][pager_id]' => 2], 'Save');
+    $this->assertSession()->pageTextContains('Pager ID: 2');
     // Revert the changes.
-    $this->drupalPostForm(NULL, [], 'comment_settings_edit');
-    $this->drupalPostForm(NULL, ['fields[comment][settings_edit_form][settings][pager_id]' => 0], t('Save'));
-    $this->assertNoText(t('Pager ID: @id', ['@id' => 0]), 'No summary for standard pager');
+    $this->submitForm([], 'comment_settings_edit');
+    $this->submitForm(['fields[comment][settings_edit_form][settings][pager_id]' => 0], 'Save');
+    // No summary for standard pager.
+    $this->assertSession()->pageTextNotContains('Pager ID: 0');
 
     $this->drupalLogin($this->adminUser);
 
@@ -362,11 +372,8 @@ class CommentPagerTest extends CommentTestBase {
       // Set comments to one per page so that we are able to test paging without
       // needing to insert large numbers of comments.
       $this->setCommentsPerPage(1, $field_name);
-      for ($i = 0; $i < 3; $i++) {
-        $comment = t('Comment @count on field @field', [
-          '@count' => $i + 1,
-          '@field' => $field_name,
-        ]);
+      for ($i = 1; $i <= 4; $i++) {
+        $comment = "Comment $i on field $field_name";
         $comments[] = $this->postComment($node, $comment, $comment, TRUE, $field_name);
       }
     }
@@ -374,26 +381,26 @@ class CommentPagerTest extends CommentTestBase {
     // Check the first page of the node, and confirm the correct comments are
     // shown.
     $this->drupalGet('node/' . $node->id());
-    $this->assertRaw(t('next'), 'Paging links found.');
-    $this->assertRaw('Comment 1 on field comment');
-    $this->assertRaw('Comment 1 on field comment_2');
+    $this->assertSession()->pageTextContains('next');
+    $this->assertSession()->pageTextContains('Comment 1 on field comment');
+    $this->assertSession()->pageTextContains('Comment 1 on field comment_2');
     // Navigate to next page of field 1.
     $this->clickLinkWithXPath('//h3/a[normalize-space(text())=:label]/ancestor::section[1]//a[@rel="next"]', [':label' => 'Comment 1 on field comment']);
     // Check only one pager updated.
-    $this->assertRaw('Comment 2 on field comment');
-    $this->assertRaw('Comment 1 on field comment_2');
+    $this->assertSession()->pageTextContains('Comment 2 on field comment');
+    $this->assertSession()->pageTextContains('Comment 1 on field comment_2');
     // Return to page 1.
     $this->drupalGet('node/' . $node->id());
     // Navigate to next page of field 2.
     $this->clickLinkWithXPath('//h3/a[normalize-space(text())=:label]/ancestor::section[1]//a[@rel="next"]', [':label' => 'Comment 1 on field comment_2']);
     // Check only one pager updated.
-    $this->assertRaw('Comment 1 on field comment');
-    $this->assertRaw('Comment 2 on field comment_2');
+    $this->assertSession()->pageTextContains('Comment 1 on field comment');
+    $this->assertSession()->pageTextContains('Comment 2 on field comment_2');
     // Navigate to next page of field 1.
     $this->clickLinkWithXPath('//h3/a[normalize-space(text())=:label]/ancestor::section[1]//a[@rel="next"]', [':label' => 'Comment 1 on field comment']);
     // Check only one pager updated.
-    $this->assertRaw('Comment 2 on field comment');
-    $this->assertRaw('Comment 2 on field comment_2');
+    $this->assertSession()->pageTextContains('Comment 2 on field comment');
+    $this->assertSession()->pageTextContains('Comment 2 on field comment_2');
   }
 
   /**
@@ -416,14 +423,13 @@ class CommentPagerTest extends CommentTestBase {
    * @return string|false
    *   Page contents on success, or FALSE on failure.
    *
-   * @see WebTestBase::clickLink()
+   * @see \Drupal\Tests\UiHelperTrait::clickLink()
    */
   protected function clickLinkWithXPath($xpath, $arguments = [], $index = 0) {
     $url_before = $this->getUrl();
     $urls = $this->xpath($xpath, $arguments);
     if (isset($urls[$index])) {
       $url_target = $this->getAbsoluteUrl($urls[$index]->getAttribute('href'));
-      $this->pass(new FormattableMarkup('Clicked link %label (@url_target) from @url_before', ['%label' => $xpath, '@url_target' => $url_target, '@url_before' => $url_before]), 'Browser');
       return $this->drupalGet($url_target);
     }
     $this->fail(new FormattableMarkup('Link %label does not exist on @url_before', ['%label' => $xpath, '@url_before' => $url_before]), 'Browser');

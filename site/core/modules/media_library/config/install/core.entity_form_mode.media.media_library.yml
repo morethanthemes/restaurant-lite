@@ -1,11 +1,11 @@
 langcode: en
 status: true
 dependencies:
-  enforced:
-    module:
-    - media_library
   module:
     - media
+  enforced:
+    module:
+      - media_library
 id: media.media_library
 label: 'Media library'
 targetEntityType: media

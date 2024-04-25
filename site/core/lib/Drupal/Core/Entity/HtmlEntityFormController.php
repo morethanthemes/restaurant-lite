@@ -13,11 +13,11 @@ use Symfony\Component\HttpKernel\Controller\ArgumentResolverInterface;
 class HtmlEntityFormController extends FormController {
 
   /**
-   * The entity manager service.
+   * The entity type manager service.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * Constructs a new \Drupal\Core\Routing\Enhancer\FormEnhancer object.
@@ -26,12 +26,12 @@ class HtmlEntityFormController extends FormController {
    *   The argument resolver.
    * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
    *   The form builder.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager service.
    */
-  public function __construct(ArgumentResolverInterface $argument_resolver, FormBuilderInterface $form_builder, EntityManagerInterface $manager) {
+  public function __construct(ArgumentResolverInterface $argument_resolver, FormBuilderInterface $form_builder, EntityTypeManagerInterface $entity_type_manager) {
     parent::__construct($argument_resolver, $form_builder);
-    $this->entityManager = $manager;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -64,9 +64,9 @@ class HtmlEntityFormController extends FormController {
   protected function getFormObject(RouteMatchInterface $route_match, $form_arg) {
     // If no operation is provided, use 'default'.
     $form_arg .= '.default';
-    list ($entity_type_id, $operation) = explode('.', $form_arg);
+    [$entity_type_id, $operation] = explode('.', $form_arg);
 
-    $form_object = $this->entityManager->getFormObject($entity_type_id, $operation);
+    $form_object = $this->entityTypeManager->getFormObject($entity_type_id, $operation);
 
     // Allow the entity form to determine the entity object from a given route
     // match.

@@ -23,12 +23,13 @@ class LayoutBuilderOptInTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
-    parent::setUp();
+  protected $defaultTheme = 'starterkit_theme';
 
-    // @todo The Layout Builder UI relies on local tasks; fix in
-    //   https://www.drupal.org/project/drupal/issues/2917777.
-    $this->drupalPlaceBlock('local_tasks_block');
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
 
     // Create one content type before installing Layout Builder and one after.
     $this->createContentType(['type' => 'before']);
@@ -116,14 +117,14 @@ class LayoutBuilderOptInTest extends WebDriverTestBase {
     $page->selectFieldOption('settings[formatter][type]', 'text_trimmed');
     $assert_session->assertWaitOnAjaxRequest();
     $page->pressButton('Update');
-    $assert_session->linkExists('Save Layout');
-    $this->clickLink('Save Layout');
+    $page->pressButton('Save layout');
 
     $this->drupalGet($layout_builder_ui);
     $assert_session->fieldValueEquals('settings[formatter][type]', 'text_trimmed');
 
     // Disable Layout Builder.
-    $this->drupalPostForm($field_ui_prefix, ['layout[enabled]' => FALSE], 'Save');
+    $this->drupalGet($field_ui_prefix);
+    $this->submitForm(['layout[enabled]' => FALSE], 'Save');
     $page->pressButton('Confirm');
 
     // The Layout Builder UI is no longer accessible.
@@ -141,7 +142,8 @@ class LayoutBuilderOptInTest extends WebDriverTestBase {
     $assert_session->fieldValueEquals('fields[body][type]', 'text_summary_or_trimmed');
 
     // Reactivate Layout Builder.
-    $this->drupalPostForm($field_ui_prefix, ['layout[enabled]' => TRUE], 'Save');
+    $this->drupalGet($field_ui_prefix);
+    $this->submitForm(['layout[enabled]' => TRUE], 'Save');
     $assert_session->linkExists('Manage layout');
     $this->clickLink('Manage layout');
     // Ensure the body appears once and only once.

@@ -2,18 +2,15 @@
 
 namespace Drupal\Tests\aggregator\Functional\Rest;
 
-use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
 use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
 use Drupal\aggregator\Entity\Feed;
 
 abstract class FeedResourceTestBase extends EntityResourceTestBase {
 
-  use BcTimestampNormalizerUnixTestTrait;
-
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['aggregator'];
+  protected static $modules = ['aggregator'];
 
   /**
    * {@inheritdoc}
@@ -38,6 +35,7 @@ abstract class FeedResourceTestBase extends EntityResourceTestBase {
       case 'GET':
         $this->grantPermissionsToTestedRole(['access news feeds']);
         break;
+
       case 'POST':
       case 'PATCH':
       case 'DELETE':
@@ -105,10 +103,16 @@ abstract class FeedResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'checked' => [
-        $this->formatExpectedTimestampItemValues(123456789),
+        [
+          'value' => (new \DateTime())->setTimestamp(123456789)->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'queued' => [
-        $this->formatExpectedTimestampItemValues(123456789),
+        [
+          'value' => (new \DateTime())->setTimestamp(123456789)->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'link' => [
         [
@@ -136,7 +140,10 @@ abstract class FeedResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'modified' => [
-        $this->formatExpectedTimestampItemValues(123456789),
+        [
+          'value' => (new \DateTime())->setTimestamp(123456789)->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
     ];
   }
@@ -173,17 +180,15 @@ abstract class FeedResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function getExpectedUnauthorizedAccessMessage($method) {
-    if ($this->config('rest.settings')->get('bc_entity_resource_permissions')) {
-      return parent::getExpectedUnauthorizedAccessMessage($method);
-    }
-
     switch ($method) {
       case 'GET':
         return "The 'access news feeds' permission is required.";
+
       case 'POST':
       case 'PATCH':
       case 'DELETE':
         return "The 'administer news feeds' permission is required.";
+
       default:
         return parent::getExpectedUnauthorizedAccessMessage($method);
     }

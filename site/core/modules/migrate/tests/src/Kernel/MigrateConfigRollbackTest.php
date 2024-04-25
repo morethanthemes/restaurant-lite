@@ -16,7 +16,7 @@ class MigrateConfigRollbackTest extends MigrateTestBase {
    *
    * @var array
    */
-  public static $modules = ['system', 'language', 'config_translation'];
+  protected static $modules = ['system', 'language', 'config_translation'];
 
   /**
    * Tests rolling back configuration.
@@ -78,8 +78,7 @@ class MigrateConfigRollbackTest extends MigrateTestBase {
     $this->assertSame('Some site', $config->get('name'));
     $this->assertSame('Awesome slogan', $config->get('slogan'));
     // Confirm the map row is deleted.
-    $map_row = $config_id_map->getRowBySource(['id' => $variable[0]['id']]);
-    $this->assertNull($map_row['destid1']);
+    $this->assertFalse($config_id_map->getRowBySource(['id' => $variable[0]['id']]));
 
     // We use system configuration to demonstrate importing and rolling back
     // configuration translations.

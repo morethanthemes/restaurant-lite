@@ -37,12 +37,11 @@ class StandardJavascriptTest extends WebDriverTestBase {
     $this->drupalGet('');
     $this->assertBigPipePlaceholderReplacementCount(1);
 
-    // Node page: 3 placeholders:
+    // Node page: 2 placeholders:
     // 1. messages
-    // 2. local tasks block
-    // 3. comment form
+    // 2. comment form
     $this->drupalGet($node->toUrl());
-    $this->assertBigPipePlaceholderReplacementCount(3);
+    $this->assertBigPipePlaceholderReplacementCount(2);
   }
 
   /**
@@ -51,7 +50,7 @@ class StandardJavascriptTest extends WebDriverTestBase {
    * @param int $expected_count
    *   The expected number of BigPipe placeholders.
    */
-  protected function assertBigPipePlaceholderReplacementCount($expected_count) {
+  protected function assertBigPipePlaceholderReplacementCount($expected_count): void {
     $web_assert = $this->assertSession();
     $web_assert->waitForElement('css', 'script[data-big-pipe-event="stop"]');
     $page = $this->getSession()->getPage();

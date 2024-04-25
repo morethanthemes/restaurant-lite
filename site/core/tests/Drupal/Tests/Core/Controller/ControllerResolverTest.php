@@ -10,17 +10,18 @@ namespace Drupal\Tests\Core\Controller;
 use Drupal\Core\Controller\ControllerResolver;
 use Drupal\Core\DependencyInjection\ClassResolver;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Tests\UnitTestCase;
+use Laminas\Diactoros\ResponseFactory;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\StreamFactory;
+use Laminas\Diactoros\UploadedFileFactory;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -53,45 +54,14 @@ class ControllerResolverTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->container = new ContainerBuilder();
     $class_resolver = new ClassResolver();
     $class_resolver->setContainer($this->container);
-    $this->httpMessageFactory = new DiactorosFactory();
+    $this->httpMessageFactory = new PsrHttpFactory(new ServerRequestFactory(), new StreamFactory(), new UploadedFileFactory(), new ResponseFactory());
     $this->controllerResolver = new ControllerResolver($this->httpMessageFactory, $class_resolver);
-  }
-
-  /**
-   * Tests getArguments().
-   *
-   * Ensure that doGetArguments uses converted arguments if available.
-   *
-   * @see \Drupal\Core\Controller\ControllerResolver::getArguments()
-   * @see \Drupal\Core\Controller\ControllerResolver::doGetArguments()
-   *
-   * @group legacy
-   * @expectedDeprecation Drupal\Core\Controller\ControllerResolver::doGetArguments is deprecated as of 8.6.0 and will be removed in 9.0. Inject the "http_kernel.controller.argument_resolver" service instead.
-   */
-  public function testGetArguments() {
-    $controller = function (EntityInterface $entity, $user, RouteMatchInterface $route_match, ServerRequestInterface $psr_7) {
-    };
-    $mock_entity = $this->getMockBuilder('Drupal\Core\Entity\Entity')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $mock_account = $this->getMock('Drupal\Core\Session\AccountInterface');
-    $request = new Request([], [], [
-      'entity' => $mock_entity,
-      'user' => $mock_account,
-      '_raw_variables' => new ParameterBag(['entity' => 1, 'user' => 1]),
-    ], [], [], ['HTTP_HOST' => 'drupal.org']);
-    $arguments = $this->controllerResolver->getArguments($request, $controller);
-
-    $this->assertEquals($mock_entity, $arguments[0]);
-    $this->assertEquals($mock_account, $arguments[1]);
-    $this->assertEquals(RouteMatch::createFromRequest($request), $arguments[2], 'Ensure that the route match object is passed along as well');
-    $this->assertInstanceOf(ServerRequestInterface::class, $arguments[3], 'Ensure that the PSR-7 object is passed along as well');
   }
 
   /**
@@ -125,7 +95,7 @@ class ControllerResolverTest extends UnitTestCase {
    * Tests createController() with a non-existent class.
    */
   public function testCreateControllerNonExistentClass() {
-    $this->setExpectedException(\InvalidArgumentException::class);
+    $this->expectException(\InvalidArgumentException::class);
     $this->controllerResolver->getControllerFromDefinition('Class::method');
   }
 
@@ -133,7 +103,7 @@ class ControllerResolverTest extends UnitTestCase {
    * Tests createController() with an invalid name.
    */
   public function testCreateControllerInvalidName() {
-    $this->setExpectedException(\LogicException::class);
+    $this->expectException(\LogicException::class);
     $this->controllerResolver->getControllerFromDefinition('ClassWithoutMethod');
   }
 
@@ -149,7 +119,7 @@ class ControllerResolverTest extends UnitTestCase {
       $this->assertCallableController($result, $class, $output);
     }
     else {
-      $this->assertSame(FALSE, $result);
+      $this->assertFalse($result);
     }
   }
 
@@ -171,6 +141,7 @@ class ControllerResolverTest extends UnitTestCase {
    * @dataProvider providerTestGetControllerFromDefinition
    */
   public function testGetControllerFromDefinition($definition, $output) {
+    $this->container->set('invoke_service', new MockInvokeController());
     $controller = $this->controllerResolver->getControllerFromDefinition($definition);
     $this->assertCallableController($controller, NULL, $output);
   }
@@ -188,6 +159,8 @@ class ControllerResolverTest extends UnitTestCase {
       [new MockInvokeController(), 'This used __invoke().'],
       // Tests a class using __invoke().
       ['Drupal\Tests\Core\Controller\MockInvokeController', 'This used __invoke().'],
+      // Tests a service from the container using __invoke().
+      ['invoke_service', 'This used __invoke().'],
     ];
   }
 
@@ -195,7 +168,7 @@ class ControllerResolverTest extends UnitTestCase {
    * Tests getControllerFromDefinition() without a callable.
    */
   public function testGetControllerFromDefinitionNotCallable() {
-    $this->setExpectedException(\InvalidArgumentException::class);
+    $this->expectException(\InvalidArgumentException::class);
     $this->controllerResolver->getControllerFromDefinition('Drupal\Tests\Core\Controller\MockController::bananas');
   }
 
@@ -207,47 +180,18 @@ class ControllerResolverTest extends UnitTestCase {
    * @param string|null $class
    *   Either the name of the class the controller represents, or NULL if it is
    *   not an object.
-   * @param mixed $output
+   * @param string|null $output
    *   The output expected for this controller.
+   *
+   * @internal
    */
-  protected function assertCallableController($controller, $class, $output) {
+  protected function assertCallableController(callable $controller, ?string $class, ?string $output): void {
     if ($class) {
-      $this->assertTrue(is_object($controller[0]));
+      $this->assertIsObject($controller[0]);
       $this->assertInstanceOf($class, $controller[0]);
     }
-    $this->assertTrue(is_callable($controller));
+    $this->assertIsCallable($controller);
     $this->assertSame($output, call_user_func($controller));
-  }
-
-  /**
-   * Tests getArguments with a route match and a request.
-   *
-   * @covers ::getArguments
-   * @covers ::doGetArguments
-   *
-   * @group legacy
-   */
-  public function testGetArgumentsWithRouteMatchAndRequest() {
-    $request = Request::create('/test');
-    $mock_controller = new MockController();
-    $arguments = $this->controllerResolver->getArguments($request, [$mock_controller, 'getControllerWithRequestAndRouteMatch']);
-    $this->assertEquals([RouteMatch::createFromRequest($request), $request], $arguments);
-  }
-
-  /**
-   * Tests getArguments with a route match and a PSR-7 request.
-   *
-   * @covers ::getArguments
-   * @covers ::doGetArguments
-   *
-   * @group legacy
-   */
-  public function testGetArgumentsWithRouteMatchAndPsr7Request() {
-    $request = Request::create('/test');
-    $mock_controller = new MockControllerPsr7();
-    $arguments = $this->controllerResolver->getArguments($request, [$mock_controller, 'getControllerWithRequestAndRouteMatch']);
-    $this->assertEquals(RouteMatch::createFromRequest($request), $arguments[0], 'Ensure that the route match object is passed along as well');
-    $this->assertInstanceOf('Psr\Http\Message\ServerRequestInterface', $arguments[1], 'Ensure that the PSR-7 object is passed along as well');
   }
 
 }

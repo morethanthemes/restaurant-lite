@@ -23,7 +23,7 @@ class ConfigEntityAdapterTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['config_test'];
+  protected static $modules = ['config_test'];
 
   /**
    * The config entity.
@@ -35,7 +35,7 @@ class ConfigEntityAdapterTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installConfig(static::$modules);
 
@@ -141,7 +141,8 @@ class ConfigEntityAdapterTest extends KernelTestBase {
    * @covers ::applyDefaultValue
    */
   public function testApplyDefaultValue() {
-    $this->setExpectedException(\BadMethodCallException::class, 'Method not supported');
+    $this->expectException(\BadMethodCallException::class);
+    $this->expectExceptionMessage('Method not supported');
     $adapter = ConfigEntityAdapter::createFromEntity($this->entity);
     $adapter->applyDefaultValue();
   }

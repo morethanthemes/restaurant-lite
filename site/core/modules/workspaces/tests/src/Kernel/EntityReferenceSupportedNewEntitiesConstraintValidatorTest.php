@@ -25,12 +25,20 @@ class EntityReferenceSupportedNewEntitiesConstraintValidatorTest extends KernelT
     'user',
     'workspaces',
     'entity_test',
+    'path_alias',
   ];
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManager
+   */
+  protected $entityTypeManager;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installEntitySchema('user');

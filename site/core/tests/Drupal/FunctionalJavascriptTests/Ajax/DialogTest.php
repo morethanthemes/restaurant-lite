@@ -19,7 +19,12 @@ class DialogTest extends WebDriverTestBase {
   protected static $modules = ['ajax_test', 'ajax_forms_test', 'contact'];
 
   /**
-   * Test sending non-JS and AJAX requests to open and manipulate modals.
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'starterkit_theme';
+
+  /**
+   * Tests sending non-JS and AJAX requests to open and manipulate modals.
    */
   public function testDialog() {
     $this->drupalLogin($this->drupalCreateUser(['administer contact forms']));
@@ -41,7 +46,7 @@ class DialogTest extends WebDriverTestBase {
     // expected.
     $this->getSession()->getPage()->clickLink('Link 1 (modal)');
 
-    // Clicking the link triggers a AJAX request/response.
+    // Clicking the link triggers an AJAX request/response.
     // Opens a Dialog panel.
     $link1_dialog_div = $this->assertSession()->waitForElementVisible('css', 'div.ui-dialog');
     $this->assertNotNull($link1_dialog_div, 'Link was used to open a dialog ( modal )');
@@ -67,7 +72,7 @@ class DialogTest extends WebDriverTestBase {
     $dialog = $this->assertSession()->waitForElementVisible('css', 'div.ui-dialog');
     $this->assertNotNull($dialog, 'Link was used to open a dialog ( non-modal, with options )');
     $style = $dialog->getAttribute('style');
-    $this->assertContains('width: 400px;', $style, new FormattableMarkup('Modal respected the dialog-options width parameter.  Style = style', ['%style' => $style]));
+    $this->assertStringContainsString('width: 400px;', $style, new FormattableMarkup('Modal respected the dialog-options width parameter.  Style = style', ['%style' => $style]));
 
     // Reset: Return to the dialog links page.
     $this->drupalGet('ajax-test/dialog');
@@ -120,7 +125,7 @@ class DialogTest extends WebDriverTestBase {
     $button2_dialog = $this->assertSession()->waitForElementVisible('css', 'div.ui-dialog-content');
     $this->assertNotNull($button2_dialog, 'Non-modal content displays as expected.');
 
-    // Use a link to close the pagnel opened by button 2.
+    // Use a link to close the panel opened by button 2.
     $this->getSession()->getPage()->clickLink('Link 4 (close non-modal if open)');
 
     // Form modal.
@@ -140,6 +145,26 @@ class DialogTest extends WebDriverTestBase {
     $preview = $form_dialog->findButton('Preview');
     $this->assertNotNull($preview, 'The dialog contains a "Preview" button.');
 
+    // When a form with submit inputs is in a dialog, the form's submit inputs
+    // are copied to the dialog buttonpane as buttons. The originals should have
+    // their styles set to display: none.
+    $hidden_buttons = $this->getSession()->getPage()->findAll('css', '.ajax-test-form [type="submit"]');
+    $this->assertCount(2, $hidden_buttons);
+    $hidden_button_text = [];
+    foreach ($hidden_buttons as $button) {
+      $styles = $button->getAttribute('style');
+      $this->assertStringContainsStringIgnoringCase('display: none;', $styles);
+      $hidden_button_text[] = $button->getAttribute('value');
+    }
+
+    // The copied buttons should have the same text as the submit inputs they
+    // were copied from.
+    $moved_to_buttonpane_buttons = $this->getSession()->getPage()->findAll('css', '.ui-dialog-buttonpane button');
+    $this->assertCount(2, $moved_to_buttonpane_buttons);
+    foreach ($moved_to_buttonpane_buttons as $key => $button) {
+      $this->assertEquals($hidden_button_text[$key], $button->getText());
+    }
+
     // Reset: close the form.
     $form_dialog->findButton('Close')->press();
 
@@ -147,8 +172,7 @@ class DialogTest extends WebDriverTestBase {
     $this->drupalGet('admin/structure/contact/add');
     // Check we get a chunk of the code, we can't test the whole form as form
     // build id and token with be different.
-    $contact_form = $this->xpath("//form[@id='contact-form-add-form']");
-    $this->assertTrue(!empty($contact_form), 'Non-JS entity form page present.');
+    $this->assertSession()->elementExists('xpath', "//form[@id='contact-form-add-form']");
 
     // Reset: Return to the dialog links page.
     $this->drupalGet('ajax-test/dialog');

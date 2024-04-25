@@ -22,6 +22,11 @@ class RebuildTest extends WebDriverTestBase {
   protected static $modules = ['node', 'form_test'];
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * A user for testing.
    *
    * @var \Drupal\user\UserInterface
@@ -31,7 +36,7 @@ class RebuildTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalCreateContentType(['type' => 'page', 'name' => 'Basic page']);
@@ -78,7 +83,7 @@ class RebuildTest extends WebDriverTestBase {
       'required' => TRUE,
     ])->save();
 
-    entity_get_form_display('node', 'page', 'default')
+    \Drupal::service('entity_display.repository')->getFormDisplay('node', 'page', 'default')
       ->setComponent($field_name, ['type' => 'text_textfield'])
       ->setComponent($field_file_name, ['type' => 'file_generic'])
       ->save();
@@ -93,7 +98,7 @@ class RebuildTest extends WebDriverTestBase {
     $this->drupalGet('node/add/page');
     $page->find('css', '[value="Add another item"]')->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertTrue(count($this->xpath('//div[contains(@class, "field--name-field-ajax-test")]//input[@type="text"]')) == 2, 'AJAX submission succeeded.');
+    $this->assertSession()->elementsCount('xpath', '//div[contains(@class, "field--name-field-ajax-test")]//input[@type="text"]', 2);
 
     // Submit the form with the non-Ajax "Save" button, leaving the file field
     // blank to trigger a validation error, and ensure that a validation error
@@ -103,16 +108,16 @@ class RebuildTest extends WebDriverTestBase {
     $edit = [
       'title[0][value]' => $this->randomString(),
     ];
-    $this->drupalPostForm(NULL, $edit, 'Save');
-    $this->assertSession()->pageTextContains('Test file field is required.', 'Non-AJAX submission correctly triggered a validation error.');
+    $this->submitForm($edit, 'Save');
+    $this->assertSession()->pageTextContains('Test file field is required.');
 
     // Ensure that the form contains two items in the multi-valued field, so we
     // know we're testing a form that was correctly retrieved from cache.
-    $this->assertTrue(count($this->xpath('//form[contains(@id, "node-page-form")]//div[contains(@class, "js-form-item-field-ajax-test")]//input[@type="text"]')) == 2, 'Form retained its state from cache.');
+    $this->assertSession()->elementsCount('xpath', '//form[contains(@id, "node-page-form")]//div[contains(@class, "js-form-item-field-ajax-test")]//input[@type="text"]', 2);
 
     // Ensure that the form's action is correct.
     $forms = $this->xpath('//form[contains(@class, "node-page-form")]');
-    $this->assertEquals(1, count($forms));
+    $this->assertCount(1, $forms);
     // Strip query params off the action before asserting.
     $url = parse_url($forms[0]->getAttribute('action'))['path'];
     $this->assertEquals(Url::fromRoute('node.add', ['node_type' => 'page'])->toString(), $url);

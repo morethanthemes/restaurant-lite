@@ -20,7 +20,7 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
    * - "<entity_type>:<entity ID>"
    */
   public function testEntityUri() {
-    $entity_url = $this->entity->urlInfo();
+    $entity_url = $this->entity->toUrl();
     $entity_type = $this->entity->getEntityTypeId();
 
     // Selects the view mode that will be used.
@@ -31,10 +31,9 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
 
     // Generate the standardized entity cache tags.
     $cache_tag = $this->entity->getCacheTags();
-    $view_cache_tag = \Drupal::entityManager()->getViewBuilder($entity_type)->getCacheTags();
+    $view_cache_tag = \Drupal::entityTypeManager()->getViewBuilder($entity_type)->getCacheTags();
     $render_cache_tag = 'rendered';
 
-    $this->pass("Test entity.", 'Debug');
     $this->verifyPageCache($entity_url, 'MISS');
 
     // Verify a cache hit, but also the presence of the correct cache tags.
@@ -42,7 +41,7 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
 
     // Also verify the existence of an entity render cache entry, if this entity
     // type supports render caching.
-    if (\Drupal::entityManager()->getDefinition($entity_type)->isRenderCacheable()) {
+    if (\Drupal::entityTypeManager()->getDefinition($entity_type)->isRenderCacheable()) {
       $cache_keys = ['entity_view', $entity_type, $this->entity->id(), $view_mode];
       $cid = $this->createCacheId($cache_keys, $entity_cache_contexts);
       $redirected_cid = NULL;
@@ -57,7 +56,6 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
     }
 
     // Verify that after modifying the entity, there is a cache miss.
-    $this->pass("Test modification of entity.", 'Debug');
     $this->entity->save();
     $this->verifyPageCache($entity_url, 'MISS');
 
@@ -65,8 +63,7 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
     $this->verifyPageCache($entity_url, 'HIT');
 
     // Verify that after modifying the entity's display, there is a cache miss.
-    $this->pass("Test modification of entity's '$view_mode' display.", 'Debug');
-    $entity_display = entity_get_display($entity_type, $this->entity->bundle(), $view_mode);
+    $entity_display = \Drupal::service('entity_display.repository')->getViewDisplay($entity_type, $this->entity->bundle(), $view_mode);
     $entity_display->save();
     $this->verifyPageCache($entity_url, 'MISS');
 
@@ -76,7 +73,6 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
     if ($bundle_entity_type_id = $this->entity->getEntityType()->getBundleEntityType()) {
       // Verify that after modifying the corresponding bundle entity, there is a
       // cache miss.
-      $this->pass("Test modification of entity's bundle entity.", 'Debug');
       $bundle_entity = $this->container->get('entity_type.manager')
         ->getStorage($bundle_entity_type_id)
         ->load($this->entity->bundle());
@@ -90,7 +86,6 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
     if ($this->entity->getEntityType()->get('field_ui_base_route')) {
       // Verify that after modifying a configurable field on the entity, there
       // is a cache miss.
-      $this->pass("Test modification of entity's configurable field.", 'Debug');
       $field_storage_name = $this->entity->getEntityTypeId() . '.configurable_field';
       $field_storage = FieldStorageConfig::load($field_storage_name);
       $field_storage->save();
@@ -101,7 +96,6 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
 
       // Verify that after modifying a configurable field on the entity, there
       // is a cache miss.
-      $this->pass("Test modification of entity's configurable field.", 'Debug');
       $field_name = $this->entity->getEntityTypeId() . '.' . $this->entity->bundle() . '.configurable_field';
       $field = FieldConfig::load($field_name);
       $field->save();
@@ -113,7 +107,6 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
 
     // Verify that after invalidating the entity's cache tag directly, there is
     // a cache miss.
-    $this->pass("Test invalidation of entity's cache tag.", 'Debug');
     Cache::invalidateTags($this->entity->getCacheTagsToInvalidate());
     $this->verifyPageCache($entity_url, 'MISS');
 
@@ -122,7 +115,6 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
 
     // Verify that after invalidating the generic entity type's view cache tag
     // directly, there is a cache miss.
-    $this->pass("Test invalidation of entity's 'view' cache tag.", 'Debug');
     Cache::invalidateTags($view_cache_tag);
     $this->verifyPageCache($entity_url, 'MISS');
 
@@ -130,10 +122,9 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
     $this->verifyPageCache($entity_url, 'HIT');
 
     // Verify that after deleting the entity, there is a cache miss.
-    $this->pass('Test deletion of entity.', 'Debug');
     $this->entity->delete();
     $this->verifyPageCache($entity_url, 'MISS');
-    $this->assertResponse(404);
+    $this->assertSession()->statusCodeEquals(404);
   }
 
   /**
@@ -143,7 +134,9 @@ abstract class EntityWithUriCacheTagsTestBase extends EntityCacheTagsTestBase {
    *   The default cache contexts for rendered entities.
    */
   protected function getDefaultCacheContexts() {
-    return ['languages:' . LanguageInterface::TYPE_INTERFACE, 'theme', 'user.permissions'];
+    // For url.site, see
+    // \Drupal\Core\Entity\Controller\EntityViewController::view().
+    return ['languages:' . LanguageInterface::TYPE_INTERFACE, 'theme', 'user.permissions', 'url.site'];
   }
 
 }

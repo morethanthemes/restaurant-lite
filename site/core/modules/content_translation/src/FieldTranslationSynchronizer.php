@@ -4,9 +4,9 @@ namespace Drupal\content_translation;
 
 use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
  * Provides field translation synchronization capabilities.
@@ -14,11 +14,11 @@ use Drupal\Core\Field\FieldTypePluginManagerInterface;
 class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterface {
 
   /**
-   * The entity manager to use to load unchanged entities.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * The field type plugin manager.
@@ -30,13 +30,13 @@ class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterf
   /**
    * Constructs a FieldTranslationSynchronizer object.
    *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entityManager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    * @param \Drupal\Core\Field\FieldTypePluginManagerInterface $field_type_manager
    *   The field type plugin manager.
    */
-  public function __construct(EntityManagerInterface $entityManager, FieldTypePluginManagerInterface $field_type_manager) {
-    $this->entityManager = $entityManager;
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, FieldTypePluginManagerInterface $field_type_manager) {
+    $this->entityTypeManager = $entity_type_manager;
     $this->fieldTypeManager = $field_type_manager;
   }
 
@@ -115,7 +115,7 @@ class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterf
         // synchronized properties are the same for all the translations in the
         // default revision.
         /** @var \Drupal\Core\Entity\ContentEntityInterface $default_revision */
-        $default_revision = $this->entityManager
+        $default_revision = $this->entityTypeManager
           ->getStorage($entity->getEntityTypeId())
           ->load($entity->id());
         if ($default_revision->getLoadedRevisionId() !== $entity->getLoadedRevisionId()) {
@@ -142,7 +142,7 @@ class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterf
 
         // If a group was selected has the require_all_groups_for_translation
         // flag set, there are no untranslatable columns. This is done because
-        // the UI adds Javascript that disables the other checkboxes, so their
+        // the UI adds JavaScript that disables the other checkboxes, so their
         // values are not saved.
         foreach (array_filter($translation_sync) as $group) {
           if (!empty($column_groups[$group]['require_all_groups_for_translation'])) {
@@ -155,7 +155,7 @@ class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterf
           foreach ($groups as $group) {
             $info = $column_groups[$group];
             // A missing 'columns' key indicates we have a single-column group.
-            $columns = array_merge($columns, isset($info['columns']) ? $info['columns'] : [$group]);
+            $columns = array_merge($columns, $info['columns'] ?? [$group]);
           }
           if (!empty($columns)) {
             $values = [];
@@ -190,7 +190,7 @@ class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterf
    */
   protected function getOriginalEntity(ContentEntityInterface $entity) {
     if (!isset($entity->original)) {
-      $storage = $this->entityManager->getStorage($entity->getEntityTypeId());
+      $storage = $this->entityTypeManager->getStorage($entity->getEntityTypeId());
       $original = $entity->isDefaultRevision() ? $storage->loadUnchanged($entity->id()) : $storage->loadRevision($entity->getLoadedRevisionId());
     }
     else {
@@ -285,7 +285,7 @@ class FieldTranslationSynchronizer implements FieldTranslationSynchronizerInterf
             // the new values are at least propagated to all the translations.
             // If the value has only been reordered we just move the old one in
             // the new position.
-            $item = isset($original_field_values[$langcode][$old_delta]) ? $original_field_values[$langcode][$old_delta] : $source_items[$new_delta];
+            $item = $original_field_values[$langcode][$old_delta] ?? $source_items[$new_delta];
             // When saving a default revision starting from a pending revision,
             // we may have desynchronized field values, so we make sure that
             // untranslatable properties are synchronized, even if in any other

@@ -25,6 +25,9 @@ interface ThemeInstallerInterface {
    *
    * @throws \Drupal\Core\Extension\Exception\UnknownExtensionException
    *   Thrown when the theme does not exist.
+   *
+   * @throws \Drupal\Core\Extension\MissingDependencyException
+   *   Thrown when a requested dependency can't be found.
    */
   public function install(array $theme_list, $install_dependencies = TRUE);
 
@@ -41,7 +44,8 @@ interface ThemeInstallerInterface {
    *   Thrown when trying to uninstall a theme that was not installed.
    *
    * @throws \InvalidArgumentException
-   *   Thrown when trying to uninstall the default theme or the admin theme.
+   *   Thrown when trying to uninstall the admin theme, the default theme or
+   *   a theme that another theme depends on.
    *
    * @see hook_themes_uninstalled()
    */

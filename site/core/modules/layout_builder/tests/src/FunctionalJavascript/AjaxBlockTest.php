@@ -3,6 +3,8 @@
 namespace Drupal\Tests\layout_builder\FunctionalJavascript;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
+use Drupal\layout_builder\Entity\LayoutBuilderEntityViewDisplay;
+use Drupal\Tests\system\Traits\OffCanvasTestTrait;
 
 /**
  * Ajax blocks tests.
@@ -11,31 +13,44 @@ use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
  */
 class AjaxBlockTest extends WebDriverTestBase {
 
+  use OffCanvasTestTrait;
+
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'block',
     'node',
     'datetime',
     'layout_builder',
     'user',
     'layout_builder_test',
+    'off_canvas_test',
   ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'starterkit_theme';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
-    $user = $this->drupalCreateUser([
+
+    // @todo The Layout Builder UI relies on local tasks; fix in
+    //   https://www.drupal.org/project/drupal/issues/2917777.
+    $this->drupalPlaceBlock('local_tasks_block');
+
+    $this->drupalLogin($this->drupalCreateUser([
       'configure any layout',
-      'administer node display',
-      'administer node fields',
-    ]);
-    $user->save();
-    $this->drupalLogin($user);
+    ]));
     $this->createContentType(['type' => 'bundle_with_section_field']);
+    LayoutBuilderEntityViewDisplay::load('node.bundle_with_section_field.default')
+      ->enableLayoutBuilder()
+      ->setOverridable()
+      ->save();
   }
 
   /**
@@ -44,8 +59,9 @@ class AjaxBlockTest extends WebDriverTestBase {
   public function testAddAjaxBlock() {
     $assert_session = $this->assertSession();
     $page = $this->getSession()->getPage();
+
     // Start by creating a node.
-    $node = $this->createNode([
+    $this->createNode([
       'type' => 'bundle_with_section_field',
       'body' => [
         [
@@ -53,31 +69,29 @@ class AjaxBlockTest extends WebDriverTestBase {
         ],
       ],
     ]);
-    $node->save();
+
     $this->drupalGet('node/1');
     $assert_session->pageTextContains('The node body');
     $assert_session->pageTextNotContains('Every word is like an unnecessary stain on silence and nothingness.');
-    $field_ui_prefix = 'admin/structure/types/manage/bundle_with_section_field';
 
     // From the manage display page, go to manage the layout.
-    $this->drupalPostForm("$field_ui_prefix/display/default", ['layout[enabled]' => TRUE], 'Save');
-    $assert_session->linkExists('Manage layout');
-    $this->clickLink('Manage layout');
-    $assert_session->addressEquals("$field_ui_prefix/display-layout/default");
+    $this->clickLink('Layout');
     // The body field is present.
     $assert_session->elementExists('css', '.field--name-body');
 
     // Add a new block.
-    $assert_session->linkExists('Add Block');
-    $this->clickLink('Add Block');
+    $assert_session->linkExists('Add block');
+    $this->clickLink('Add block');
+    $this->waitForOffCanvasArea();
     $assert_session->assertWaitOnAjaxRequest();
     $assert_session->linkExists('TestAjax');
     $this->clickLink('TestAjax');
+    $this->waitForOffCanvasArea();
     $assert_session->assertWaitOnAjaxRequest();
     // Find the radio buttons.
     $name = 'settings[ajax_test]';
     /** @var \Behat\Mink\Element\NodeElement[] $radios */
-    $radios = $this->cssSelect('input[name="' . $name . '"]');
+    $radios = $this->assertSession()->fieldExists($name);
     // Click them both a couple of times.
     foreach ([1, 2] as $rounds) {
       foreach ($radios as $radio) {
@@ -86,11 +100,12 @@ class AjaxBlockTest extends WebDriverTestBase {
       }
     }
     // Then add the block.
-    $page->pressButton('Add Block');
+    $assert_session->waitForElementVisible('named', ['button', 'Add block'])->press();
     $assert_session->assertWaitOnAjaxRequest();
+    $assert_session->waitForElementVisible('css', '.block-layout-builder-test-testajax');
     $block_elements = $this->cssSelect('.block-layout-builder-test-testajax');
     // Should be exactly one of these in there.
-    $this->assertEquals(1, count($block_elements));
+    $this->assertCount(1, $block_elements);
     $assert_session->pageTextContains('Every word is like an unnecessary stain on silence and nothingness.');
   }
 

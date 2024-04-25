@@ -124,10 +124,8 @@ class FormValidator implements FormValidatorInterface {
    * {@inheritdoc}
    */
   public function setInvalidTokenError(FormStateInterface $form_state) {
-    $url = $this->requestStack->getCurrentRequest()->getRequestUri();
-
     // Setting this error will cause the form to fail validation.
-    $form_state->setErrorByName('form_token', $this->t('The form has become outdated. Copy any unsaved work in the form below and then <a href=":link">reload this page</a>.', [':link' => $url]));
+    $form_state->setErrorByName('form_token', $this->t('The form has become outdated. Press the back button, copy any unsaved work in the form, and then reload the page.'));
   }
 
   /**
@@ -225,7 +223,9 @@ class FormValidator implements FormValidatorInterface {
    *   not be repeated in the submission step.
    * @param $form_id
    *   A unique string identifying the form for validation, submission,
-   *   theming, and hook_form_alter functions.
+   *   theming, and hook_form_alter functions. Is only present on the initial
+   *   call to the method, which receives the entire form array as the $element,
+   *   and not on recursive calls.
    */
   protected function doValidateForm(&$elements, FormStateInterface &$form_state, $form_id = NULL) {
     // Recurse through all children, sorting the elements so that the order of

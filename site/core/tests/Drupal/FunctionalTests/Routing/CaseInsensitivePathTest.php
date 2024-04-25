@@ -14,12 +14,17 @@ class CaseInsensitivePathTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system', 'views', 'node', 'system_test'];
+  protected static $modules = ['system', 'views', 'node', 'system_test'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     \Drupal::state()->set('system_test.module_hidden', FALSE);
     $this->createContentType(['type' => 'page']);
@@ -38,7 +43,11 @@ class CaseInsensitivePathTest extends BrowserTestBase {
     $this->assertSession()->pageTextMatches('/Log in/');
 
     // Tests paths defined by routes from the Views module.
-    $admin = $this->drupalCreateUser(['access administration pages', 'administer nodes', 'access content overview']);
+    $admin = $this->drupalCreateUser([
+      'access administration pages',
+      'administer nodes',
+      'access content overview',
+    ]);
     $this->drupalLogin($admin);
 
     $this->drupalGet('admin/content');

@@ -3,7 +3,7 @@
  * A Backbone view that decorates the in-place editable entity.
  */
 
-(function(Drupal, $, Backbone) {
+(function (Drupal, $, Backbone) {
   Drupal.quickedit.EntityDecorationView = Backbone.View.extend(
     /** @lends Drupal.quickedit.EntityDecorationView# */ {
       /**
@@ -18,7 +18,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        */
       render() {
         this.$el.toggleClass(
@@ -28,7 +28,7 @@
       },
 
       /**
-       * @inheritdoc
+       * {@inheritdoc}
        */
       remove() {
         this.setElement(null);

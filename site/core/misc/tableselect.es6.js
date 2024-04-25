@@ -3,7 +3,7 @@
  * Table select functionality.
  */
 
-(function($, Drupal) {
+(function ($, Drupal) {
   /**
    * Initialize tableSelects.
    *
@@ -15,18 +15,17 @@
   Drupal.behaviors.tableSelect = {
     attach(context, settings) {
       // Select the inner-most table in case of nested tables.
-      $(context)
-        .find('th.select-all')
-        .closest('table')
-        .once('table-select')
-        .each(Drupal.tableSelect);
+      once(
+        'table-select',
+        $(context).find('th.select-all').closest('table'),
+      ).forEach((table) => Drupal.tableSelect.call(table));
     },
   };
 
   /**
    * Callback used in {@link Drupal.behaviors.tableSelect}.
    */
-  Drupal.tableSelect = function() {
+  Drupal.tableSelect = function () {
     // Do not add a "Select all" checkbox if there are no rows with checkboxes
     // in the table.
     if ($(this).find('td input[type="checkbox"]').length === 0) {
@@ -43,13 +42,13 @@
       selectAll: Drupal.t('Select all rows in this table'),
       selectNone: Drupal.t('Deselect all rows in this table'),
     };
-    const updateSelectAll = function(state) {
+    const updateSelectAll = function (state) {
       // Update table's select-all checkbox (and sticky header's if available).
       $table
         .prev('table.sticky-header')
         .addBack()
         .find('th.select-all input[type="checkbox"]')
-        .each(function() {
+        .each(function () {
           const $checkbox = $(this);
           const stateChanged = $checkbox.prop('checked') !== state;
 
@@ -70,17 +69,12 @@
     // Find all <th> with class select-all, and insert the check all checkbox.
     $table
       .find('th.select-all')
-      .prepend(
-        $('<input type="checkbox" class="form-checkbox" />').attr(
-          'title',
-          strings.selectAll,
-        ),
-      )
-      .on('click', event => {
+      .prepend($(Drupal.theme('checkbox')).attr('title', strings.selectAll))
+      .on('click', (event) => {
         if ($(event.target).is('input[type="checkbox"]')) {
           // Loop through all checkboxes and set their state to the select all
           // checkbox' state.
-          checkboxes.each(function() {
+          checkboxes.each(function () {
             const $checkbox = $(this);
             const stateChanged =
               $checkbox.prop('checked') !== event.target.checked;
@@ -107,16 +101,14 @@
     // For each of the checkboxes within the table that are not disabled.
     checkboxes = $table
       .find('td input[type="checkbox"]:enabled')
-      .on('click', function(e) {
+      .on('click', function (e) {
         // Either add or remove the selected class based on the state of the
         // check all checkbox.
 
         /**
          * @this {HTMLElement}
          */
-        $(this)
-          .closest('tr')
-          .toggleClass('selected', this.checked);
+        $(this).closest('tr').toggleClass('selected', this.checked);
 
         // If this is a shift click, we need to highlight everything in the
         // range. Also make sure that we are actually checking checkboxes
@@ -153,7 +145,7 @@
    * @param {bool} state
    *   The state to set on the range.
    */
-  Drupal.tableSelectRange = function(from, to, state) {
+  Drupal.tableSelectRange = function (from, to, state) {
     // We determine the looping mode based on the order of from and to.
     const mode =
       from.rowIndex > to.rowIndex ? 'previousSibling' : 'nextSibling';

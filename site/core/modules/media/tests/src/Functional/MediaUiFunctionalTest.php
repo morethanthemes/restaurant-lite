@@ -3,7 +3,6 @@
 namespace Drupal\Tests\media\Functional;
 
 use Behat\Mink\Element\NodeElement;
-use Drupal\media\Entity\Media;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Url;
 use Drupal\field\Entity\FieldConfig;
@@ -21,7 +20,7 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'block',
     'media_test_source',
   ];
@@ -29,7 +28,12 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->drupalPlaceBlock('local_actions_block');
     $this->drupalPlaceBlock('local_tasks_block');
@@ -63,6 +67,7 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
     $media_id = $this->container->get('entity_type.manager')
       ->getStorage('media')
       ->getQuery()
+      ->accessCheck(FALSE)
       ->execute();
     $media_id = reset($media_id);
     /** @var \Drupal\media\MediaInterface $media */
@@ -71,8 +76,6 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
       ->loadUnchanged($media_id);
     $this->assertSame($media->getRevisionLogMessage(), $revision_log_message);
     $this->assertSame($media->getName(), $media_name);
-    $this->drupalGet('media/' . $media_id);
-    $assert_session->titleEquals($media_name . ' | Drupal');
 
     // Tests media edit form.
     $media_type->setNewRevision(FALSE);
@@ -88,8 +91,21 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
       ->getStorage('media')
       ->loadUnchanged($media_id);
     $this->assertSame($media->getName(), $media_name2);
-    $this->drupalGet('media/' . $media_id);
-    $assert_session->titleEquals($media_name2 . ' | Drupal');
+
+    // Change the authored by field to an empty string, which should assign
+    // authorship to the anonymous user (uid 0).
+    $this->drupalGet('media/' . $media_id . '/edit');
+    $edit['uid[0][target_id]'] = '';
+    $this->submitForm($edit, 'Save');
+    /** @var \Drupal\media\MediaInterface $media */
+    $media = $this->container->get('entity_type.manager')
+      ->getStorage('media')
+      ->loadUnchanged($media_id);
+    $uid = $media->getOwnerId();
+    // Most SQL database drivers stringify fetches but entities are not
+    // necessarily stored in a SQL database. At the same time, NULL/FALSE/""
+    // won't do.
+    $this->assertTrue($uid === 0 || $uid === '0', 'Media authored by anonymous user.');
 
     // Test that there is no empty vertical tabs element, if the container is
     // empty (see #2750697).
@@ -116,7 +132,7 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
     $page->fillField('revision_log_message[0][value]', $revision_log_message);
     $page->pressButton('Save');
     $this->drupalGet('media/' . $media_id);
-    $assert_session->titleEquals($media_name . ' | Drupal');
+    $assert_session->statusCodeEquals(404);
     /** @var \Drupal\media\MediaInterface $media */
     $media = $this->container->get('entity_type.manager')
       ->getStorage('media')
@@ -139,12 +155,12 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
     $page->clickLink('Delete');
     $assert_session->pageTextContains('This action cannot be undone');
     $page->pressButton('Delete');
-    $media_id = \Drupal::entityQuery('media')->execute();
-    $this->assertFalse($media_id);
+    $media_id = \Drupal::entityQuery('media')->accessCheck(FALSE)->execute();
+    $this->assertEmpty($media_id);
   }
 
   /**
-   * Tests the "media/add" and "media/mid" pages.
+   * Tests the "media/add" page.
    *
    * Tests if the "media/add" page gives you a selecting option if there are
    * multiple media types available.
@@ -167,27 +183,10 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
     // Checks for the second media type.
     $assert_session->pageTextContains($second_media_type->label());
     $assert_session->pageTextContains($second_media_type->getDescription());
-
-    // Continue testing media type filter.
-    $first_media_item = Media::create(['bundle' => $first_media_type->id()]);
-    $first_media_item->save();
-    $second_media_item = Media::create(['bundle' => $second_media_type->id()]);
-    $second_media_item->save();
-
-    // Go to first media item.
-    $this->drupalGet('media/' . $first_media_item->id());
-    $assert_session->statusCodeEquals(200);
-    $assert_session->pageTextContains($first_media_item->getName());
-    $assert_session->elementsCount('css', '.media--view-mode-full', 1);
-
-    // Go to second media item.
-    $this->drupalGet('media/' . $second_media_item->id());
-    $assert_session->statusCodeEquals(200);
-    $assert_session->pageTextContains($second_media_item->getName());
   }
 
   /**
-   * Test that media in ER fields use the Rendered Entity formatter by default.
+   * Tests that media in ER fields use the Rendered Entity formatter by default.
    */
   public function testRenderedEntityReferencedMedia() {
     $page = $this->getSession()->getPage();
@@ -248,7 +247,7 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
       // Unlimited value field.
       'unlimited_value:single_type:create_list' => [FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED, [TRUE], TRUE],
       // Unlimited value field with the tags widget.
-      'unlimited_value:single_type:create_list' => [FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED, [TRUE], TRUE, 'entity_reference_autocomplete_tags'],
+      'unlimited_value:single_type:create_list:tags' => [FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED, [TRUE], TRUE, 'entity_reference_autocomplete_tags'],
     ];
   }
 
@@ -264,6 +263,8 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
    *   one that allows the user to create media and a second that does not.
    * @param bool $list_access
    *   Whether to grant the test user access to list media.
+   * @param string $widget_id
+   *   The widget ID to test.
    *
    * @see media_field_widget_entity_reference_autocomplete_form_alter()
    * @see media_field_widget_multiple_entity_reference_autocomplete_form_alter()
@@ -338,19 +339,21 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
     // Create a media field through the user interface to ensure that the
     // help text handling does not break the default value entry on the field
     // settings form.
-    // Using drupalPostForm() to avoid dealing with JavaScript on the previous
+    // Using submitForm() to avoid dealing with JavaScript on the previous
     // page in the field creation.
     $edit = [
       'new_storage_type' => 'field_ui:entity_reference:media',
       'label' => "Media (cardinality $cardinality)",
       'field_name' => 'media_reference',
     ];
-    $this->drupalPostForm("admin/structure/types/manage/{$content_type->id()}/fields/add-field", $edit, 'Save and continue');
+    $this->drupalGet("admin/structure/types/manage/{$content_type->id()}/fields/add-field");
+    $this->submitForm($edit, 'Save and continue');
     $edit = [];
     foreach ($media_types as $type) {
       $edit["settings[handler_settings][target_bundles][$type]"] = TRUE;
     }
-    $this->drupalPostForm("admin/structure/types/manage/{$content_type->id()}/fields/node.{$content_type->id()}.field_media_reference", $edit, "Save settings");
+    $this->drupalGet("admin/structure/types/manage/{$content_type->id()}/fields/node.{$content_type->id()}.field_media_reference");
+    $this->submitForm($edit, "Save settings");
     \Drupal::entityTypeManager()
       ->getStorage('entity_form_display')
       ->load('node.' . $content_type->id() . '.default')
@@ -461,9 +464,10 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
     $media_id = $this->container->get('entity_type.manager')
       ->getStorage('media')
       ->getQuery()
+      ->accessCheck(FALSE)
       ->execute();
     $media_id = reset($media_id);
-    $assert_session->addressEquals('media/' . $media_id);
+    $assert_session->addressEquals("media/$media_id/edit");
 
     // Test a redirect to the media overview for a user with the 'access media
     // overview' permission.
@@ -486,8 +490,10 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
    *   A list of the help texts to check.
    * @param string $selector
    *   (optional) The selector to search.
+   *
+   * @internal
    */
-  public function assertHelpTexts(array $texts, $selector = '') {
+  public function assertHelpTexts(array $texts, string $selector = ''): void {
     $assert_session = $this->assertSession();
     foreach ($texts as $text) {
       // We only want to escape single quotes, so use str_replace() rather than
@@ -507,8 +513,10 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
    *
    * @param string[] $texts
    *   A list of the help texts to check.
+   *
+   * @internal
    */
-  public function assertNoHelpTexts(array $texts) {
+  public function assertNoHelpTexts(array $texts): void {
     $assert_session = $this->assertSession();
     foreach ($texts as $text) {
       $assert_session->pageTextNotContains($text);
@@ -525,8 +533,10 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
    * @param string[] $attributes
    *   An associative array of any expected attributes, keyed by the
    *   attribute name.
+   *
+   * @internal
    */
-  protected function assertHelpLink(NodeElement $element, $text, array $attributes = []) {
+  protected function assertHelpLink(NodeElement $element, string $text, array $attributes = []): void {
     // Find all the links inside the element.
     $link = $element->findLink($text);
 
@@ -543,8 +553,10 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
    *   The element to search.
    * @param string $text
    *   The link text.
+   *
+   * @internal
    */
-  protected function assertNoHelpLink(NodeElement $element, $text) {
+  protected function assertNoHelpLink(NodeElement $element, string $text): void {
     $assert_session = $this->assertSession();
     // Assert that the link and its text are not present anywhere on the page.
     $assert_session->elementNotExists('named', ['link', $text], $element);
@@ -552,7 +564,7 @@ class MediaUiFunctionalTest extends MediaFunctionalTestBase {
   }
 
   /**
-   * Test the media collection route.
+   * Tests the media collection route.
    */
   public function testMediaCollectionRoute() {
     /** @var \Drupal\Core\Entity\EntityStorageInterface $media_storage */

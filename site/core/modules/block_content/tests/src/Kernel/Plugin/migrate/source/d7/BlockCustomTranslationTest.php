@@ -16,7 +16,7 @@ class BlockCustomTranslationTest extends MigrateSqlSourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block_content', 'migrate_drupal'];
+  protected static $modules = ['block_content', 'migrate_drupal'];
 
   /**
    * {@inheritdoc}
@@ -34,6 +34,12 @@ class BlockCustomTranslationTest extends MigrateSqlSourceTestBase {
       ],
       [
         'bid' => 2,
+        'body' => 'box 2 body',
+        'info' => 'box 2 title',
+        'format' => '2',
+      ],
+      [
+        'bid' => 4,
         'body' => 'box 2 body',
         'info' => 'box 2 title',
         'format' => '2',
@@ -63,6 +69,14 @@ class BlockCustomTranslationTest extends MigrateSqlSourceTestBase {
         'type' => 'block',
         'property' => 'body',
         'objectindex' => 2,
+        'format' => 2,
+      ],
+      [
+        'lid' => 4,
+        'objectid' => 4,
+        'type' => 'block',
+        'property' => 'body',
+        'objectindex' => 4,
         'format' => 2,
       ],
     ];

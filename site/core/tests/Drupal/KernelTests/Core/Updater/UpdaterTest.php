@@ -9,7 +9,7 @@ use Drupal\KernelTests\KernelTestBase;
  * Tests InfoParser class and exception.
  *
  * Files for this test are stored in core/modules/system/tests/fixtures and end
- * with .info.txt instead of info.yml in order not not be considered as real
+ * with .info.txt instead of info.yml in order not to be considered as real
  * extensions.
  *
  * @group Extension
@@ -26,7 +26,7 @@ class UpdaterTest extends KernelTestBase {
     // it will choose the first project title in the directory.
     $directory = $this->root . '/core/modules/system/tests/modules/module_handler_test_multiple';
     $title = Updater::getProjectTitle($directory);
-    $this->assertEqual('module handler test multiple', $title);
+    $this->assertEquals('module handler test multiple', $title);
   }
 
 }

@@ -14,12 +14,17 @@ class PathMediaFormTest extends PathTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['media', 'media_test_source'];
+  protected static $modules = ['media', 'media_test_source'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Create test user and log in.
@@ -48,18 +53,18 @@ class PathMediaFormTest extends PathTestBase {
     $this->drupalGet('media/add/' . $media_type_id);
 
     // Make sure we have a vertical tab fieldset and 'Path' field.
-    $assert_session->elementContains('css', '.form-type-vertical-tabs #edit-path-0 summary', 'URL alias');
+    $assert_session->elementContains('css', '.js-form-type-vertical-tabs #edit-path-0 summary', 'URL alias');
     $assert_session->fieldExists('path[0][alias]');
 
     // Disable the 'Path' field for this content type.
-    entity_get_form_display('media', $media_type_id, 'default')
+    \Drupal::service('entity_display.repository')->getFormDisplay('media', $media_type_id, 'default')
       ->removeComponent('path')
       ->save();
 
     $this->drupalGet('media/add/' . $media_type_id);
 
     // See if the whole fieldset is gone now.
-    $assert_session->elementNotExists('css', '.form-type-vertical-tabs #edit-path-0');
+    $assert_session->elementNotExists('css', '.js-form-type-vertical-tabs #edit-path-0');
     $assert_session->fieldNotExists('path[0][alias]');
   }
 
