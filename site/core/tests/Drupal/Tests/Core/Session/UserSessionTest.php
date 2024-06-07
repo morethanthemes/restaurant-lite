@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Session;
 
 use Drupal\Core\Cache\MemoryCache\MemoryCache;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Session\PermissionChecker;
 use Drupal\Core\Session\UserSession;
 use Drupal\Tests\UnitTestCase;
 use Drupal\user\RoleInterface;
@@ -120,6 +123,7 @@ class UserSessionTest extends UnitTestCase {
       ->willReturn($role_storage);
     $container = new ContainerBuilder();
     $container->set('entity_type.manager', $entity_type_manager);
+    $container->set('permission_checker', new PermissionChecker($entity_type_manager));
     \Drupal::setContainer($container);
 
     $this->users['user_one'] = $this->createUserSession(['role_one']);
@@ -160,6 +164,19 @@ class UserSessionTest extends UnitTestCase {
   public function testUserGetRoles() {
     $this->assertEquals([RoleInterface::AUTHENTICATED_ID, 'role_two'], $this->users['user_three']->getRoles());
     $this->assertEquals(['role_two'], $this->users['user_three']->getRoles(TRUE));
+  }
+
+  /**
+   * Tests the hasRole method.
+   *
+   * @covers ::hasRole
+   */
+  public function testHasRole() {
+    $this->assertTrue($this->users['user_one']->hasRole('role_one'));
+    $this->assertFalse($this->users['user_two']->hasRole('no role'));
+    $this->assertTrue($this->users['user_three']->hasRole(RoleInterface::AUTHENTICATED_ID));
+    $this->assertFalse($this->users['user_three']->hasRole(RoleInterface::ANONYMOUS_ID));
+    $this->assertTrue($this->users['user_last']->hasRole(RoleInterface::ANONYMOUS_ID));
   }
 
 }

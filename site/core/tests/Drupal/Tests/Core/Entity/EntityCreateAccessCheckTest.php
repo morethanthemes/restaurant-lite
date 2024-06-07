@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Entity;
 
 use Drupal\Core\Access\AccessResult;
@@ -7,7 +9,7 @@ use Drupal\Core\Cache\Context\CacheContextsManager;
 use Drupal\Core\DependencyInjection\Container;
 use Drupal\Core\Entity\EntityCreateAccessCheck;
 use Drupal\Tests\UnitTestCase;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\HttpFoundation\InputBag;
 
 /**
  * @coversDefaultClass \Drupal\Core\Entity\EntityCreateAccessCheck
@@ -82,7 +84,7 @@ class EntityCreateAccessCheckTest extends UnitTestCase {
 
     // Don't expect a call to the access control handler when we have a bundle
     // argument requirement but no bundle is provided.
-    if ($entity_bundle || strpos($requirement, '{') === FALSE) {
+    if ($entity_bundle || !str_contains($requirement, '{')) {
       $access_control_handler = $this->createMock('Drupal\Core\Entity\EntityAccessControlHandlerInterface');
       $access_control_handler->expects($this->once())
         ->method('createAccess')
@@ -104,7 +106,7 @@ class EntityCreateAccessCheckTest extends UnitTestCase {
       ->with('_entity_create_access')
       ->willReturn($requirement);
 
-    $raw_variables = new ParameterBag();
+    $raw_variables = new InputBag();
     if ($entity_bundle) {
       $raw_variables->set('bundle_argument', $entity_bundle);
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\BuildTests\Composer\Component;
 
 use Drupal\BuildTests\Composer\ComposerBuildTestBase;
@@ -13,8 +15,6 @@ use Drupal\Composer\Composer;
  * @group Component
  *
  * @coversNothing
- *
- * @requires externalCommand composer
  */
 class ComponentsTaggedReleaseTest extends ComposerBuildTestBase {
 
@@ -68,7 +68,7 @@ class ComponentsTaggedReleaseTest extends ComposerBuildTestBase {
       );
       // Required packages from drupal/core-* should have our constraint.
       foreach ($requires as $package => $req_constraint) {
-        if (strpos($package, 'drupal/core-') !== FALSE) {
+        if (str_contains($package, 'drupal/core-')) {
           $this->assertEquals($constraint, $req_constraint);
         }
       }

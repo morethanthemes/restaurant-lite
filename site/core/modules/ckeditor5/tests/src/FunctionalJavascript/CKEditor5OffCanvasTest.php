@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\ckeditor5\FunctionalJavascript;
 
 /**
@@ -33,11 +35,11 @@ class CKEditor5OffCanvasTest extends CKEditor5TestBase {
     // The "Add Node" link triggers an off-canvas dialog with an add node form
     // that includes CKEditor.
     $page->clickLink('Add Node');
-    $assert_session->waitForElementVisible('css', '#drupal-off-canvas');
+    $assert_session->waitForElementVisible('css', '#drupal-off-canvas-wrapper');
     $assert_session->assertWaitOnAjaxRequest();
 
     $styles = $assert_session->elementExists('css', 'style#ckeditor5-off-canvas-reset');
-    $this->stringContains('#drupal-off-canvas [data-drupal-ck-style-fence]', $styles->getText());
+    $this->assertStringContainsString('#drupal-off-canvas-wrapper [data-drupal-ck-style-fence]', $styles->getHtml());
 
     $assert_session->elementExists('css', '.ck');
 

@@ -8,8 +8,11 @@ core.entity_view_mode.*.*:
       type: string
       label: 'ID'
     label:
-      type: label
+      type: required_label
       label: 'The human-readable name of the view mode'
+    description:
+      type: text
+      label: 'Description'
     targetEntityType:
       type: string
       label: 'Target entity type'
@@ -25,8 +28,11 @@ core.entity_form_mode.*.*:
       type: string
       label: 'ID'
     label:
-      type: label
+      type: required_label
       label: 'Label'
+    description:
+      type: text
+      label: 'Description'
     targetEntityType:
       type: string
       label: 'Target entity type'
@@ -227,6 +233,14 @@ field.widget.settings.checkbox:
       type: boolean
       label: 'Use field label instead of the "On value" as label'
 
+field.widget.settings.language_select:
+  type: mapping
+  label: 'Language format settings'
+  mapping:
+    include_locked:
+      type: boolean
+      label: 'Include locked languages'
+
 field.widget.settings.entity_reference_autocomplete_tags:
   type: mapping
   label: 'Entity reference autocomplete (Tags style) display format settings'
@@ -337,16 +351,45 @@ field.formatter.settings.timestamp:
     timezone:
       type: string
       label: 'Time zone'
+    tooltip:
+      type: mapping
+      label: Tooltip
+      mapping:
+        date_format:
+          type: string
+          label: 'Tooltip date format'
+        custom_date_format:
+          type: string
+          label: 'Tooltip custom date format'
+    time_diff:
+      type: mapping
+      label: 'Time difference'
+      mapping:
+        enabled:
+          type: boolean
+          label: 'Show as time difference'
+        future_format:
+          type: string
+          label: 'Future format'
+        past_format:
+          type: string
+          label: 'Past format'
+        granularity:
+          type: integer
+          label: 'Time units'
+        refresh:
+          type: integer
+          label: 'Refresh interval in seconds'
 
 field.formatter.settings.timestamp_ago:
   type: mapping
   label: 'Timestamp ago display format settings'
   mapping:
     future_format:
-      type: label
+      type: required_label
       label: 'Future format'
     past_format:
-      type: label
+      type: required_label
       label: 'Past format'
     granularity:
       type: integer

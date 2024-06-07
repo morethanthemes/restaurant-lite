@@ -82,10 +82,16 @@ class NodeGrantDatabaseStorage implements NodeGrantDatabaseStorageInterface {
     $query->addExpression('1');
     // Only interested for granting in the current operation.
     $query->condition('grant_' . $operation, 1, '>=');
-    // Check for grants for this node and the correct langcode.
+    // Check for grants for this node and the correct langcode. New translations
+    // do not yet have a langcode and must check the fallback node record.
     $nids = $query->andConditionGroup()
-      ->condition('nid', $node->id())
-      ->condition('langcode', $node->language()->getId());
+      ->condition('nid', $node->id());
+    if (!$node->isNewTranslation()) {
+      $nids->condition('langcode', $node->language()->getId());
+    }
+    else {
+      $nids->condition('fallback', 1);
+    }
     // If the node is published, also take the default grant into account. The
     // default is saved with a node ID of 0.
     $status = $node->isPublished();
@@ -146,7 +152,7 @@ class NodeGrantDatabaseStorage implements NodeGrantDatabaseStorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function alterQuery($query, array $tables, $op, AccountInterface $account, $base_table) {
+  public function alterQuery($query, array $tables, $operation, AccountInterface $account, $base_table) {
     if (!$langcode = $query->getMetaData('langcode')) {
       $langcode = FALSE;
     }
@@ -154,14 +160,14 @@ class NodeGrantDatabaseStorage implements NodeGrantDatabaseStorageInterface {
     // Find all instances of the base table being joined -- could appear
     // more than once in the query, and could be aliased. Join each one to
     // the node_access table.
-    $grants = node_access_grants($op, $account);
+    $grants = node_access_grants($operation, $account);
     // If any grant exists for the specified user, then user has access to the
     // node for the specified operation.
     $grant_conditions = $this->buildGrantsQueryCondition($grants);
     $grants_exist = count($grant_conditions->conditions()) > 0;
 
     $is_multilingual = \Drupal::languageManager()->isMultilingual();
-    foreach ($tables as $nalias => $tableinfo) {
+    foreach ($tables as $table_alias => $tableinfo) {
       $table = $tableinfo['table'];
       if (!($table instanceof SelectInterface) && $table == $base_table) {
         // Set the subquery.
@@ -172,7 +178,7 @@ class NodeGrantDatabaseStorage implements NodeGrantDatabaseStorageInterface {
         if ($grants_exist) {
           $subquery->condition($grant_conditions);
         }
-        $subquery->condition('na.grant_' . $op, 1, '>=');
+        $subquery->condition('na.grant_' . $operation, 1, '>=');
 
         // Add langcode-based filtering if this is a multilingual site.
         if ($is_multilingual) {
@@ -189,7 +195,7 @@ class NodeGrantDatabaseStorage implements NodeGrantDatabaseStorageInterface {
 
         $field = 'nid';
         // Now handle entities.
-        $subquery->where("[$nalias].[$field] = [na].[nid]");
+        $subquery->where("[$table_alias].[$field] = [na].[nid]");
 
         $query->exists($subquery);
       }

@@ -33,7 +33,7 @@ class MigrateFileTest extends MigrateDrupal7TestBase {
   protected function getFileMigrationInfo() {
     return [
       'path' => 'public://sites/default/files/cube.jpeg',
-      'size' => '3620',
+      'size' => 3620,
       'base_path' => 'public://',
       'plugin_id' => 'd7_file',
     ];
@@ -43,7 +43,7 @@ class MigrateFileTest extends MigrateDrupal7TestBase {
    * Tests that all expected files are migrated.
    */
   public function testFileMigration() {
-    $this->assertEntity(1, 'cube.jpeg', 'public://cube.jpeg', 'image/jpeg', '3620', '1421727515', '1421727515', '1');
+    $this->assertEntity(1, 'cube.jpeg', 'public://cube.jpeg', 'image/jpeg', 3620, 1421727515, 1421727515, '1');
     // Ensure temporary file was not migrated.
     $this->assertNull(File::load(4));
   }

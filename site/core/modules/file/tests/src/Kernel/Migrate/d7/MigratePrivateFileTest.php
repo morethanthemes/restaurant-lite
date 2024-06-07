@@ -34,7 +34,7 @@ class MigratePrivateFileTest extends MigrateDrupal7TestBase {
   protected function getFileMigrationInfo() {
     return [
       'path' => 'private://sites/default/private/Babylon5.txt',
-      'size' => '3',
+      'size' => 3,
       'base_path' => 'private://',
       'plugin_id' => 'd7_file_private',
     ];
@@ -53,7 +53,7 @@ class MigratePrivateFileTest extends MigrateDrupal7TestBase {
    * Tests that all expected files are migrated.
    */
   public function testFileMigration() {
-    $this->assertEntity(3, 'Babylon5.txt', 'private://Babylon5.txt', 'text/plain', '3', '1486104045', '1486104045', '1');
+    $this->assertEntity(3, 'Babylon5.txt', 'private://Babylon5.txt', 'text/plain', 3, 1486104045, 1486104045, '1');
   }
 
 }

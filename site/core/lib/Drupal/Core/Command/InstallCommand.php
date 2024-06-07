@@ -60,7 +60,7 @@ class InstallCommand extends Command {
   /**
    * {@inheritdoc}
    */
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     $io = new SymfonyStyle($input, $output);
     if (!extension_loaded('pdo_sqlite')) {
       $io->getErrorStyle()->error('You must have the pdo_sqlite PHP extension installed. See core/INSTALL.sqlite.txt for instructions.');
@@ -291,7 +291,7 @@ class InstallCommand extends Command {
       $alternatives = [];
       foreach (array_keys($profiles) as $profile_name) {
         $lev = levenshtein($install_profile, $profile_name);
-        if ($lev <= strlen($profile_name) / 4 || FALSE !== strpos($profile_name, $install_profile)) {
+        if ($lev <= strlen($profile_name) / 4 || str_contains($profile_name, $install_profile)) {
           $alternatives[] = $profile_name;
         }
       }

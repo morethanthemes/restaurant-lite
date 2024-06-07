@@ -8,7 +8,7 @@ use Drupal\field\Entity\FieldConfig;
 use Drupal\node\Entity\NodeType;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\taxonomy\Entity\Vocabulary;
-use Drupal\Tests\field\Traits\EntityReferenceTestTrait;
+use Drupal\Tests\field\Traits\EntityReferenceFieldCreationTrait;
 use Symfony\Component\ErrorHandler\BufferingLogger;
 
 /**
@@ -18,7 +18,7 @@ use Symfony\Component\ErrorHandler\BufferingLogger;
  */
 class EntityReferenceSettingsTest extends KernelTestBase {
 
-  use EntityReferenceTestTrait;
+  use EntityReferenceFieldCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -29,7 +29,6 @@ class EntityReferenceSettingsTest extends KernelTestBase {
     'field',
     'user',
     'text',
-    'entity_reference',
     'entity_test',
     'system',
   ];
@@ -73,13 +72,13 @@ class EntityReferenceSettingsTest extends KernelTestBase {
     $this->installEntitySchema('entity_test');
 
     $this->nodeType = NodeType::create([
-      'type' => mb_strtolower($this->randomMachineName()),
+      'type' => $this->randomMachineName(),
       'name' => $this->randomString(),
     ]);
     $this->nodeType->save();
 
     // Create a custom bundle.
-    $this->customBundle = 'test_bundle_' . mb_strtolower($this->randomMachineName());
+    $this->customBundle = 'test_bundle_' . $this->randomMachineName();
     entity_test_create_bundle($this->customBundle, NULL, 'entity_test');
 
     // Prepare the logger for collecting the expected critical error.
@@ -94,7 +93,7 @@ class EntityReferenceSettingsTest extends KernelTestBase {
     /** @var \Drupal\taxonomy\Entity\Vocabulary[] $vocabularies */
     $vocabularies = [];
     for ($i = 0; $i < 2; $i++) {
-      $vid = mb_strtolower($this->randomMachineName());
+      $vid = $this->randomMachineName();
       $vocabularies[$i] = Vocabulary::create([
         'name' => $this->randomString(),
         'vid' => $vid,
@@ -102,7 +101,7 @@ class EntityReferenceSettingsTest extends KernelTestBase {
       $vocabularies[$i]->save();
     }
     // Attach an entity reference field to $this->nodeType.
-    $name = mb_strtolower($this->randomMachineName());
+    $name = $this->randomMachineName();
     $label = $this->randomString();
     $handler_settings = [
       'target_bundles' => [
@@ -151,7 +150,7 @@ class EntityReferenceSettingsTest extends KernelTestBase {
    */
   public function testCustomTargetBundleDeletion() {
     // Attach an entity reference field to $this->nodeType.
-    $name = mb_strtolower($this->randomMachineName());
+    $name = $this->randomMachineName();
     $label = $this->randomString();
     $handler_settings = ['target_bundles' => [$this->customBundle => $this->customBundle]];
     $this->createEntityReferenceField('node', $this->nodeType->id(), $name, $label, 'entity_test', 'default', $handler_settings);

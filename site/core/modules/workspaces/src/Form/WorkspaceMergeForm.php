@@ -136,7 +136,7 @@ class WorkspaceMergeForm extends ConfirmFormBase implements WorkspaceFormInterfa
    * {@inheritdoc}
    */
   public function getCancelUrl() {
-    return Url::fromRoute('entity.workspace.collection', [], ['query' => \Drupal::destination()->getAsArray()]);
+    return Url::fromRoute('entity.workspace.collection', [], ['query' => $this->getDestinationArray()]);
   }
 
   /**

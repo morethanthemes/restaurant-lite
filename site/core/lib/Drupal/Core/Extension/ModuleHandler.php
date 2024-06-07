@@ -230,7 +230,7 @@ class ModuleHandler implements ModuleHandlerInterface {
         }
       }
     }
-    $graph_object = new Graph($graph);
+    $graph_object = new Graph($graph ?? []);
     $graph = $graph_object->searchAndSort();
     foreach ($graph as $module_name => $data) {
       $modules[$module_name]->required_by = $data['reverse_paths'] ?? [];
@@ -324,15 +324,6 @@ class ModuleHandler implements ModuleHandlerInterface {
   /**
    * {@inheritdoc}
    */
-  public function getImplementations($hook) {
-    @trigger_error('ModuleHandlerInterface::getImplementations() is deprecated in drupal:9.4.0 and is removed from drupal:10.0.0. Instead you should use ModuleHandlerInterface::invokeAllWith() for hook invocations, or you should use ModuleHandlerInterface::hasImplementations() to determine if hooks implementations exist. See https://www.drupal.org/node/3000490', E_USER_DEPRECATED);
-    $implementations = $this->getImplementationInfo($hook);
-    return array_keys($implementations);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function writeCache() {
     if ($this->cacheNeedsWriting) {
       $this->cacheBackend->set('module_implements', $this->implementations);
@@ -386,14 +377,6 @@ class ModuleHandler implements ModuleHandlerInterface {
     }
 
     return !empty(array_intersect((array) $modules, array_keys($implementations)));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function implementsHook($module, $hook) {
-    @trigger_error('ModuleHandlerInterface::implementsHook() is deprecated in drupal:9.4.0 and is removed from drupal:10.0.0. Instead you should use ModuleHandlerInterface::hasImplementations()  with the $modules argument. See https://www.drupal.org/node/3000490', E_USER_DEPRECATED);
-    return $this->hasImplementations($hook, $module);
   }
 
   /**
@@ -516,7 +499,7 @@ class ModuleHandler implements ModuleHandlerInterface {
         foreach ($extra_types as $extra_type) {
           $extra_modules[] = array_keys($this->getImplementationInfo($extra_type . '_alter'));
         }
-        $extra_modules = array_merge([], ...$extra_modules);
+        $extra_modules = array_merge(...$extra_modules);
         // If any modules implement one of the extra hooks that do not implement
         // the primary hook, we need to add them to the $modules array in their
         // appropriate order. $this->getImplementationInfo() can only return

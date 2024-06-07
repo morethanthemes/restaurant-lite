@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\language\Unit;
 
 use Drupal\Core\Cache\Cache;
@@ -18,12 +20,13 @@ class LanguageNegotiationUrlTest extends UnitTestCase {
 
   protected $languageManager;
   protected $user;
-  protected $languages;
+  protected array $languages;
 
   /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
 
     // Set up some languages to be used by the language-based path processor.
     $language_de = $this->createMock('\Drupal\Core\Language\LanguageInterface');

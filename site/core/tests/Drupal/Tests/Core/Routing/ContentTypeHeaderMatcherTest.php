@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Routing;
 
 use Drupal\Core\Routing\ContentTypeHeaderMatcher;
 use Drupal\Tests\UnitTestCase;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
 
@@ -128,7 +130,7 @@ class ContentTypeHeaderMatcherTest extends UnitTestCase {
     $routes = $this->fixtures->contentRouteCollection();
     $request = Request::create('path/two', 'POST');
     // Delete all request headers that Request::create() sets by default.
-    $request->headers = new ParameterBag();
+    $request->headers = new HeaderBag();
     $this->expectException(UnsupportedMediaTypeHttpException::class);
     $this->expectExceptionMessage('No "Content-Type" request header specified');
     $matcher->filter($routes, $request);

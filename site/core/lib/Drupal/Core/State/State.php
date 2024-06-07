@@ -2,12 +2,29 @@
 
 namespace Drupal\Core\State;
 
+use Drupal\Core\Asset\AssetQueryString;
 use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 
 /**
  * Provides the state system using a key value store.
  */
 class State implements StateInterface {
+
+  /**
+   * Information about all deprecated state, keyed by legacy state key.
+   *
+   * Each entry should be an array that defines the following keys:
+   *   - 'replacement': The new name for the state.
+   *   - 'message': The deprecation message to use for trigger_error().
+   *
+   * @var array
+   */
+  private static array $deprecatedState = [
+    'system.css_js_query_string' => [
+      'replacement' => AssetQueryString::STATE_KEY,
+      'message' => 'The \'system.css_js_query_string\' state is deprecated in drupal:10.2.0. Use \Drupal\Core\Asset\AssetQueryStringInterface::get() and ::reset() instead. See https://www.drupal.org/node/3358337.',
+    ],
+  ];
 
   /**
    * The key value store to use.
@@ -37,6 +54,13 @@ class State implements StateInterface {
    * {@inheritdoc}
    */
   public function get($key, $default = NULL) {
+    // If the caller is asking for the value of a deprecated state, trigger a
+    // deprecation message about it.
+    if (isset(self::$deprecatedState[$key])) {
+      // phpcs:ignore Drupal.Semantics.FunctionTriggerError
+      @trigger_error(self::$deprecatedState[$key]['message'], E_USER_DEPRECATED);
+      $key = self::$deprecatedState[$key]['replacement'];
+    }
     $values = $this->getMultiple([$key]);
     return $values[$key] ?? $default;
   }
@@ -63,7 +87,7 @@ class State implements StateInterface {
       foreach ($load as $key) {
         // If we find a value, even one that is NULL, add it to the cache and
         // return it.
-        if (isset($loaded_values[$key]) || array_key_exists($key, $loaded_values)) {
+        if (\array_key_exists($key, $loaded_values)) {
           $values[$key] = $loaded_values[$key];
           $this->cache[$key] = $loaded_values[$key];
         }
@@ -80,6 +104,11 @@ class State implements StateInterface {
    * {@inheritdoc}
    */
   public function set($key, $value) {
+    if (isset(self::$deprecatedState[$key])) {
+      // phpcs:ignore Drupal.Semantics.FunctionTriggerError
+      @trigger_error(self::$deprecatedState[$key]['message'], E_USER_DEPRECATED);
+      $key = self::$deprecatedState[$key]['replacement'];
+    }
     $this->cache[$key] = $value;
     $this->keyValueStore->set($key, $value);
   }

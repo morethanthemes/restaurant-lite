@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Common;
 
 use Drupal\Component\Utility\Tags;
@@ -22,10 +24,10 @@ class TagsTest extends UnitTestCase {
   /**
    * Explodes a series of tags.
    */
-  public function explodeTags() {
+  public function testExplodeTags() {
     $string = implode(', ', array_keys($this->validTags));
     $tags = Tags::explode($string);
-    $this->assertTags($tags);
+    $this->assertEquals(array_values($this->validTags), $tags);
   }
 
   /**
@@ -38,24 +40,7 @@ class TagsTest extends UnitTestCase {
       $string = Tags::implode($tags);
       $tags = Tags::explode($string);
     }
-    $this->assertTags($tags);
-  }
-
-  /**
-   * Helper function: asserts that the ending array of tags is what we wanted.
-   *
-   * @internal
-   */
-  protected function assertTags(array $tags): void {
-    $original = $this->validTags;
-    foreach ($tags as $tag) {
-      $key = array_search($tag, $original);
-      $this->assertTrue((bool) $key, $tag, sprintf('Make sure tag %s shows up in the final tags array (originally %s)', $tag, $key));
-      unset($original[$key]);
-    }
-    foreach ($original as $leftover) {
-      $this->fail(sprintf('Leftover tag %s was left over.', $leftover));
-    }
+    $this->assertEquals(array_values($this->validTags), $tags);
   }
 
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\media_library\FunctionalJavascript;
 
 /**
@@ -106,6 +108,10 @@ class MediaOverviewTest extends MediaLibraryTestBase {
     // Test that selecting elements as a part of bulk operations works.
     $page->selectFieldOption('Media type', '- Any -');
     $assert_session->elementExists('css', '#views-exposed-form-media-library-page')->submit();
+    $this->waitForText('Dog');
+
+    // Select the "Delete media" action.
+    $page->selectFieldOption('Action', 'Delete media');
     $this->waitForText('Dog');
 
     // This tests that anchor tags clicked inside the preview are suppressed.

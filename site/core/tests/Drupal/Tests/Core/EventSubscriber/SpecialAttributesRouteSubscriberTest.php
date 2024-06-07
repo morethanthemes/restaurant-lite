@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\EventSubscriber;
 
 use Drupal\Core\EventSubscriber\SpecialAttributesRouteSubscriber;
@@ -78,7 +80,7 @@ class SpecialAttributesRouteSubscriberTest extends UnitTestCase {
     $route_collection = new RouteCollection();
     $route_collection->add('test', $route);
 
-    $event = new RouteBuildEvent($route_collection, 'test');
+    $event = new RouteBuildEvent($route_collection);
     $subscriber = new SpecialAttributesRouteSubscriber();
     $this->assertNull($subscriber->onAlterRoutes($event));
   }
@@ -96,7 +98,7 @@ class SpecialAttributesRouteSubscriberTest extends UnitTestCase {
     $route_collection = new RouteCollection();
     $route_collection->add('test', $route);
 
-    $event = new RouteBuildEvent($route_collection, 'test');
+    $event = new RouteBuildEvent($route_collection);
     $subscriber = new SpecialAttributesRouteSubscriber();
     $this->expectWarning();
     $this->expectWarningMessage('uses reserved variable names');

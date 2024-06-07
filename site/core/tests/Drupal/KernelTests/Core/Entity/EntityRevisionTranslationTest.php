@@ -63,6 +63,7 @@ class EntityRevisionTranslationTest extends EntityKernelTestBase {
    */
   public function testRevertRevisionAfterTranslation() {
     $user = $this->createUser();
+    /** @var \Drupal\Core\Entity\RevisionableStorageInterface $storage */
     $storage = $this->entityTypeManager->getStorage('entity_test_mulrev');
 
     // Create a test entity.
@@ -98,6 +99,7 @@ class EntityRevisionTranslationTest extends EntityKernelTestBase {
    */
   public function testTranslationValuesWhenSavingPendingRevisions() {
     $user = $this->createUser();
+    /** @var \Drupal\Core\Entity\RevisionableStorageInterface $storage */
     $storage = $this->entityTypeManager->getStorage('entity_test_mulrev');
 
     // Create a test entity and a translation for it.
@@ -202,7 +204,6 @@ class EntityRevisionTranslationTest extends EntityKernelTestBase {
     /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $storage */
     $storage = $this->entityTypeManager->getStorage('entity_test_mul');
     $method = new \ReflectionMethod(get_class($storage), 'isAnyStoredRevisionTranslated');
-    $method->setAccessible(TRUE);
 
     // Check that a non-revisionable new entity is handled correctly.
     $entity = EntityTestMul::create();

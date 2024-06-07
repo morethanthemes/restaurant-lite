@@ -20,12 +20,9 @@ class BlockConfigSchemaTest extends KernelTestBase {
    */
   protected static $modules = [
     'block',
-    'book',
     'block_content',
     'comment',
-    'forum',
     'node',
-    'statistics',
     // \Drupal\block\Entity\Block->preSave() calls system_region_list().
     'system',
     'taxonomy',
@@ -58,7 +55,7 @@ class BlockConfigSchemaTest extends KernelTestBase {
     $this->installEntitySchema('block_content');
     $this->installEntitySchema('taxonomy_term');
     $this->installEntitySchema('node');
-    $this->installSchema('book', ['book']);
+    $this->container->get('theme_installer')->install(['stark']);
   }
 
   /**
@@ -66,7 +63,7 @@ class BlockConfigSchemaTest extends KernelTestBase {
    */
   public function testBlockConfigSchema() {
     foreach ($this->blockManager->getDefinitions() as $block_id => $definition) {
-      $id = strtolower($this->randomMachineName());
+      $id = $this->randomMachineName();
       $block = Block::create([
         'id' => $id,
         'theme' => 'stark',

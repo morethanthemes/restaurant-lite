@@ -5,7 +5,8 @@ namespace Drupal\Tests\locale\Functional;
 use Drupal\Component\Gettext\PoItem;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Component\Render\FormattableMarkup;
+
+// cspell:ignore descripcion mostrar
 
 /**
  * Tests parsing js files for translatable strings.
@@ -32,12 +33,8 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
     // _locale_parse_js_file() finds translatable source strings in all valid
     // JavaScript syntax regardless of the coding style used, especially with
     // respect to optional whitespace, line breaks, etc.
-    // - We test locale_test.es6.js, because that is the one that contains a
+    // - We test locale_test.js, because that is the one that contains a
     //   variety of whitespace styles.
-    // - We also test the transpiled locale_test.js as an extra double-check
-    //   that JavaScript transpilation doesn't change what
-    //   _locale_parse_js_file() finds.
-    $files[] = __DIR__ . '/../../locale_test.es6.js';
     $files[] = __DIR__ . '/../../locale_test.js';
 
     foreach ($files as $filename) {
@@ -97,10 +94,9 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
 
       // Assert that all strings were found properly.
       foreach ($test_strings as $str => $context) {
-        $args = ['%source' => $str, '%context' => $context];
 
         // Make sure that the string was found in the file.
-        $this->assertTrue(isset($source_strings[$str]), new FormattableMarkup('Found source string: %source', $args));
+        $this->assertTrue(isset($source_strings[$str]), "Found source string: $str");
 
         // Make sure that the proper context was matched.
         $this->assertArrayHasKey($str, $source_strings);

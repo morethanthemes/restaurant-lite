@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Plugin\views\query;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Tests\UnitTestCase;
 use Drupal\views\Plugin\views\query\SqliteDateSql;
+
+// cspell:ignore unixepoch
 
 /**
  * Tests the MySQL-specific date query handler.
@@ -25,7 +29,7 @@ class SqliteDateSqlTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
     parent::setUp();
     $this->database = $this->prophesize(Connection::class)->reveal();
   }

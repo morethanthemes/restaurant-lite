@@ -4,22 +4,23 @@ namespace Drupal\comment\Plugin\Action;
 
 use Drupal\Component\Utility\Tags;
 use Drupal\Core\Action\ConfigurableActionBase;
+use Drupal\Core\Action\Attribute\Action;
 use Drupal\Core\Entity\EntityViewBuilderInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Unpublishes a comment containing certain keywords.
- *
- * @Action(
- *   id = "comment_unpublish_by_keyword_action",
- *   label = @Translation("Unpublish comment containing keyword(s)"),
- *   type = "comment"
- * )
  */
+#[Action(
+  id: 'comment_unpublish_by_keyword_action',
+  label: new TranslatableMarkup('Unpublish comment containing keyword(s)'),
+  type: 'comment'
+)]
 class UnpublishByKeywordComment extends ConfigurableActionBase implements ContainerFactoryPluginInterface {
 
   /**
@@ -77,7 +78,7 @@ class UnpublishByKeywordComment extends ConfigurableActionBase implements Contai
     $build = $this->viewBuilder->view($comment);
     $text = $this->renderer->renderPlain($build);
     foreach ($this->configuration['keywords'] as $keyword) {
-      if (strpos($text, $keyword) !== FALSE) {
+      if (str_contains($text, $keyword)) {
         $comment->setUnpublished();
         $comment->save();
         break;

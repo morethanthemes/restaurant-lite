@@ -15,6 +15,7 @@ use GuzzleHttp\RequestOptions;
  * Tests the structure of a REST resource.
  *
  * @group rest
+ * @group #slow
  */
 class ResourceTest extends BrowserTestBase {
 
@@ -82,7 +83,7 @@ class ResourceTest extends BrowserTestBase {
     // non-REST route a match, but a lower quality one: no format restrictions
     // means there's always a match and hence when there is no matching REST
     // route, the non-REST route is used, but can't render into
-    // application/hal+json, so it returns a 406.
+    // application/json, so it returns a 406.
     $this->assertSession()->statusCodeEquals(406);
   }
 
@@ -108,7 +109,7 @@ class ResourceTest extends BrowserTestBase {
     // non-REST route a match, but a lower quality one: no format restrictions
     // means there's always a match and hence when there is no matching REST
     // route, the non-REST route is used, but can't render into
-    // application/hal+json, so it returns a 406.
+    // application/json, so it returns a 406.
     $this->assertSession()->statusCodeEquals(406);
   }
 

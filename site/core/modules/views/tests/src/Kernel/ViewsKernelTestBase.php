@@ -44,10 +44,9 @@ abstract class ViewsKernelTestBase extends KernelTestBase {
    *   to setup some additional stuff, like fields, you need to call false and
    *   then call createTestViews for your own.
    */
-  protected function setUp($import_test_views = TRUE) {
+  protected function setUp($import_test_views = TRUE): void {
     parent::setUp();
 
-    $this->installSchema('system', ['sequences']);
     $this->setUpFixtures();
 
     if ($import_test_views) {

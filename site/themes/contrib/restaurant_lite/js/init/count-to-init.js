@@ -1,8 +1,8 @@
-(function ($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings, once) {
   Drupal.behaviors.mtCountTo = {
     attach: function (context, settings) {
-      $(context).find('[data-to]').once('mtCountToInit').each(function() {
-        var stat_item = $(this);
+      once('mtCountToInit', '[data-to]', context).forEach(function(item) {
+        var stat_item = $(item);
         var waypoints = stat_item.waypoint(function(direction) {
           var animatedObject = $(this.element);
             animatedObject.countTo();
@@ -13,4 +13,4 @@
       });
     }
   };
-})(jQuery, Drupal, drupalSettings);
+})(jQuery, Drupal, drupalSettings, once);

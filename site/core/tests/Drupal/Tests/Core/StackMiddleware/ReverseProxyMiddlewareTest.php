@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\StackMiddleware;
 
 use Drupal\Core\Site\Settings;
@@ -25,7 +27,12 @@ class ReverseProxyMiddlewareTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
-    $this->mockHttpKernel = $this->createMock(MockHttpKernelInterface::class);
+    parent::setUp();
+
+    $responseMock = $this->createMock(Response::class);
+    $this->mockHttpKernel = $this->createMock(HttpKernelInterface::class);
+    $this->mockHttpKernel->method('handle')
+      ->willReturn($responseMock);
   }
 
   /**
@@ -104,16 +111,5 @@ class ReverseProxyMiddlewareTest extends UnitTestCase {
     $this->assertSame($settings->get('reverse_proxy_addresses'), $request->getTrustedProxies());
     $this->assertSame($expected_trusted_header_set, $request->getTrustedHeaderSet());
   }
-
-}
-
-/**
- * Helper interface for the Symfony 6 version of the HttpKernelInterface.
- *
- * @todo Remove this interface when the Symfony 6 is in core.
- */
-interface MockHttpKernelInterface extends HttpKernelInterface {
-
-  public function handle(Request $request, $type = HttpKernelInterface::MASTER_REQUEST, $catch = TRUE): Response;
 
 }

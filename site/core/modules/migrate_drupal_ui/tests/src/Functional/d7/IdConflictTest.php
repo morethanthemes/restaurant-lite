@@ -15,10 +15,8 @@ class IdConflictTest extends MigrateUpgradeExecuteTestBase {
    * {@inheritdoc}
    */
   protected static $modules = [
-    'book',
     'config_translation',
     'content_translation',
-    'forum',
     'language',
     'migrate_drupal_ui',
     'statistics',

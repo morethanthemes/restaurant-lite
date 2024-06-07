@@ -4,6 +4,8 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\ckeditor5\Kernel;
 
+// cspell:ignore arta codesnippet
+
 use Drupal\ckeditor5\HTMLRestrictions;
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\NestedArray;
@@ -15,7 +17,7 @@ use Drupal\Tests\SchemaCheckTestTrait;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * @covers \Drupal\ckeditor5\SmartDefaultSettings::computeSmartDefaultSettings()
+ * @covers \Drupal\ckeditor5\SmartDefaultSettings::computeSmartDefaultSettings
  * @group ckeditor5
  * @internal
  */
@@ -423,9 +425,50 @@ class SmartDefaultSettingsTest extends KernelTestBase {
                 ],
               ],
             ],
+            1 => [
+              [
+                'name' => 'Contributed modules providing buttons with settings',
+                'items' => [
+                  // @see https://www.drupal.org/project/codesnippet
+                  'CodeSnippet',
+                ],
+              ],
+            ],
           ],
         ],
-        'plugins' => [],
+        'plugins' => [
+          'codesnippet' => [
+            'highlight_style' => 'arta',
+            'highlight_languages' => [
+              'cs' => 'cs',
+              'cpp' => 'cpp',
+              'coffeescript' => 'coffeescript',
+              'css' => 'css',
+              'diff' => 'diff',
+              'html' => 'html',
+              'http' => 'http',
+              'ini' => 'ini',
+              'java' => 'java',
+              'javascript' => 'javascript',
+              'json' => 'json',
+              'makefile' => 'makefile',
+              'markdown' => 'markdown',
+              'nginx' => 'nginx',
+              'objectivec' => 'objectivec',
+              'perl' => 'perl',
+              'php' => 'php',
+              'python' => 'python',
+              'ruby' => 'ruby',
+              'sql' => 'sql',
+              'vbscript' => 'vbscript',
+              'xhtml' => 'xhtml',
+              'xml' => 'xml',
+              // These 2 languages have been disabled.
+              'apache' => 0,
+              'bash' => 0,
+            ],
+          ],
+        ],
       ],
     ])->setSyncing(TRUE)->save();
   }
@@ -498,11 +541,22 @@ class SmartDefaultSettingsTest extends KernelTestBase {
 
     // Ensure that the result of ::computeSmartDefaultSettings() always complies
     // with the config schema.
+    // TRICKY: because we're validating using `editor.editor.*` as the config
+    // name, TextEditorObjectDependentValidatorTrait will load the stored filter
+    // format. That has not yet been updated at this point, so in order for
+    // validation to pass, it must first be saved.
+    // @see \Drupal\ckeditor5\Plugin\Validation\Constraint\TextEditorObjectDependentValidatorTrait::createTextEditorObjectFromContext()
+    // @todo Remove this work-around in https://www.drupal.org/project/drupal/issues/3231354
+    $updated_text_editor->getFilterFormat()->save();
     $this->assertConfigSchema(
       $this->typedConfig,
       $updated_text_editor->getConfigDependencyName(),
       $updated_text_editor->toArray()
     );
+
+    // Save this to ensure the config export order is applied.
+    // @see \Drupal\Core\Config\StorableConfigBase::castValue()
+    $updated_text_editor->save();
 
     // We should now have the expected data in the Editor config entity.
     $this->assertSame('ckeditor5', $updated_text_editor->getEditor());
@@ -637,8 +691,11 @@ class SmartDefaultSettingsTest extends KernelTestBase {
             'allow_resize' => TRUE,
           ],
           'ckeditor5_list' => [
-            'reversed' => FALSE,
-            'startIndex' => TRUE,
+            'properties' => [
+              'reversed' => FALSE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
           ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => [
@@ -788,7 +845,13 @@ class SmartDefaultSettingsTest extends KernelTestBase {
             ],
           ],
           'ckeditor5_imageResize' => ['allow_resize' => TRUE],
-          'ckeditor5_list' => ['reversed' => FALSE, 'startIndex' => TRUE],
+          'ckeditor5_list' => [
+            'properties' => [
+              'reversed' => FALSE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
+          ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => array_values(array_diff(
               $basic_html_test_case['expected_ckeditor5_settings']['plugins']['ckeditor5_sourceEditing']['allowed_tags'],
@@ -830,7 +893,13 @@ class SmartDefaultSettingsTest extends KernelTestBase {
             ],
           ],
           'ckeditor5_imageResize' => ['allow_resize' => TRUE],
-          'ckeditor5_list' => ['reversed' => FALSE, 'startIndex' => TRUE],
+          'ckeditor5_list' => [
+            'properties' => [
+              'reversed' => FALSE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
+          ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => $basic_html_test_case['expected_ckeditor5_settings']['plugins']['ckeditor5_sourceEditing']['allowed_tags'],
           ],
@@ -864,7 +933,13 @@ class SmartDefaultSettingsTest extends KernelTestBase {
         ],
         'plugins' => [
           'ckeditor5_imageResize' => ['allow_resize' => TRUE],
-          'ckeditor5_list' => ['reversed' => FALSE, 'startIndex' => TRUE],
+          'ckeditor5_list' => [
+            'properties' => [
+              'reversed' => FALSE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
+          ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => array_values(array_diff(
               $basic_html_test_case['expected_ckeditor5_settings']['plugins']['ckeditor5_sourceEditing']['allowed_tags'],
@@ -899,7 +974,26 @@ class SmartDefaultSettingsTest extends KernelTestBase {
             ['codeBlock'],
           ),
         ],
-        'plugins' => $basic_html_test_case['expected_ckeditor5_settings']['plugins'],
+        'plugins' => [
+          'ckeditor5_codeBlock' => [
+            'languages' => [
+              ['label' => 'Plain text', 'language' => 'plaintext'],
+              ['label' => 'C', 'language' => 'c'],
+              ['label' => 'C#', 'language' => 'cs'],
+              ['label' => 'C++', 'language' => 'cpp'],
+              ['label' => 'CSS', 'language' => 'css'],
+              ['label' => 'Diff', 'language' => 'diff'],
+              ['label' => 'HTML', 'language' => 'html'],
+              ['label' => 'Java', 'language' => 'java'],
+              ['label' => 'JavaScript', 'language' => 'javascript'],
+              ['label' => 'PHP', 'language' => 'php'],
+              ['label' => 'Python', 'language' => 'python'],
+              ['label' => 'Ruby', 'language' => 'ruby'],
+              ['label' => 'TypeScript', 'language' => 'typescript'],
+              ['label' => 'XML', 'language' => 'xml'],
+            ],
+          ],
+        ] + $basic_html_test_case['expected_ckeditor5_settings']['plugins'],
       ],
       'expected_superset' => '<code class="language-*">',
       'expected_fundamental_compatibility_violations' => $basic_html_test_case['expected_fundamental_compatibility_violations'],
@@ -931,12 +1025,12 @@ class SmartDefaultSettingsTest extends KernelTestBase {
           ),
         ],
         'plugins' => array_merge(
-          $basic_html_test_case['expected_ckeditor5_settings']['plugins'],
           [
             'ckeditor5_alignment' => [
               'enabled_alignments' => ['center', 'justify'],
             ],
           ],
+          $basic_html_test_case['expected_ckeditor5_settings']['plugins'],
         ),
       ],
       'expected_superset' => implode(' ', [
@@ -1133,6 +1227,13 @@ class SmartDefaultSettingsTest extends KernelTestBase {
               'heading6',
             ],
           ],
+          'ckeditor5_list' => [
+            'properties' => [
+              'reversed' => FALSE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
+          ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => [
               '<cite>',
@@ -1149,10 +1250,6 @@ class SmartDefaultSettingsTest extends KernelTestBase {
               '<h5 id>',
               '<h6 id>',
             ],
-          ],
-          'ckeditor5_list' => [
-            'reversed' => FALSE,
-            'startIndex' => TRUE,
           ],
         ],
       ],
@@ -1207,10 +1304,29 @@ class SmartDefaultSettingsTest extends KernelTestBase {
             'heading',
             'codeBlock',
             '|',
+            'showBlocks',
             'sourceEditing',
           ],
         ],
         'plugins' => [
+          'ckeditor5_codeBlock' => [
+            'languages' => [
+              ['label' => 'Plain text', 'language' => 'plaintext'],
+              ['label' => 'C', 'language' => 'c'],
+              ['label' => 'C#', 'language' => 'cs'],
+              ['label' => 'C++', 'language' => 'cpp'],
+              ['label' => 'CSS', 'language' => 'css'],
+              ['label' => 'Diff', 'language' => 'diff'],
+              ['label' => 'HTML', 'language' => 'html'],
+              ['label' => 'Java', 'language' => 'java'],
+              ['label' => 'JavaScript', 'language' => 'javascript'],
+              ['label' => 'PHP', 'language' => 'php'],
+              ['label' => 'Python', 'language' => 'python'],
+              ['label' => 'Ruby', 'language' => 'ruby'],
+              ['label' => 'TypeScript', 'language' => 'typescript'],
+              ['label' => 'XML', 'language' => 'xml'],
+            ],
+          ],
           'ckeditor5_heading' => [
             'enabled_headings' => [
               'heading2',
@@ -1224,8 +1340,11 @@ class SmartDefaultSettingsTest extends KernelTestBase {
             'allow_resize' => TRUE,
           ],
           'ckeditor5_list' => [
-            'reversed' => TRUE,
-            'startIndex' => TRUE,
+            'properties' => [
+              'reversed' => TRUE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
           ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => [],
@@ -1268,6 +1387,13 @@ class SmartDefaultSettingsTest extends KernelTestBase {
               'heading6',
             ],
           ],
+          'ckeditor5_list' => [
+            'properties' => [
+              'reversed' => FALSE,
+              'startIndex' => TRUE,
+            ],
+            'multiBlock' => TRUE,
+          ],
           'ckeditor5_sourceEditing' => [
             'allowed_tags' => [
               '<cite>',
@@ -1284,10 +1410,6 @@ class SmartDefaultSettingsTest extends KernelTestBase {
               '<h5 id>',
               '<h6 id>',
             ],
-          ],
-          'ckeditor5_list' => [
-            'reversed' => FALSE,
-            'startIndex' => TRUE,
           ],
         ],
       ],
@@ -1375,17 +1497,17 @@ class SmartDefaultSettingsTest extends KernelTestBase {
           ],
         ],
         'plugins' => [
+          'ckeditor5_sourceEditing' => [
+            'allowed_tags' => [
+              '<span>',
+            ],
+          ],
           'ckeditor5_style' => [
             'styles' => [
               [
                 'label' => 'Llama span',
                 'element' => '<span class="llama">',
               ],
-            ],
-          ],
-          'ckeditor5_sourceEditing' => [
-            'allowed_tags' => [
-              '<span>',
             ],
           ],
         ],
@@ -1411,9 +1533,39 @@ class SmartDefaultSettingsTest extends KernelTestBase {
         'toolbar' => [
           'items' => [
             'code',
+            '|',
+            'codeBlock',
           ],
         ],
-        'plugins' => [],
+        'plugins' => [
+          'ckeditor5_codeBlock' => [
+            'languages' => [
+              ['label' => 'cs', 'language' => 'cs'],
+              ['label' => 'cpp', 'language' => 'cpp'],
+              ['label' => 'coffeescript', 'language' => 'coffeescript'],
+              ['label' => 'css', 'language' => 'css'],
+              ['label' => 'diff', 'language' => 'diff'],
+              ['label' => 'html', 'language' => 'html'],
+              ['label' => 'http', 'language' => 'http'],
+              ['label' => 'ini', 'language' => 'ini'],
+              ['label' => 'java', 'language' => 'java'],
+              ['label' => 'javascript', 'language' => 'javascript'],
+              ['label' => 'json', 'language' => 'json'],
+              ['label' => 'makefile', 'language' => 'makefile'],
+              ['label' => 'markdown', 'language' => 'markdown'],
+              ['label' => 'nginx', 'language' => 'nginx'],
+              ['label' => 'objectivec', 'language' => 'objectivec'],
+              ['label' => 'perl', 'language' => 'perl'],
+              ['label' => 'php', 'language' => 'php'],
+              ['label' => 'python', 'language' => 'python'],
+              ['label' => 'ruby', 'language' => 'ruby'],
+              ['label' => 'sql', 'language' => 'sql'],
+              ['label' => 'vbscript', 'language' => 'vbscript'],
+              ['label' => 'xhtml', 'language' => 'xhtml'],
+              ['label' => 'xml', 'language' => 'xml'],
+            ],
+          ],
+        ],
       ],
       'expected_superset' => '',
       'expected_fundamental_compatibility_violations' => [],

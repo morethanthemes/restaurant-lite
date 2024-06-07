@@ -7,8 +7,6 @@
  *    contrast mode Firefox.
  */
 
-@import "../base/variables.pcss.css";
-
 :root {
   /**
   * Dropbutton
@@ -39,10 +37,12 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
-.form-actions .dropbutton-wrapper {
+.form-actions .dropbutton-wrapper,
+.field-actions .dropbutton-wrapper {
   margin: var(--space-xs) var(--space-m) var(--space-xs) 0;
 }
-[dir="rtl"] .form-actions .dropbutton-wrapper {
+[dir="rtl"] .form-actions .dropbutton-wrapper,
+[dir="rtl"] .field-actions .dropbutton-wrapper {
   margin-right: 0;
   margin-left: var(--space-m);
 }
@@ -53,7 +53,7 @@
 }
 
 .js .dropbutton-wrapper.open .dropbutton-widget {
-  z-index: 100;
+  z-index: var(--dropbutton-widget-z-index);
 }
 
 /**
@@ -69,53 +69,52 @@
   margin: 0;
 }
 
-.js .dropbutton {
+.dropbutton {
   min-width: 6rem; /* Help mitigate long dropbutton text from obscuring other dropbuttons. */
   height: var(--dropbutton-toggle-size);
 }
 
-.js .dropbutton-widget {
+.dropbutton-widget {
   border-radius: var(--button-border-radius-size);
   background-color: var(--button-bg-color);
 }
 
-.js .dropbutton-action {
-  border-inline-end: var(--dropbutton-border-size) solid white;
-}
-
 /* Variants. */
-.js.no-touchevents .dropbutton--small {
+.dropbutton--small {
   height: var(--dropbutton-small-toggle-size);
 }
 
-.js.no-touchevents .dropbutton--extrasmall {
+.dropbutton--extrasmall {
   height: var(--dropbutton-extrasmall-toggle-size);
 }
 
 /**
  * First dropbutton list item.
  */
-.js .dropbutton--multiple .dropbutton__item:first-of-type {
+.dropbutton--multiple .dropbutton__item:first-of-type {
   margin-right: calc(var(--dropbutton-toggle-size) + var(--dropbutton-toggle-size-spacing)); /* LTR */
+  white-space: nowrap;
 }
-[dir="rtl"].js .dropbutton--multiple .dropbutton__item:first-of-type {
+[dir="rtl"] .dropbutton--multiple .dropbutton__item:first-of-type {
   margin-right: 0;
   margin-left: calc(var(--dropbutton-toggle-size) + var(--dropbutton-toggle-size-spacing));
 }
 
 /* First dropbutton list item variants */
-.js.no-touchevents .dropbutton--multiple.dropbutton--small .dropbutton__item:first-of-type {
+.no-touchevents .dropbutton--multiple.dropbutton--small .dropbutton__item:first-of-type {
   margin-right: calc(var(--dropbutton-small-toggle-size) + var(--dropbutton-toggle-size-spacing)); /* LTR */
+  white-space: nowrap;
 }
-[dir="rtl"].js.no-touchevents .dropbutton--multiple.dropbutton--small .dropbutton__item:first-of-type {
+[dir="rtl"].no-touchevents .dropbutton--multiple.dropbutton--small .dropbutton__item:first-of-type {
   margin-right: 0;
   margin-left: calc(var(--dropbutton-small-toggle-size) + var(--dropbutton-toggle-size-spacing));
 }
 
-.js.no-touchevents .dropbutton--multiple.dropbutton--extrasmall .dropbutton__item:first-of-type {
+.no-touchevents .dropbutton--multiple.dropbutton--extrasmall .dropbutton__item:first-of-type {
   margin-right: calc(var(--dropbutton-extrasmall-toggle-size) + var(--dropbutton-toggle-size-spacing)); /* LTR */
+  white-space: nowrap;
 }
-[dir="rtl"].js.no-touchevents .dropbutton--multiple.dropbutton--extrasmall .dropbutton__item:first-of-type {
+[dir="rtl"].no-touchevents .dropbutton--multiple.dropbutton--extrasmall .dropbutton__item:first-of-type {
   margin-right: 0;
   margin-left: calc(var(--dropbutton-extrasmall-toggle-size) + var(--dropbutton-toggle-size-spacing));
 }
@@ -132,6 +131,7 @@
   width: var(--dropbutton-toggle-size);
   height: var(--dropbutton-toggle-size);
   border: var(--dropbutton-border-size) solid transparent !important; /* 1 */
+  border-inline-start: var(--dropbutton-border-size) solid white !important;
   border-radius: 0 var(--button-border-radius-size) var(--button-border-radius-size) 0; /* LTR */
   background: var(--button-bg-color);
   font-size: 1px; /* iOS Safari sets a minimum button-width based on font-size. */
@@ -195,7 +195,7 @@
 }
 
 /* High contrast. */
-@media (-ms-high-contrast: active), (forced-colors: active) {
+@media (forced-colors: active) {
   /* Default. */
   .dropbutton__toggle::before {
     width: 0.5625rem;
@@ -302,10 +302,10 @@
   z-index: 2;
 }
 
-.js .dropbutton--multiple .dropbutton__item:first-of-type > * {
+.dropbutton--multiple .dropbutton__item:first-of-type > * {
   border-radius: var(--button-border-radius-size) 0 0 var(--button-border-radius-size); /* LTR */
 }
-[dir="rtl"].js .dropbutton--multiple .dropbutton__item:first-of-type > * {
+[dir="rtl"] .dropbutton--multiple .dropbutton__item:first-of-type > * {
   border-radius: 0 var(--button-border-radius-size) var(--button-border-radius-size) 0;
 }
 
@@ -322,7 +322,7 @@
   text-align: right;
 }
 
-.js .dropbutton-wrapper:not(.open) .dropbutton__item:first-of-type ~ .dropbutton__item {
+.dropbutton-wrapper:not(.open) .dropbutton__item:first-of-type ~ .dropbutton__item {
   visibility: hidden;
 }
 
@@ -365,17 +365,6 @@
   font-weight: normal;
   line-height: var(--dropbutton-line-height);
   -webkit-font-smoothing: antialiased;
-}
-
-/**
- * Set the inherited button border color to transparent for high contrast
- * mode.
- */
-@media screen and (-ms-high-contrast: active) {
-  .dropbutton__item:first-of-type ~ .dropbutton__item > a,
-  .dropbutton__item:first-of-type ~ .dropbutton__item > .button {
-    border-color: transparent !important;
-  }
 }
 
 .dropbutton__item:first-of-type ~ .dropbutton__item > a:not(:focus),

@@ -45,7 +45,7 @@
  * implementing hook_theme(), which specifies the name of the hook, the input
  * "variables" used to provide data and options, and other information. Modules
  * implementing hook_theme() also need to provide a default implementation for
- * each of their theme hooks in a Twig template file, and they may also provide
+ * each of their theme hooks in a Twig file, and they may also provide
  * preprocessing functions. For example, the core Search module defines a theme
  * hook for a search result item in search_theme():
  * @code
@@ -68,6 +68,23 @@
  * rendered by the Twig template; the processed variables that the Twig template
  * receives are documented in the header of the default Twig template file.
  *
+ * Theme hooks can declare a variable deprecated using the reserved
+ * 'deprecations' variable. For example:
+ * @code
+ *  search_result' => [
+ *   'variables' => [
+ *     'result' => NULL,
+ *     'new_result' => NULL,
+ *     'plugin_id' => NULL,
+ *     'deprecations' => [
+ *       'result' => "'result' is deprecated in drupal:X.0.0 and is removed from drupal:Y.0.0. Use 'new_result' instead. See https://www.example.com."
+ *     ]
+ *   ],
+ * ],
+ * @endcode
+ * Template engines should trigger a deprecation error if a deprecated
+ * variable is used in a template.
+ *
  * @section sec_overriding_theme_hooks Overriding Theme Hooks
  * Themes may register new theme hooks within a hook_theme() implementation, but
  * it is more common for themes to override default implementations provided by
@@ -79,16 +96,15 @@
  * copy the default implementation template, and then modifying it as desired.
  *
  * @section sec_preprocess_templates Preprocessing for Template Files
- * If the theme implementation is a template file, several functions are called
- * before the template file is invoked to modify the variables that are passed
- * to the template. These make up the "preprocessing" phase, and are executed
- * (if they exist), in the following order (note that in the following list,
- * HOOK indicates the hook being called or a less specific hook. For example, if
- * '#theme' => 'node__article' is called, hook is node__article and node. MODULE
- * indicates a module name, THEME indicates a theme name, and ENGINE indicates a
- * theme engine name). Modules, themes, and theme engines can provide these
- * functions to modify how the data is preprocessed, before it is passed to the
- * theme template:
+ * Several functions are called before the template file is invoked to modify
+ * the variables that are passed to the template. These make up the
+ * "preprocessing" phase, and are executed (if they exist), in the following
+ * order (note that in the following list, HOOK indicates the hook being called
+ * or a less specific hook. For example, if '#theme' => 'node__article' is
+ * called, hook is node__article and node. MODULE indicates a module name,
+ * THEME indicates a theme name, and ENGINE indicates a theme engine name).
+ * Modules, themes, and theme engines can provide these functions to modify how
+ * the data is preprocessed, before it is passed to the theme template:
  * - template_preprocess(&$variables, $hook): Creates a default set of variables
  *   for all theme hooks with template implementations. Provided by Drupal Core.
  * - template_preprocess_HOOK(&$variables): Should be implemented by the module
@@ -165,8 +181,8 @@
  *   $variables['#attached'] @endcode, e.g.:
  *   @code
  *   function THEME_preprocess_menu_local_action(array &$variables) {
- *     // We require Modernizr's touch test for button styling.
- *     $variables['#attached']['library'][] = 'core/modernizr';
+ *     // We require touch events detection for button styling.
+ *     $variables['#attached']['library'][] = 'core/drupal.touchevents-test';
  *   }
  *   @endcode
  *
@@ -251,7 +267,7 @@
  *   hook_theme() implementation specifies variable 'foo', then in a render
  *   array, you would provide this data using property '#foo'. Modules
  *   implementing hook_theme() also need to provide a default implementation for
- *   each of their theme hooks in a Twig template file. For more information
+ *   each of their theme hooks, normally in a Twig file. For more information
  *   and to discover available theme hooks, see the documentation of
  *   hook_theme() and the
  *   @link themeable Default theme implementations topic. @endlink
@@ -527,8 +543,8 @@ function hook_form_system_theme_settings_alter(&$form, \Drupal\Core\Form\FormSta
  * Preprocess theme variables for templates.
  *
  * This hook allows modules to preprocess theme variables for theme templates.
- * It is called for all theme hooks. hook_preprocess_HOOK() can be used to
- * preprocess variables for a specific theme hook.
+ * hook_preprocess_HOOK() can be used to preprocess variables for a specific
+ * theme hook.
  *
  * For more detailed information, see the
  * @link themeable Theme system overview topic @endlink.
@@ -548,10 +564,10 @@ function hook_preprocess(&$variables, $hook) {
   }
 
   if (!isset($hooks)) {
-    $hooks = theme_get_registry();
+    $hooks = \Drupal::service('theme.registry')->get();
   }
 
-  // Determine the primary theme hook argument.
+  // Determine the primary theme function argument.
   if (isset($hooks[$hook]['variables'])) {
     $keys = array_keys($hooks[$hook]['variables']);
     $key = $keys[0];
@@ -586,15 +602,20 @@ function hook_preprocess(&$variables, $hook) {
  *   The variables array (modify in place).
  */
 function hook_preprocess_HOOK(&$variables) {
-  // This example is from rdf_preprocess_image(). It adds an RDF attribute
-  // to the image hook's variables.
-  $variables['attributes']['typeof'] = ['foaf:Image'];
+  // This example is from node_preprocess_html(). It adds the node type to
+  // the body classes, when on an individual node page or node preview page.
+  if (($node = \Drupal::routeMatch()->getParameter('node')) || ($node = \Drupal::routeMatch()->getParameter('node_preview'))) {
+    if ($node instanceof NodeInterface) {
+      $variables['node_type'] = $node->getType();
+    }
+  }
 }
 
 /**
  * Provides alternate named suggestions for a specific theme hook.
  *
- * This hook allows modules to provide alternative template name suggestions.
+ * This hook allows modules to provide alternative theme template name
+ * suggestions.
  *
  * HOOK is the least-specific version of the hook being called. For example, if
  * '#theme' => 'node__article' is called, then hook_theme_suggestions_node()
@@ -660,10 +681,13 @@ function hook_theme_suggestions_HOOK(array $variables) {
  * hook_theme_suggestions_HOOK_alter(). So, for each module or theme, the more
  * general hooks are called first followed by the more specific.
  *
+ * New suggestions must begin with the value of HOOK, followed by two underscores to be discoverable.
+ *
  * In the following example, we provide an alternative template suggestion to
  * node and taxonomy term templates based on the user being logged in.
+ *
  * @code
- * function MYMODULE_theme_suggestions_alter(array &$suggestions, array $variables, $hook) {
+ * function MYMODULE_theme_suggestions_alter(array &$suggestions, array &$variables, $hook) {
  *   if (\Drupal::currentUser()->isAuthenticated() && in_array($hook, array('node', 'taxonomy_term'))) {
  *     $suggestions[] = $hook . '__' . 'logged_in';
  *   }
@@ -671,23 +695,21 @@ function hook_theme_suggestions_HOOK(array $variables) {
  *
  * @endcode
  *
- * @param array $suggestions
- *   An array of alternate, more specific names for template files.
+ * @param array &$suggestions
+ *   An array of alternate, more specific names for template files, passed by
+ *   reference.
  * @param array $variables
- *   An array of variables passed to the theme hook. Note that this hook is
- *   invoked before any variable preprocessing.
+ *   An array of variables passed to the theme hook, passed by reference. Note
+ *   that this hook is invoked before any variable preprocessing.
  * @param string $hook
  *   The base hook name. For example, if '#theme' => 'node__article' is called,
  *   then $hook will be 'node', not 'node__article'. The specific hook called
  *   (in this case 'node__article') is available in
  *   $variables['theme_hook_original'].
  *
- * @return array
- *   An array of theme suggestions.
- *
  * @see hook_theme_suggestions_HOOK_alter()
  */
-function hook_theme_suggestions_alter(array &$suggestions, array $variables, $hook) {
+function hook_theme_suggestions_alter(array &$suggestions, array &$variables, $hook) {
   // Add an interface-language specific suggestion to all theme hooks.
   $suggestions[] = $hook . '__' . \Drupal::languageManager()->getCurrentLanguage()->getId();
 }
@@ -705,22 +727,38 @@ function hook_theme_suggestions_alter(array &$suggestions, array $variables, $ho
  * hook called (in this case 'node__article') is available in
  * $variables['theme_hook_original'].
  *
+ * New suggestions must begin with the value of HOOK, followed by two underscores to be discoverable.
+ * For example, consider the below suggestions from hook_theme_suggestions_node_alter:
+ *   - node__article is valid
+ *   - node__article__custom_template is valid
+ *   - node--article is invalid
+ *   - article__custom_template is invalid
+ *
  * Implementations of this hook must be placed in *.module or *.theme files, or
  * must otherwise make sure that the hook implementation is available at
  * any given time.
  *
- * @todo Add @code sample.
+ * In the following example, we provide an alternative template suggestion to
+ * node templates based on the user being logged in.
+ * @code
+ * function MYMODULE_theme_suggestions_node_alter(array &$suggestions, array $variables) {
+ *   if (\Drupal::currentUser()->isAuthenticated()) {
+ *     $suggestions[] = 'node__logged_in';
+ *   }
+ * }
+ *
+ * @endcode
  *
  * @param array $suggestions
- *   An array of theme suggestions.
+ *   An array of theme suggestions, passed by reference.
  * @param array $variables
- *   An array of variables passed to the theme hook. Note that this hook is
- *   invoked before any preprocessing.
+ *   An array of variables passed to the theme hook, passed by reference. Note
+ *   that this hook is invoked before any preprocessing.
  *
  * @see hook_theme_suggestions_alter()
  * @see hook_theme_suggestions_HOOK()
  */
-function hook_theme_suggestions_HOOK_alter(array &$suggestions, array $variables) {
+function hook_theme_suggestions_HOOK_alter(array &$suggestions, array &$variables) {
   if (empty($variables['header'])) {
     $suggestions[] = 'hookname__no_header';
   }
@@ -775,8 +813,7 @@ function hook_extension() {
  * It is the theme engine's responsibility to escape variables. The only
  * exception is if a variable implements
  * \Drupal\Component\Render\MarkupInterface. Drupal is inherently unsafe if
- * other variables are not escaped. The helper function
- * theme_render_and_autoescape() may be used for this.
+ * other variables are not escaped.
  *
  * @param string $template_file
  *   The path (relative to the Drupal root directory) to the template to be
@@ -842,10 +879,12 @@ function hook_element_plugin_alter(array &$definitions) {
  *   An array of all JavaScript being presented on the page.
  * @param \Drupal\Core\Asset\AttachedAssetsInterface $assets
  *   The assets attached to the current response.
+ * @param \Drupal\Core\Language\LanguageInterface $language
+ *   The language for the page request that the assets will be rendered for.
  *
  * @see \Drupal\Core\Asset\AssetResolver
  */
-function hook_js_alter(&$javascript, \Drupal\Core\Asset\AttachedAssetsInterface $assets) {
+function hook_js_alter(&$javascript, \Drupal\Core\Asset\AttachedAssetsInterface $assets, \Drupal\Core\Language\LanguageInterface $language) {
   // Swap out jQuery to use an updated version of the library.
   $javascript['core/assets/vendor/jquery/jquery.min.js']['data'] = \Drupal::service('extension.list.module')->getPath('jquery_update') . '/jquery.js';
 }
@@ -867,31 +906,31 @@ function hook_js_alter(&$javascript, \Drupal\Core\Asset\AttachedAssetsInterface 
 function hook_library_info_build() {
   $libraries = [];
   // Add a library whose information changes depending on certain conditions.
-  $libraries['mymodule.zombie'] = [
+  $libraries['zombie'] = [
     'dependencies' => [
       'core/once',
     ],
   ];
   if (Drupal::moduleHandler()->moduleExists('minifyzombies')) {
-    $libraries['mymodule.zombie'] += [
+    $libraries['zombie'] += [
       'js' => [
-        'mymodule.zombie.min.js' => [],
+        'zombie.min.js' => [],
       ],
       'css' => [
         'base' => [
-          'mymodule.zombie.min.css' => [],
+          'zombie.min.css' => [],
         ],
       ],
     ];
   }
   else {
-    $libraries['mymodule.zombie'] += [
+    $libraries['zombie'] += [
       'js' => [
-        'mymodule.zombie.js' => [],
+        'zombie.js' => [],
       ],
       'css' => [
         'base' => [
-          'mymodule.zombie.css' => [],
+          'zombie.css' => [],
         ],
       ],
     ];
@@ -903,7 +942,7 @@ function hook_library_info_build() {
   // the library (of course) not be loaded but no notices or errors will be
   // triggered.
   if (Drupal::moduleHandler()->moduleExists('vampirize')) {
-    $libraries['mymodule.vampire'] = [
+    $libraries['vampire'] = [
       'js' => [
         'js/vampire.js' => [],
       ],
@@ -972,8 +1011,14 @@ function hook_js_settings_alter(array &$settings, \Drupal\Core\Asset\AttachedAss
  * and themes that may be using the library.
  *
  * @param array $libraries
- *   An associative array of libraries registered by $extension. Keyed by
- *   internal library name and passed by reference.
+ *   An associative array of libraries, passed by reference. The array key
+ *   for any particular library will be the name registered in *.libraries.yml.
+ *   In the example below, the array key would be $libraries['foo'].
+ *   @code
+ *   foo:
+ *     js:
+ *       .......
+ *   @endcode
  * @param string $extension
  *   Can either be 'core' or the machine name of the extension that registered
  *   the libraries.
@@ -1018,10 +1063,12 @@ function hook_library_info_alter(&$libraries, $extension) {
  *   An array of all CSS items (files and inline CSS) being requested on the page.
  * @param \Drupal\Core\Asset\AttachedAssetsInterface $assets
  *   The assets attached to the current response.
+ * @param \Drupal\Core\Language\LanguageInterface $language
+ *   The language of the request that the assets will be rendered for.
  *
  * @see Drupal\Core\Asset\LibraryResolverInterface::getCssAssets()
  */
-function hook_css_alter(&$css, \Drupal\Core\Asset\AttachedAssetsInterface $assets) {
+function hook_css_alter(&$css, \Drupal\Core\Asset\AttachedAssetsInterface $assets, \Drupal\Core\Language\LanguageInterface $language) {
   // Remove defaults.css file.
   $file_path = \Drupal::service('extension.list.module')->getPath('system') . '/defaults.css';
   unset($css[$file_path]);
@@ -1142,25 +1189,26 @@ function hook_page_bottom(array &$page_bottom) {
  *     where the array keys are the names of the variables, and the array
  *     values are the default values if they are not given in the render array.
  *     Template implementations receive each array key as a variable in the
- *     template file (so they must be legal PHP/Twig variable names).
+ *     template file (so they must be legal PHP/Twig variable names). If you
+ *     are using these variables in a render array, prefix the variable names
+ *     defined here with a #.
  *   - render element: Used for render element items only: the name of the
- *     renderable element or element tree to pass to the template. This
- *     name is used as the name of the variable that holds the renderable
- *     element or tree in preprocess and process functions.
- *   - file: The file the implementation resides in. This file will be included
- *     prior to the theme being rendered, to make sure that the preprocess
- *     functions in this file are actually loaded.
+ *     renderable element or element tree to pass to the template. This name is
+ *     used as the name of the variable that holds the renderable element or
+ *     tree in preprocess and process functions.
+ *   - file: The file that any preprocess implementations reside in. This file
+ *     will be included prior to the template being rendered, to make sure that
+ *     the preprocess function (as needed) is actually loaded.
  *   - path: If specified, overrides the path to the directory that contains the
  *     file to be used. This path should be relative to the Drupal root
  *     directory. If not provided, the path will be set to the module or theme's
  *     templates directory.
- *   - template: If specified, this is the template name. Do not add 'html.twig'
- *     on the end of the template name. The extension will be added
- *     automatically by the default rendering engine (which is Twig.) If 'path'
- *     is specified, 'template' should also be specified. If 'template' is not
- *     specified, a default template name will be assumed. For example, if a
- *     module registers the 'search_result' theme hook, 'search-result' will be
- *     assigned as its template name.
+ *   - template: The template name, without 'html.twig' on the end. The
+ *     extension will be added automatically by the default rendering engine
+ *     (which is Twig.) If 'path' is specified, 'template' should also be
+ *     specified. If not specified, a default template name will be assumed.
+ *     For example, if a module registers the 'search_result' theme hook,
+ *     'search-result' will be assigned as its template name.
  *   - base hook: Used for theme suggestions only: the base theme hook name.
  *     Instead of this suggestion's implementation being used directly, the base
  *     hook will be invoked with this implementation as its first suggestion.
@@ -1193,13 +1241,15 @@ function hook_page_bottom(array &$page_bottom) {
  *     the standard preprocess functions to run. This can be used to give a
  *     theme FULL control over how variables are set. For example, if a theme
  *     wants total control over how certain variables in the page.html.twig are
- *     set, this can be set to true. Please keep in mind that when this is used
- *     by a theme, that theme becomes responsible for making sure necessary
- *     variables are set.
+ *     set, this can be set to true. Keep in mind that when this is used by a
+ *     theme, that theme becomes responsible for making sure necessary variables
+ *     are set.
  *   - type: (automatically derived) Where the theme hook is defined:
  *     'module', 'theme_engine', or 'theme'.
  *   - theme path: The directory path of the theme or module. If not defined,
  *     it is determined during the registry process.
+ *   - deprecated: The deprecated key marks a twig template as deprecated with
+ *     a custom message.
  *
  * @see themeable
  * @see hook_theme_registry_alter()
@@ -1226,7 +1276,7 @@ function hook_theme($existing, $type, $theme, $path) {
  * Alter the theme registry information returned from hook_theme().
  *
  * The theme registry stores information about all available theme hooks,
- * including which callback functions those hooks will call when triggered,
+ * including which preprocess functions those hooks will call when triggered,
  * what template files are exposed by these hooks, and so on.
  *
  * Note that this hook is only executed as the theme cache is re-built.
@@ -1240,9 +1290,9 @@ function hook_theme($existing, $type, $theme, $path) {
  * @code
  * $theme_registry['block_content_add_list'] = array (
  *   'template' => 'block-content-add-list',
- *   'path' => 'core/themes/seven/templates',
+ *   'path' => 'core/themes/claro/templates',
  *   'type' => 'theme_engine',
- *   'theme path' => 'core/themes/seven',
+ *   'theme path' => 'core/themes/claro',
  *   'includes' => array (
  *     0 => 'core/modules/block_content/block_content.pages.inc',
  *   ),
@@ -1253,7 +1303,7 @@ function hook_theme($existing, $type, $theme, $path) {
  *     0 => 'template_preprocess',
  *     1 => 'template_preprocess_block_content_add_list',
  *     2 => 'contextual_preprocess',
- *     3 => 'seven_preprocess_block_content_add_list',
+ *     3 => 'claro_preprocess_block_content_add_list',
  *   ),
  * );
  * @endcode

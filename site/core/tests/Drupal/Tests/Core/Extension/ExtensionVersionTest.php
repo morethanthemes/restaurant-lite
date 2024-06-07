@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Extension;
 
 use Drupal\Core\Extension\ExtensionVersion;
@@ -357,7 +359,7 @@ class ExtensionVersionTest extends UnitTestCase {
     $this->assertInstanceOf(ExtensionVersion::class, $version);
     $this->assertSame($expected_major, $version->getMajorVersion());
     // Version extra can't be determined from a branch.
-    $this->assertSame(NULL, $version->getVersionExtra());
+    $this->assertNull($version->getVersionExtra());
   }
 
   /**

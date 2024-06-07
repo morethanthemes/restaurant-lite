@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Cache;
 
 use Drupal\Core\Cache\Cache;
@@ -50,6 +52,8 @@ class CacheCollectorTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->cacheBackend = $this->createMock('Drupal\Core\Cache\CacheBackendInterface');
     $this->cacheTagsInvalidator = $this->createMock('Drupal\Core\Cache\CacheTagsInvalidatorInterface');
     $this->lock = $this->createMock('Drupal\Core\Lock\LockBackendInterface');
@@ -305,12 +309,12 @@ class CacheCollectorTest extends UnitTestCase {
     ];
     // Set up mock expectation, on the second call the with the second argument
     // set to TRUE because we triggered a cache invalidation.
+    $allow_invalid = [FALSE, TRUE];
     $this->cacheBackend->expects($this->exactly(2))
       ->method('get')
-      ->withConsecutive(
-        [$this->cid],
-        [$this->cid, TRUE],
-      )
+      ->with($this->cid, $this->callback(function ($value) use (&$allow_invalid) {
+        return array_shift($allow_invalid) === $value;
+      }))
       ->willReturn($cache);
 
     $this->collector->delete($key);

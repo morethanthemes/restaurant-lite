@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Test;
 
 use Drupal\Tests\TestSuites\TestSuiteBase;
@@ -93,7 +95,6 @@ class TestSuiteBaseTest extends TestCase {
 
     // Access addTestsBySuiteNamespace().
     $ref_add_tests = new \ReflectionMethod($stub, 'addTestsBySuiteNamespace');
-    $ref_add_tests->setAccessible(TRUE);
 
     // Invoke addTestsBySuiteNamespace().
     $ref_add_tests->invokeArgs($stub, [vfsStream::url('root'), $suite_namespace]);

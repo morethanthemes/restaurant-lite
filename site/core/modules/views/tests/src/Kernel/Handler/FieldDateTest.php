@@ -31,6 +31,7 @@ class FieldDateTest extends ViewsKernelTestBase {
       'unsigned' => TRUE,
       'not null' => FALSE,
       'default' => 0,
+      'size' => 'big',
     ];
     return $schema;
   }
@@ -56,11 +57,11 @@ class FieldDateTest extends ViewsKernelTestBase {
    * {@inheritdoc}
    */
   public function dataSet() {
-    $datas = parent::dataSet();
-    foreach ($datas as $i => $data) {
-      $datas[$i]['destroyed'] = gmmktime(0, 0, 0, 1, 1, 2050);
+    $data_set = parent::dataSet();
+    foreach ($data_set as $i => $data) {
+      $data_set[$i]['destroyed'] = gmmktime(0, 0, 0, 1, 1, 2050);
     }
-    return $datas;
+    return $data_set;
   }
 
   /**
@@ -162,7 +163,7 @@ class FieldDateTest extends ViewsKernelTestBase {
       else {
         $message = "$date_format format matches.";
       }
-      $actual_result = $view->field['created']->advancedRender($view->result[0]);
+      $actual_result = (string) $view->field['created']->advancedRender($view->result[0]);
       $this->assertEquals($expected_result, strip_tags($actual_result), $message);
     }
   }
@@ -180,7 +181,7 @@ class FieldDateTest extends ViewsKernelTestBase {
   protected function assertRenderedFutureDatesEqual(ViewExecutable $view, array $map): void {
     foreach ($map as $format => $result) {
       $view->field['destroyed']->options['date_format'] = $format;
-      $view_result = $view->field['destroyed']->advancedRender($view->result[0]);
+      $view_result = (string) $view->field['destroyed']->advancedRender($view->result[0]);
       $this->assertEquals($result, strip_tags($view_result), "$format format matches.");
     }
   }

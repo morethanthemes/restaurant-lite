@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Routing;
 
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Tests\UnitTestCase;
 use Drupal\views\Routing\ViewPageController;
 use Drupal\Core\Routing\RouteObjectInterface;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 
@@ -39,6 +41,8 @@ class ViewPageControllerTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->pageController = new ViewPageController();
   }
 
@@ -151,7 +155,7 @@ class ViewPageControllerTest extends UnitTestCase {
     $request->attributes->set('display_id', 'page_1');
     // Add the argument to the request.
     $request->attributes->set('test_entity', $this->createMock('Drupal\Core\Entity\EntityInterface'));
-    $raw_variables = new ParameterBag(['test_entity' => 'example_id']);
+    $raw_variables = new InputBag(['test_entity' => 'example_id']);
     $request->attributes->set('_raw_variables', $raw_variables);
     $options = [
       '_view_argument_map' => [
@@ -186,7 +190,7 @@ namespace Drupal\views\Routing;
 
 if (!function_exists('views_add_contextual_links')) {
 
-  function views_add_contextual_links() {
+  function views_add_contextual_links(&$render_element, $location, $display_id, array $view_element = NULL) {
   }
 
 }

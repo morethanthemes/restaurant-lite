@@ -50,7 +50,7 @@ class SaveTest extends FileManagedUnitTestBase {
     $loaded_file = File::load($file->id());
     // Verify that the timestamp didn't go backwards.
     $this->assertGreaterThanOrEqual($file->getChangedTime(), $loaded_file->getChangedTime());
-    $this->assertNotNull($loaded_file, 'Record still exists in the database.', 'File');
+    $this->assertNotNull($loaded_file, 'Record still exists in the database.');
     $this->assertEquals($file->isPermanent(), $loaded_file->isPermanent(), 'Status was saved correctly.');
     $this->assertEquals('en', $loaded_file->langcode->value, 'Langcode was saved correctly.');
 
@@ -74,7 +74,7 @@ class SaveTest extends FileManagedUnitTestBase {
     file_put_contents($uppercase_file_duplicate->getFileUri(), 'hello world');
     $violations = $uppercase_file_duplicate->validate();
     $this->assertCount(1, $violations);
-    $this->assertEquals(t('The file %value already exists. Enter a unique file URI.', ['%value' => $uppercase_file_duplicate->getFileUri()]), $violations[0]->getMessage());
+    $this->assertEquals(sprintf('The file %s already exists. Enter a unique file URI.', $uppercase_file_duplicate->getFileUri()), $violations[0]->getMessage());
     // Ensure that file URI entity queries are case sensitive.
     $fids = \Drupal::entityQuery('file')
       ->accessCheck(FALSE)

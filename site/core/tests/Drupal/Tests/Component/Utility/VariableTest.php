@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\Utility\VariableTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\Utility;
 
@@ -21,27 +18,21 @@ use PHPUnit\Framework\TestCase;
 class VariableTest extends TestCase {
 
   /**
-   * A bogus callable for testing ::callableToString().
-   */
-  public static function fake(): void {
-  }
-
-  /**
    * Data provider for testCallableToString().
    *
    * @return array[]
    *   Sets of arguments to pass to the test method.
    */
   public function providerCallableToString(): array {
-    $self = static::class;
+    $mock = VariableTestMock::class;
     return [
       'string' => [
-        "$self::fake",
-        "$self::fake",
+        "$mock::fake",
+        "$mock::fake",
       ],
       'static method as array' => [
-        [$self, 'fake'],
-        "$self::fake",
+        [$mock, 'fake'],
+        "$mock::fake",
       ],
       'closure' => [
         function () {
@@ -50,8 +41,8 @@ class VariableTest extends TestCase {
         '[closure]',
       ],
       'object method' => [
-        [new static(), 'fake'],
-        "$self::fake",
+        [new VariableTestMock(), 'fake'],
+        "$mock::fake",
       ],
       'service method' => [
         'fake_service:method',
@@ -164,7 +155,9 @@ class VariableTest extends TestCase {
       [
         // A not-stdClass object. Since PHP 8.2 exported namespace is prefixed,
         // see https://github.com/php/php-src/pull/8233 for reasons.
-        (PHP_VERSION_ID >= 80200 ? '\\' : '') . "Drupal\Tests\Component\Utility\StubVariableTestClass::__set_state(array(\n))",
+        PHP_VERSION_ID >= 80200 ?
+        "\Drupal\Tests\Component\Utility\StubVariableTestClass::__set_state(array(\n))" :
+        "Drupal\Tests\Component\Utility\StubVariableTestClass::__set_state(array(\n))",
         new StubVariableTestClass(),
       ],
     ];
@@ -187,11 +180,21 @@ class VariableTest extends TestCase {
 
 }
 
+class VariableTestMock {
+
+  /**
+   * A bogus callable for testing ::callableToString().
+   */
+  public static function fake(): void {
+  }
+
+}
+
 /**
  * No-op test class for VariableTest::testExport().
  *
- * @see Drupal\Tests\Component\Utility\VariableTest::testExport()
- * @see Drupal\Tests\Component\Utility\VariableTest::providerTestExport()
+ * @see \Drupal\Tests\Component\Utility\VariableTest::testExport()
+ * @see \Drupal\Tests\Component\Utility\VariableTest::providerTestExport()
  */
 class StubVariableTestClass {
 

@@ -3,7 +3,10 @@
 namespace Drupal\Tests\language\Functional;
 
 use Drupal\Core\Url;
+use Drupal\locale\StringStorageInterface;
 use Drupal\Tests\BrowserTestBase;
+
+// cspell:ignore espagnol
 
 /**
  * Adds a new language with translations and tests language list order.
@@ -27,7 +30,7 @@ class LanguageLocaleListTest extends BrowserTestBase {
   /**
    * @var \Drupal\locale\StringStorageInterface
    */
-  protected $storage;
+  protected StringStorageInterface $storage;
 
   /**
    * {@inheritdoc}

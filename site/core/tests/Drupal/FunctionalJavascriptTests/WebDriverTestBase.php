@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\FunctionalJavascriptTests;
 
 use Behat\Mink\Exception\DriverException;
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Tests\BrowserTestBase;
 use PHPUnit\Runner\BaseTestRunner;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -68,6 +71,7 @@ abstract class WebDriverTestBase extends BrowserTestBase {
    */
   protected function installModulesFromClassProperty(ContainerInterface $container) {
     self::$modules = [
+      'js_testing_ajax_request_test',
       'js_testing_log_test',
       'jquery_keyevent_polyfill_test',
     ];
@@ -90,7 +94,7 @@ abstract class WebDriverTestBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function tearDown() {
+  protected function tearDown(): void {
     if ($this->mink) {
       $status = $this->getStatus();
       if ($status === BaseTestRunner::STATUS_ERROR || $status === BaseTestRunner::STATUS_WARNING || $status === BaseTestRunner::STATUS_FAILURE) {
@@ -99,7 +103,7 @@ abstract class WebDriverTestBase extends BrowserTestBase {
       }
       // Wait for all requests to finish. It is possible that an AJAX request is
       // still on-going.
-      $result = $this->getSession()->wait(5000, '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length))');
+      $result = $this->getSession()->wait(5000, 'window.drupalActiveXhrCount === 0 || typeof window.drupalActiveXhrCount === "undefined"');
       if (!$result) {
         // If the wait is unsuccessful, there may still be an AJAX request in
         // progress. If we tear down now, then this AJAX request may fail with
@@ -111,20 +115,29 @@ abstract class WebDriverTestBase extends BrowserTestBase {
 
       $warnings = $this->getSession()->evaluateScript("JSON.parse(sessionStorage.getItem('js_testing_log_test.warnings') || JSON.stringify([]))");
       foreach ($warnings as $warning) {
-        if (strpos($warning, '[Deprecation]') === 0) {
+        if (str_starts_with($warning, '[Deprecation]')) {
+          // phpcs:ignore Drupal.Semantics.FunctionTriggerError
           @trigger_error('Javascript Deprecation:' . substr($warning, 13), E_USER_DEPRECATED);
         }
       }
-      if ($this->failOnJavascriptConsoleErrors) {
-        $errors = $this->getSession()->evaluateScript("JSON.parse(sessionStorage.getItem('js_testing_log_test.errors') || JSON.stringify([]))");
-        if (!empty($errors)) {
-          $all_errors = implode("\n", $errors);
-          @trigger_error("Not failing JavaScript test for JavaScript errors is deprecated in drupal:9.3.0 and is removed from drupal:10.0.0. This test had the following JavaScript errors: $all_errors. See https://www.drupal.org/node/3221100", E_USER_DEPRECATED);
-        }
-      }
-
     }
     parent::tearDown();
+  }
+
+  /**
+   * Triggers a test failure if a JavaScript error was encountered.
+   *
+   * @throws \PHPUnit\Framework\AssertionFailedError
+   *
+   * @postCondition
+   */
+  protected function failOnJavaScriptErrors(): void {
+    if ($this->failOnJavascriptConsoleErrors) {
+      $errors = $this->getSession()->evaluateScript("JSON.parse(sessionStorage.getItem('js_testing_log_test.errors') || JSON.stringify([]))");
+      if (!empty($errors)) {
+        $this->fail(implode("\n", $errors));
+      }
+    }
   }
 
   /**
@@ -209,8 +222,11 @@ abstract class WebDriverTestBase extends BrowserTestBase {
   }
 })();
 EndOfScript;
-
-    return $this->getSession()->evaluateScript($script) ?: [];
+    $settings = $this->getSession()->evaluateScript($script) ?: [];
+    if (isset($settings['ajaxPageState'])) {
+      $settings['ajaxPageState']['libraries'] = UrlHelper::uncompressQueryParameter($settings['ajaxPageState']['libraries']);
+    }
+    return $settings;
   }
 
   /**

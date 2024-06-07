@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Form\FormBuilderTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\Form;
 
@@ -598,9 +595,33 @@ class FormBuilderTest extends FormTestBase {
   /**
    * @covers ::buildForm
    */
-  public function testGetPostAjaxRequest() {
+  public function testPostAjaxRequest(): void {
     $request = new Request([FormBuilderInterface::AJAX_FORM_REQUEST => TRUE], ['form_id' => 'different_form_id']);
     $request->setMethod('POST');
+    $this->requestStack->push($request);
+
+    $form_state = (new FormState())
+      ->setUserInput([FormBuilderInterface::AJAX_FORM_REQUEST => TRUE])
+      ->setMethod('get')
+      ->setAlwaysProcess()
+      ->disableRedirect()
+      ->set('ajax', TRUE);
+
+    $form_id = '\Drupal\Tests\Core\Form\TestForm';
+    $expected_form = (new TestForm())->buildForm([], $form_state);
+
+    $form = $this->formBuilder->buildForm($form_id, $form_state);
+    $this->assertFormElement($expected_form, $form, 'test');
+    $this->assertSame('test-form', $form['#id']);
+  }
+
+  /**
+   * @covers ::buildForm
+   */
+  public function testGetAjaxRequest(): void {
+    $request = new Request([FormBuilderInterface::AJAX_FORM_REQUEST => TRUE]);
+    $request->query->set('form_id', 'different_form_id');
+    $request->setMethod('GET');
     $this->requestStack->push($request);
 
     $form_state = (new FormState())
@@ -788,7 +809,6 @@ class FormBuilderTest extends FormTestBase {
    */
   public function testValueCallableIsSafe($callback, $expected) {
     $method = new \ReflectionMethod(FormBuilder::class, 'valueCallableIsSafe');
-    $method->setAccessible(TRUE);
     $is_safe = $method->invoke($this->formBuilder, $callback);
     $this->assertSame($expected, $is_safe);
   }
@@ -839,7 +859,6 @@ class FormBuilderTest extends FormTestBase {
     $current_user = $this->prophesize(AccountInterface::class);
     $current_user->isAuthenticated()->willReturn($user_is_authenticated);
     $property = new \ReflectionProperty(FormBuilder::class, 'currentUser');
-    $property->setAccessible(TRUE);
     $property->setValue($this->formBuilder, $current_user->reveal());
 
     $expected_form = $form_id();

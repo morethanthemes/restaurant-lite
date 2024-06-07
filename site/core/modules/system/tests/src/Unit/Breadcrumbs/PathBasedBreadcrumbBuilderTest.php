@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\system\Unit\Breadcrumbs\PathBasedBreadcrumbBuilderTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\system\Unit\Breadcrumbs;
 
@@ -19,7 +16,7 @@ use Drupal\system\PathBasedBreadcrumbBuilder;
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Routing\RouteObjectInterface;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 
@@ -194,7 +191,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
           return [
             RouteObjectInterface::ROUTE_NAME => 'example',
             RouteObjectInterface::ROUTE_OBJECT => $route_1,
-            '_raw_variables' => new ParameterBag([]),
+            '_raw_variables' => new InputBag([]),
           ];
         }
       });
@@ -234,14 +231,14 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
           return [
             RouteObjectInterface::ROUTE_NAME => 'example_bar',
             RouteObjectInterface::ROUTE_OBJECT => $route_1,
-            '_raw_variables' => new ParameterBag([]),
+            '_raw_variables' => new InputBag([]),
           ];
         }
         elseif ($request->getPathInfo() == '/example') {
           return [
             RouteObjectInterface::ROUTE_NAME => 'example',
             RouteObjectInterface::ROUTE_OBJECT => $route_2,
-            '_raw_variables' => new ParameterBag([]),
+            '_raw_variables' => new InputBag([]),
           ];
         }
       });
@@ -369,7 +366,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
           return [
             RouteObjectInterface::ROUTE_NAME => 'user_page',
             RouteObjectInterface::ROUTE_OBJECT => $route_1,
-            '_raw_variables' => new ParameterBag([]),
+            '_raw_variables' => new InputBag([]),
           ];
         }
       });
@@ -413,7 +410,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
  */
 class TestPathBasedBreadcrumbBuilder extends PathBasedBreadcrumbBuilder {
 
-  protected $linkGenerator;
+  protected LinkGeneratorInterface $linkGenerator;
 
   public function setStringTranslation(TranslationInterface $string_translation) {
     $this->stringTranslation = $string_translation;

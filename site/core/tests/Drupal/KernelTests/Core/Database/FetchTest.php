@@ -82,7 +82,7 @@ class FetchTest extends DatabaseTestBase {
   /**
    * Confirms that we can fetch a record into a class using fetchObject.
    *
-   * @see \Drupal\system\Tests\Database\FakeRecord
+   * @see \Drupal\Tests\system\Functional\Database\FakeRecord
    * @see \Drupal\Core\Database\StatementPrefetch::fetchObject
    */
   public function testQueryFetchObjectClass() {
@@ -98,13 +98,34 @@ class FetchTest extends DatabaseTestBase {
   }
 
   /**
+   * Confirms that we can fetch a record into a class without constructor args.
+   *
+   * @see \Drupal\Tests\system\Functional\Database\FakeRecord
+   * @see \Drupal\Core\Database\StatementPrefetch::fetchObject
+   */
+  public function testQueryFetchObjectClassNoConstructorArgs(): void {
+    $records = 0;
+    $query = $this->connection->query('SELECT [name] FROM {test} WHERE [age] = :age', [':age' => 25]);
+    while ($result = $query->fetchObject(FakeRecord::class)) {
+      $records += 1;
+      $this->assertInstanceOf(FakeRecord::class, $result);
+      $this->assertSame('John', $result->name);
+      $this->assertSame(0, $result->fakeArg);
+    }
+    $this->assertSame(1, $records);
+  }
+
+  /**
    * Confirms that we can fetch a record into a new instance of a custom class.
    *
    * The name of the class is determined from a value of the first column.
    *
    * @see \Drupal\Tests\system\Functional\Database\FakeRecord
+   *
+   * @group legacy
    */
   public function testQueryFetchClasstype() {
+    $this->expectDeprecation('Fetch mode FETCH_CLASS | FETCH_CLASSTYPE is deprecated in drupal:10.2.0 and is removed from drupal:11.0.0. Use supported modes only. See https://www.drupal.org/node/3377999');
     $records = [];
     $result = $this->connection->query('SELECT [classname], [name], [job] FROM {test_classtype} WHERE [age] = :age', [':age' => 26], ['fetch' => \PDO::FETCH_CLASS | \PDO::FETCH_CLASSTYPE]);
     foreach ($result as $record) {
@@ -136,8 +157,11 @@ class FetchTest extends DatabaseTestBase {
 
   /**
    * Confirms that we can fetch a record into a doubly-keyed array explicitly.
+   *
+   * @group legacy
    */
   public function testQueryFetchBoth() {
+    $this->expectDeprecation('Fetch mode FETCH_BOTH is deprecated in drupal:10.2.0 and is removed from drupal:11.0.0. Use supported modes only. See https://www.drupal.org/node/3377999');
     $records = [];
     $result = $this->connection->query('SELECT [name] FROM {test} WHERE [age] = :age', [':age' => 25], ['fetch' => \PDO::FETCH_BOTH]);
     foreach ($result as $record) {
@@ -178,6 +202,75 @@ class FetchTest extends DatabaseTestBase {
     foreach ($result as $record) {
       $this->assertSame($column[$i++], $record->name, 'Column matches direct access.');
     }
+  }
+
+  /**
+   * Tests ::fetchAllAssoc().
+   */
+  public function testQueryFetchAllAssoc(): void {
+    $expected_result = [
+      "Singer" => [
+        "id" => "2",
+        "name" => "George",
+        "age" => "27",
+        "job" => "Singer",
+      ],
+      "Drummer" => [
+        "id" => "3",
+        "name" => "Ringo",
+        "age" => "28",
+        "job" => "Drummer",
+      ],
+    ];
+
+    $statement = $this->connection->query('SELECT * FROM {test} WHERE [age] > :age', [':age' => 26]);
+    $result = $statement->fetchAllAssoc('job', \PDO::FETCH_ASSOC);
+    $this->assertSame($expected_result, $result);
+
+    $statement = $this->connection->query('SELECT * FROM {test} WHERE [age] > :age', [':age' => 26]);
+    $result = $statement->fetchAllAssoc('job', \PDO::FETCH_OBJ);
+    $this->assertEquals((object) $expected_result['Singer'], $result['Singer']);
+    $this->assertEquals((object) $expected_result['Drummer'], $result['Drummer']);
+  }
+
+  /**
+   * Tests ::fetchField().
+   */
+  public function testQueryFetchField(): void {
+    $this->connection->insert('test')
+      ->fields([
+        'name' => 'Foo',
+        'age' => 0,
+        'job' => 'Dummy',
+      ])
+      ->execute();
+
+    $this->connection->insert('test')
+      ->fields([
+        'name' => 'Kurt',
+        'age' => 27,
+        'job' => 'Singer',
+      ])
+      ->execute();
+
+    $expectedResults = ['25', '27', '28', '26', '0', '27'];
+
+    $statement = $this->connection->select('test')
+      ->fields('test', ['age'])
+      ->orderBy('id')
+      ->execute();
+
+    $actualResults = [];
+    while (TRUE) {
+      $result = $statement->fetchField();
+      if ($result === FALSE) {
+        break;
+      }
+      $this->assertIsNumeric($result);
+      $actualResults[] = $result;
+    }
+
+    $this->assertSame($expectedResults, $actualResults);
   }
 
   /**

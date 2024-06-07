@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\big_pipe\FunctionalJavascript;
 
 use Drupal\big_pipe\Render\BigPipe;
@@ -30,7 +32,7 @@ class BigPipeRegressionTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
     parent::setUp();
 
     // Use the big_pipe_test_theme theme.
@@ -122,6 +124,53 @@ JS;
     $this->drupalGet(Url::fromRoute('big_pipe_regression_test.2802923'));
 
     $this->assertJsCondition('document.querySelectorAll(\'p\').length === 1');
+  }
+
+  /**
+   * Tests BigPipe large content.
+   *
+   * Repeat loading of same page for two times, after second time the page is
+   * cached and the bug consistently reproducible.
+   */
+  public function testBigPipeLargeContent() {
+    $user = $this->drupalCreateUser();
+    $this->drupalLogin($user);
+    $assert_session = $this->assertSession();
+
+    $this->drupalGet(Url::fromRoute('big_pipe_test_large_content'));
+    $this->assertNotNull($assert_session->waitForElement('css', 'script[data-big-pipe-event="stop"]'));
+    $this->assertCount(0, $this->getDrupalSettings()['bigPipePlaceholderIds']);
+    $this->assertCount(2, $this->getSession()->getPage()->findAll('css', 'script[data-big-pipe-replacement-for-placeholder-with-id]'));
+    $assert_session->elementExists('css', '#big-pipe-large-content');
+
+    $this->drupalGet(Url::fromRoute('big_pipe_test_large_content'));
+    $this->assertNotNull($assert_session->waitForElement('css', 'script[data-big-pipe-event="stop"]'));
+    $this->assertCount(0, $this->getDrupalSettings()['bigPipePlaceholderIds']);
+    $this->assertCount(2, $this->getSession()->getPage()->findAll('css', 'script[data-big-pipe-replacement-for-placeholder-with-id]'));
+    $assert_session->elementExists('css', '#big-pipe-large-content');
+  }
+
+  /**
+   * Test BigPipe replacement of multiple complex replacements.
+   *
+   * In some situations with either a large number of replacements or multiple
+   * replacements involving complex operations, some replacements were not
+   * completed. This is a simulation of such a situation by rendering a lot of
+   * placeholders on a page.
+   *
+   * @see https://www.drupal.org/node/3390178
+   */
+  public function testMultipleReplacements(): void {
+    $user = $this->drupalCreateUser();
+    $this->drupalLogin($user);
+
+    $assert_session = $this->assertSession();
+
+    $this->drupalGet(Url::fromRoute('big_pipe_test_multiple_replacements'));
+    $this->assertNotNull($assert_session->waitForElement('css', 'script[data-big-pipe-event="stop"]'));
+    $this->assertCount(0, $this->getDrupalSettings()['bigPipePlaceholderIds']);
+    $this->assertCount(0, $this->getSession()->getPage()->findAll('css', 'span[data-big-pipe-placeholder-id]'));
+    $this->assertCount(BigPipeRegressionTestController::PLACEHOLDER_COUNT + 1, $this->getSession()->getPage()->findAll('css', 'script[data-big-pipe-replacement-for-placeholder-with-id]'));
   }
 
 }

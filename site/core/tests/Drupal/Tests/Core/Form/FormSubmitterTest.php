@@ -1,13 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Form;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\EventSubscriber\RedirectResponseSubscriber;
+use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\UnroutedUrlAssemblerInterface;
 use Drupal\Tests\UnitTestCase;
+use Prophecy\Argument;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -33,12 +39,18 @@ class FormSubmitterTest extends UnitTestCase {
   protected $unroutedUrlAssembler;
 
   /**
+   * @var \PHPUnit\Framework\MockObject\MockObject|\Drupal\Core\EventSubscriber\RedirectResponseSubscriber
+   */
+  protected $redirectResponseSubscriber;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
     $this->urlGenerator = $this->createMock(UrlGeneratorInterface::class);
     $this->unroutedUrlAssembler = $this->createMock(UnroutedUrlAssemblerInterface::class);
+    $this->redirectResponseSubscriber = $this->createMock(RedirectResponseSubscriber::class);
   }
 
   /**
@@ -219,31 +231,31 @@ class FormSubmitterTest extends UnitTestCase {
    */
   public function testExecuteSubmitHandlers() {
     $form_submitter = $this->getFormSubmitter();
-    $mock = $this->getMockForAbstractClass('Drupal\Core\Form\FormBase', [], '', TRUE, TRUE, TRUE, ['submit_handler', 'hash_submit', 'simple_string_submit']);
-    $mock->expects($this->once())
-      ->method('submit_handler')
-      ->with($this->isType('array'), $this->isInstanceOf('Drupal\Core\Form\FormStateInterface'));
-    $mock->expects($this->once())
-      ->method('hash_submit')
-      ->with($this->isType('array'), $this->isInstanceOf('Drupal\Core\Form\FormStateInterface'));
-    $mock->expects($this->once())
-      ->method('simple_string_submit')
-      ->with($this->isType('array'), $this->isInstanceOf('Drupal\Core\Form\FormStateInterface'));
+    $mock = $this->prophesize(MockFormBase::class);
+    $mock
+      ->hash_submit(Argument::type('array'), Argument::type(FormStateInterface::class))
+      ->shouldBeCalledOnce();
+    $mock
+      ->submit_handler(Argument::type('array'), Argument::type(FormStateInterface::class))
+      ->shouldBeCalledOnce();
+    $mock
+      ->simple_string_submit(Argument::type('array'), Argument::type(FormStateInterface::class))
+      ->shouldBeCalledOnce();
 
     $form = [];
     $form_state = new FormState();
     $form_submitter->executeSubmitHandlers($form, $form_state);
 
-    $form['#submit'][] = [$mock, 'hash_submit'];
+    $form['#submit'][] = [$mock->reveal(), 'hash_submit'];
     $form_submitter->executeSubmitHandlers($form, $form_state);
 
     // $form_state submit handlers will supersede $form handlers.
-    $form_state->setSubmitHandlers([[$mock, 'submit_handler']]);
+    $form_state->setSubmitHandlers([[$mock->reveal(), 'submit_handler']]);
     $form_submitter->executeSubmitHandlers($form, $form_state);
 
     // Methods directly on the form object can be specified as a string.
     $form_state = (new FormState())
-      ->setFormObject($mock)
+      ->setFormObject($mock->reveal())
       ->setSubmitHandlers(['::simple_string_submit']);
     $form_submitter->executeSubmitHandlers($form, $form_state);
   }
@@ -255,9 +267,34 @@ class FormSubmitterTest extends UnitTestCase {
     $request_stack = new RequestStack();
     $request_stack->push(Request::create('/test-path'));
     return $this->getMockBuilder('Drupal\Core\Form\FormSubmitter')
-      ->setConstructorArgs([$request_stack, $this->urlGenerator])
+      ->setConstructorArgs([$request_stack, $this->urlGenerator, $this->redirectResponseSubscriber])
       ->onlyMethods(['batchGet'])
       ->getMock();
+  }
+
+}
+
+/**
+ * Interface used in the mocking process of this test.
+ */
+abstract class MockFormBase extends FormBase {
+
+  /**
+   * Function used in the mocking process of this test.
+   */
+  public function submit_handler(array $array, FormStateInterface $form_state): void {
+  }
+
+  /**
+   * Function used in the mocking process of this test.
+   */
+  public function hash_submit(array $array, FormStateInterface $form_state): void {
+  }
+
+  /**
+   * Function used in the mocking process of this test.
+   */
+  public function simple_string_submit(array $array, FormStateInterface $form_state): void {
   }
 
 }

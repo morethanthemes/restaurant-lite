@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Database;
 
 use Drupal\Core\Database\Query\Select;
@@ -25,6 +27,8 @@ class OrderByTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $mockPdo = $this->createMock(StubPDO::class);
     $connection = new StubConnection($mockPdo, []);
     $this->query = new Select($connection, 'test', NULL);

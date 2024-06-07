@@ -7,7 +7,7 @@ use Drupal\Tests\views\Functional\ViewTestBase;
 use Drupal\views\Views;
 
 /**
- * Tests the views page display plugin as webtest.
+ * Tests the views page display plugin.
  *
  * @group views
  */
@@ -63,13 +63,13 @@ class DisplayPageWebTest extends ViewTestBase {
     $this->assertSession()->statusCodeEquals(200);
     $this->assertCacheContexts(['languages:language_interface', 'route', 'theme', 'url']);
     $this->assertSession()->elementsCount('xpath', $xpath, 1);
-    $this->assertSession()->elementTextEquals('xpath', $xpath, 1);
+    $this->assertSession()->elementTextEquals('xpath', $xpath, '1');
 
     // Ensure that just the filtered entry is returned.
     $this->drupalGet('test_route_with_suffix/1/suffix');
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->elementsCount('xpath', $xpath, 1);
-    $this->assertSession()->elementTextEquals('xpath', $xpath, 1);
+    $this->assertSession()->elementTextEquals('xpath', $xpath, '1');
 
     // Ensure that no result is returned.
     $this->drupalGet('test_route_with_suffix_and_argument/1/suffix/2');
@@ -80,13 +80,13 @@ class DisplayPageWebTest extends ViewTestBase {
     $this->drupalGet('test_route_with_suffix_and_argument/1/suffix/1');
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->elementsCount('xpath', $xpath, 1);
-    $this->assertSession()->elementTextEquals('xpath', $xpath, 1);
+    $this->assertSession()->elementTextEquals('xpath', $xpath, '1');
 
     // Ensure that just the filtered entry is returned.
     $this->drupalGet('test_route_with_long_argument/1');
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->elementsCount('xpath', $xpath, 1);
-    $this->assertSession()->elementTextEquals('xpath', $xpath, 1);
+    $this->assertSession()->elementTextEquals('xpath', $xpath, '1');
   }
 
   /**
@@ -145,6 +145,37 @@ class DisplayPageWebTest extends ViewTestBase {
     $this->assertPagePath('0');
     $this->assertPagePath('9999');
     $this->assertPagePath('☺');
+  }
+
+  /**
+   * Tests the 'use_admin_theme' page display option.
+   */
+  public function testAdminTheme(): void {
+    $account = $this->drupalCreateUser(['view the administration theme']);
+    $this->drupalLogin($account);
+    // Use distinct default and administrative themes for this test.
+    /** @var \Drupal\Core\Extension\ThemeHandlerInterface $theme_handler */
+    $theme_handler = $this->container->get('theme_handler');
+    /** @var \Drupal\Core\Extension\ThemeInstallerInterface $theme_installer */
+    $theme_installer = $this->container->get('theme_installer');
+    $theme_installer->install(['claro']);
+    $this->container->get('config.factory')
+      ->getEditable('system.theme')
+      ->set('admin', 'claro')
+      ->set('default', 'stable')
+      ->save();
+    $theme_handler->refreshInfo();
+    // Check that the page has been served with the default theme.
+    $this->drupalGet('test_page_display_200');
+    $this->assertSession()->responseNotContains('core/themes/claro/css/base/elements.css');
+
+    $view = $this->config('views.view.test_page_display');
+    $view->set('display.page_3.display_options.use_admin_theme', TRUE)->save();
+    $this->container->get('router.builder')->rebuild();
+
+    // Check that the page was served with the administrative theme.
+    $this->drupalGet('test_page_display_200');
+    $this->assertSession()->responseContains('core/themes/claro/css/base/elements.css');
   }
 
   /**

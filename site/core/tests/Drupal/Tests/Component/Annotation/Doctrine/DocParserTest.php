@@ -765,6 +765,10 @@ DOCBLOCK;
             PHP_EOL
         );
         $provider[] = array(
+            '@AnnotationWithConstants(\SimpleXMLElement::class)',
+            \SimpleXMLElement::class
+        );
+        $provider[] = array(
             '@AnnotationWithConstants(AnnotationWithConstants::INTEGER)',
             AnnotationWithConstants::INTEGER
         );
@@ -830,6 +834,10 @@ DOCBLOCK;
              })',
             array(
                 AnnotationWithConstants::STRING => AnnotationWithConstants::INTEGER,
+                // Since this class is a near-copy of
+                // Doctrine\Tests\Common\Annotations\DocParserTest, we don't fix
+                // PHPStan errors here.
+                // @phpstan-ignore-next-line
                 ClassWithConstants::SOME_KEY    => ClassWithConstants::SOME_VALUE,
                 ClassWithConstants::SOME_KEY    => IntefaceWithConstants::SOME_VALUE
             )
@@ -1187,30 +1195,6 @@ DOCBLOCK;
         $result = $parser->parse("@Marker(-1234.345)");
         $annot = $result[0];
         $this->assertIsFloat($annot->value);
-    }
-
-    public function testReservedKeywordsInAnnotations()
-    {
-        if (PHP_VERSION_ID >= 70000) {
-            $this->markTestSkipped('This test requires PHP 5.6 or lower.');
-        }
-        require 'ReservedKeywordsClasses.php';
-
-        $parser = $this->createTestParser();
-
-        $result = $parser->parse('@Drupal\Tests\Component\Annotation\Doctrine\True');
-        $this->assertInstanceOf(True::class, $result[0]);
-        $result = $parser->parse('@Drupal\Tests\Component\Annotation\Doctrine\False');
-        $this->assertInstanceOf(False::class, $result[0]);
-        $result = $parser->parse('@Drupal\Tests\Component\Annotation\Doctrine\Null');
-        $this->assertInstanceOf(Null::class, $result[0]);
-
-        $result = $parser->parse('@True');
-        $this->assertInstanceOf(True::class, $result[0]);
-        $result = $parser->parse('@False');
-        $this->assertInstanceOf(False::class, $result[0]);
-        $result = $parser->parse('@Null');
-        $this->assertInstanceOf(Null::class, $result[0]);
     }
 
     public function testSetValuesException()

@@ -3,13 +3,12 @@
 namespace Drupal\Core\File\MimeType;
 
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesserInterface as LegacyMimeTypeGuesserInterface;
 use Symfony\Component\Mime\MimeTypeGuesserInterface;
 
 /**
  * Makes possible to guess the MIME type of a file using its extension.
  */
-class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTypeGuesserInterface {
+class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface {
 
   /**
    * Default MIME extension mapping.
@@ -134,7 +133,6 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       109 => 'application/x-dms',
       110 => 'application/x-doom',
       111 => 'application/x-dvi',
-      112 => 'application/x-flac',
       113 => 'application/x-font',
       114 => 'application/x-freemind',
       115 => 'application/x-futuresplash',
@@ -154,7 +152,7 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       129 => 'application/x-iphone',
       130 => 'application/x-iso9660-image',
       131 => 'application/x-java-jnlp-file',
-      132 => 'application/javascript',
+      132 => 'text/javascript',
       133 => 'application/x-jmol',
       134 => 'application/x-kchart',
       135 => 'application/x-killustrator',
@@ -210,7 +208,9 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       183 => 'application/xhtml+xml',
       184 => 'application/xml',
       185 => 'application/zip',
+      360 => 'audio/aac',
       186 => 'audio/basic',
+      112 => 'audio/flac',
       187 => 'audio/midi',
       346 => 'audio/mp4',
       188 => 'audio/mpeg',
@@ -281,6 +281,7 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       251 => 'chemical/x-vmd',
       252 => 'chemical/x-xtel',
       253 => 'chemical/x-xyz',
+      362 => 'image/avif',
       254 => 'image/gif',
       255 => 'image/ief',
       256 => 'image/jpeg',
@@ -379,6 +380,7 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       343 => 'x-conference/x-cooltalk',
       344 => 'x-epoc/x-sisx-app',
       345 => 'x-world/x-vrml',
+      361 => 'application/json',
     ],
 
     // Extensions added to this list MUST be lower-case.
@@ -624,6 +626,7 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       'mp2' => 188,
       'ogg' => 189,
       'oga' => 189,
+      'opus' => 189,
       'spx' => 189,
       'sid' => 190,
       'aif' => 191,
@@ -859,6 +862,10 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
       'webm' => 357,
       'vtt' => 358,
       'gz' => 359,
+      'mjs' => 132,
+      'aac' => 360,
+      'json' => 361,
+      'avif' => 362,
     ],
   ];
 
@@ -884,14 +891,6 @@ class ExtensionMimeTypeGuesser implements MimeTypeGuesserInterface, LegacyMimeTy
    */
   public function __construct(ModuleHandlerInterface $module_handler) {
     $this->moduleHandler = $module_handler;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function guess($path) {
-    @trigger_error(__METHOD__ . '() is deprecated in drupal:9.1.0 and is removed from drupal:10.0.0. Use ::guessMimeType() instead. See https://www.drupal.org/node/3133341', E_USER_DEPRECATED);
-    return $this->guessMimeType($path);
   }
 
   /**

@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Mail\MailManagerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\Mail;
 
@@ -13,6 +10,8 @@ use Drupal\Core\Render\RendererInterface;
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Mail\MailManager;
 use Drupal\Component\Plugin\Discovery\DiscoveryInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @coversDefaultClass \Drupal\Core\Mail\MailManager
@@ -63,6 +62,20 @@ class MailManagerTest extends UnitTestCase {
   protected $mailManager;
 
   /**
+   * The request stack.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack|\Prophecy\Prophecy\ProphecyInterface
+   */
+  protected $requestStack;
+
+  /**
+   * The current request.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request
+   */
+  protected $request;
+
+  /**
    * A list of mail plugin definitions.
    *
    * @var array
@@ -103,6 +116,14 @@ class MailManagerTest extends UnitTestCase {
     $this->configFactory = $this->getConfigFactoryStub([
       'system.mail' => [
         'interface' => $interface,
+        'mailer_dsn' => [
+          'scheme' => 'null',
+          'host' => 'null',
+          'user' => NULL,
+          'password' => NULL,
+          'port' => NULL,
+          'options' => [],
+        ],
       ],
       'system.site' => [
         'mail' => 'test@example.com',
@@ -115,9 +136,16 @@ class MailManagerTest extends UnitTestCase {
     $this->mailManager = new TestMailManager(new \ArrayObject(), $this->cache, $this->moduleHandler, $this->configFactory, $logger_factory, $string_translation, $this->renderer);
     $this->mailManager->setDiscovery($this->discovery);
 
+    $this->request = new Request();
+
+    $this->requestStack = $this->prophesize(RequestStack::class);
+    $this->requestStack->getCurrentRequest()
+      ->willReturn($this->request);
+
     // @see \Drupal\Core\Plugin\Factory\ContainerFactory::createInstance()
     $container = new ContainerBuilder();
     $container->set('config.factory', $this->configFactory);
+    $container->set('request_stack', $this->requestStack->reveal());
     \Drupal::setContainer($container);
   }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Serialization;
 
 use Drupal\Component\Serialization\Exception\InvalidDataTypeException;
@@ -23,7 +25,7 @@ class YamlTest extends TestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
     parent::setUp();
     $this->mockParser = $this->getMockBuilder('\stdClass')
       ->addMethods(['encode', 'decode', 'getFileExtension'])
@@ -34,7 +36,7 @@ class YamlTest extends TestCase {
   /**
    * {@inheritdoc}
    */
-  public function tearDown(): void {
+  protected function tearDown(): void {
     YamlParserProxy::setMock(NULL);
     parent::tearDown();
   }
@@ -129,8 +131,8 @@ class YamlTest extends TestCase {
     foreach ($dirs as $dir) {
       $pathname = $dir->getPathname();
       // Exclude core/node_modules.
-      if ($dir->getExtension() == 'yml' && strpos($pathname, '/../../../../../node_modules') === FALSE) {
-        if (strpos($dir->getRealPath(), 'invalid_file') !== FALSE) {
+      if ($dir->getExtension() == 'yml' && !str_contains($pathname, '/../../../../../node_modules')) {
+        if (str_contains($dir->getRealPath(), 'invalid_file')) {
           // There are some intentionally invalid files provided for testing
           // library API behaviors, ignore them.
           continue;

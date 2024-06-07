@@ -1,11 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\Plugin\Factory\ReflectionFactoryTest.
- *
- * Also contains Argument* classes used as data for testing.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\Plugin\Factory;
 
@@ -115,7 +110,6 @@ class ReflectionFactoryTest extends TestCase {
       ->disableOriginalConstructor()
       ->getMock();
     $get_instance_arguments_ref = new \ReflectionMethod($reflection_factory, 'getInstanceArguments');
-    $get_instance_arguments_ref->setAccessible(TRUE);
 
     // Special case for plugin class without a constructor.
     // getInstanceArguments() throws an exception if there's no constructor.

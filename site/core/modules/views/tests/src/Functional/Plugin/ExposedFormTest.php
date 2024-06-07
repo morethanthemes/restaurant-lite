@@ -9,11 +9,13 @@ use Drupal\Tests\views\Functional\ViewTestBase;
 use Drupal\views\ViewExecutable;
 use Drupal\views\Views;
 use Drupal\views\Entity\View;
+use Drupal\views\Plugin\views\filter\FilterPluginBase;
 
 /**
  * Tests exposed forms functionality.
  *
  * @group views
+ * @group #slow
  */
 class ExposedFormTest extends ViewTestBase {
 
@@ -161,6 +163,37 @@ class ExposedFormTest extends ViewTestBase {
       'page_1' => ['This identifier has illegal characters.'],
     ];
     $this->assertEquals($expected, $errors);
+
+    foreach (FilterPluginBase::RESTRICTED_IDENTIFIERS as $restricted_identifier) {
+      $view = Views::getView('test_exposed_form_buttons');
+      $view->setDisplay();
+      $view->displayHandlers->get('default')->overrideOption('filters', [
+        'type' => [
+          'exposed' => TRUE,
+          'field' => 'type',
+          'id' => 'type',
+          'table' => 'node_field_data',
+          'plugin_id' => 'in_operator',
+          'entity_type' => 'node',
+          'entity_field' => 'type',
+          'expose' => [
+            'identifier' => $restricted_identifier,
+            'label' => 'Content: Type',
+            'operator_id' => 'type_op',
+            'reduce' => FALSE,
+            'description' => 'Exposed overridden description',
+          ],
+        ],
+      ]);
+      $this->executeView($view);
+
+      $errors = $view->validate();
+      $expected = [
+        'default' => ['This identifier is not allowed.'],
+        'page_1' => ['This identifier is not allowed.'],
+      ];
+      $this->assertEquals($expected, $errors);
+    }
   }
 
   /**
@@ -234,7 +267,7 @@ class ExposedFormTest extends ViewTestBase {
     $block->getPlugin()->setConfigurationValue('views_label', '<strong>Custom</strong> title<script>alert("hacked!");</script>');
     $block->save();
 
-    // Test that the custom block label is found.
+    // Test that the content block label is found.
     $this->drupalGet('test_exposed_block');
     $this->assertSession()->responseContains('<strong>Custom</strong> titlealert("hacked!");');
 

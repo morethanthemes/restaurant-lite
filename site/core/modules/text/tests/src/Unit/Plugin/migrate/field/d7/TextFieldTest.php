@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\text\Unit\Plugin\migrate\field\d7;
 
 use Drupal\migrate\Row;
@@ -21,6 +23,8 @@ class TextFieldTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->plugin = new TextField([], 'text', []);
   }
 

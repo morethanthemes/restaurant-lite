@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Composer\Plugin\ProjectMessage;
 
 use Composer\Package\RootPackageInterface;
@@ -59,9 +61,7 @@ class ConfigTest extends TestCase {
    */
   public function testGetMessageText($expected, $config) {
     // Root package has our config.
-    $root = $this->getMockBuilder(RootPackageInterface::class)
-      ->onlyMethods(['getExtra'])
-      ->getMockForAbstractClass();
+    $root = $this->createMock(RootPackageInterface::class);
     $root->expects($this->once())
       ->method('getExtra')
       ->willReturn($config);
@@ -76,9 +76,7 @@ class ConfigTest extends TestCase {
    */
   public function testDefaultFile() {
     // Root package has no extra field.
-    $root = $this->getMockBuilder(RootPackageInterface::class)
-      ->onlyMethods(['getExtra'])
-      ->getMockForAbstractClass();
+    $root = $this->createMock(RootPackageInterface::class);
     $root->expects($this->once())
       ->method('getExtra')
       ->willReturn([]);

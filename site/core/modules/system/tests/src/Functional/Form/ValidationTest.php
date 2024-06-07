@@ -9,6 +9,7 @@ use Drupal\Tests\BrowserTestBase;
  * Tests form processing and alteration via form validation handlers.
  *
  * @group Form
+ * @group #slow
  */
 class ValidationTest extends BrowserTestBase {
 
@@ -234,8 +235,10 @@ class ValidationTest extends BrowserTestBase {
         $this->assertSession()->pageTextNotContains($form[$key]['#title'] . ' field is required.');
         $this->assertSession()->pageTextContains((string) $form[$key]['#form_test_required_error']);
       }
+      if (isset($form[$key]['#title'])) {
+        $this->assertSession()->pageTextNotContains('The submitted value in the ' . $form[$key]['#title'] . ' element is not allowed.');
+      }
     }
-    $this->assertSession()->pageTextNotContains('An illegal choice has been detected. Please contact the site administrator.');
 
     // Verify that no custom validation error appears with valid values.
     $edit = [
@@ -255,8 +258,10 @@ class ValidationTest extends BrowserTestBase {
         $this->assertSession()->pageTextNotContains($form[$key]['#title'] . ' field is required.');
         $this->assertSession()->pageTextNotContains((string) $form[$key]['#form_test_required_error']);
       }
+      if (isset($form[$key]['#title'])) {
+        $this->assertSession()->pageTextNotContains('The submitted value in the ' . $form[$key]['#title'] . ' element is not allowed.');
+      }
     }
-    $this->assertSession()->pageTextNotContains('An illegal choice has been detected. Please contact the site administrator.');
   }
 
 }

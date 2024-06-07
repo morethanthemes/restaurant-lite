@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Database;
 
 use Drupal\Core\Database\RowCountException;
@@ -31,7 +33,7 @@ class RowCountExceptionTest extends UnitTestCase {
 
   /**
    * @covers ::__construct
-   * @dataProvider providerTestExceptionMessage()
+   * @dataProvider providerTestExceptionMessage
    */
   public function testExceptionMessage($expected, $message) {
     $e = new RowCountException($message);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Asset;
 
 use Drupal\Core\Asset\LibraryDiscovery;
@@ -69,7 +71,7 @@ class LibraryDiscoveryTest extends UnitTestCase {
     $this->libraryDiscoveryCollector = $this->getMockBuilder('Drupal\Core\Asset\LibraryDiscoveryCollector')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->libraryDiscovery = new LibraryDiscovery($this->libraryDiscoveryCollector, $this->cacheTagsInvalidator);
+    $this->libraryDiscovery = new LibraryDiscovery($this->libraryDiscoveryCollector);
     $this->libraryDiscoveryCollector->expects($this->once())
       ->method('get')
       ->with('test')

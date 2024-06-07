@@ -35,7 +35,7 @@ class RequestCloseSubscriber implements EventSubscriberInterface {
    *   removed/changed. Also, if possible, do more light-weight shutdowns on
    *   AJAX requests.
    *
-   * @param Symfony\Component\HttpKernel\Event\TerminateEvent $event
+   * @param \Symfony\Component\HttpKernel\Event\TerminateEvent $event
    *   The Event to process.
    */
   public function onTerminate(TerminateEvent $event) {
@@ -48,7 +48,7 @@ class RequestCloseSubscriber implements EventSubscriberInterface {
    * @return array
    *   An array of event listener definitions.
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[KernelEvents::TERMINATE][] = ['onTerminate', 100];
 
     return $events;

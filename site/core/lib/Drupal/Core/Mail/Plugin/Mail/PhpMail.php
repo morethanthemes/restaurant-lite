@@ -8,6 +8,8 @@ use Drupal\Core\Site\Settings;
 use Symfony\Component\Mime\Header\Headers;
 use Symfony\Component\Mime\Header\UnstructuredHeader;
 
+// cspell:ignore windir
+
 /**
  * Defines the default Drupal mail backend, using PHP's native mail() function.
  *
@@ -34,10 +36,18 @@ class PhpMail implements MailInterface {
   protected $configFactory;
 
   /**
+   * The currently active request object.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request
+   */
+  protected $request;
+
+  /**
    * PhpMail constructor.
    */
   public function __construct() {
     $this->configFactory = \Drupal::configFactory();
+    $this->request = \Drupal::request();
   }
 
   /**
@@ -103,20 +113,7 @@ class PhpMail implements MailInterface {
     $mail_body = preg_replace('@\r?\n@', $line_endings, $message['body']);
     $mail_headers = $headers->toString();
 
-    // Since Drupal 10+ does not support PHP < 8, this block is only relevant for Drupal 9.x.
-    // See: https://www.drupal.org/node/3270647
-    if (version_compare(PHP_VERSION, '8.0.0') < 0) {
-      // For headers, PHP's API suggests that we use CRLF normally,
-      // but some MTAs incorrectly replace LF with CRLF. See #234403.
-      // PHP 8+ requires headers to be separated by CRLF,
-      // so we'll replace CRLF by LF only when using PHP < 8. See:
-      // - https://bugs.php.net/bug.php?id=81158
-      // - https://github.com/php/php-src/commit/6983ae751cd301886c966b84367fc7aaa1273b2d#diff-c6922cd89f6f75912eb377833ca1eddb7dd41de088be821024b8a0e340fed3df
-      $mail_headers = str_replace("\r\n", "\n", $mail_headers);
-      $mail_subject = str_replace("\r\n", "\n", $mail_subject);
-    }
-
-    if (substr(PHP_OS, 0, 3) != 'WIN') {
+    if (!$this->request->server->has('WINDIR') && !str_contains($this->request->server->get('SERVER_SOFTWARE'), 'Win32')) {
       // On most non-Windows systems, the "-f" option to the sendmail command
       // is used to set the Return-Path. There is no space between -f and
       // the value of the return path.
@@ -162,14 +159,14 @@ class PhpMail implements MailInterface {
    *   Subject of the email to be sent.
    * @param string $message
    *   Message to be sent.
-   * @param array $additional_headers
-   *   (optional) Array to be inserted at the end of the email header.
+   * @param array|string $additional_headers
+   *   (optional) String or array to be inserted at the end of the email header.
    * @param string $additional_params
    *   (optional) Can be used to pass additional flags as command line options.
    *
    * @see mail()
    */
-  protected function doMail(string $to, string $subject, string $message, $additional_headers = [], string $additional_params = ''): bool {
+  protected function doMail(string $to, string $subject, string $message, array|string $additional_headers = [], string $additional_params = ''): bool {
     return @mail(
       $to,
       $subject,

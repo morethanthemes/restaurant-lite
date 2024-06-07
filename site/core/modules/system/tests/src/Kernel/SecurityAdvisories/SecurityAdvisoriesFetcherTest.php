@@ -8,6 +8,7 @@ use Drupal\Core\Logger\RfcLoggerTrait;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\KernelTests\KernelTestBase;
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -25,11 +26,11 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
   use RfcLoggerTrait;
 
   /**
-   * The log messages from watchdog_exception.
+   * The error messages.
    *
    * @var string[]
    */
-  protected $watchdogExceptionMessages = [];
+  protected $errorMessages = [];
 
   /**
    * The log error log messages.
@@ -506,7 +507,7 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
         'title' => 'SA title',
         'link' => 'http://example.com',
       ];
-      $responses[] = new Response('200', [], json_encode([$feed_item]));
+      $responses[] = new Response(200, [], json_encode([$feed_item]));
     }
     $this->setTestFeedResponses($responses);
   }
@@ -633,8 +634,8 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
       'link' => 'http://example.com',
     ];
     $this->setTestFeedResponses([
-      new Response('500', [], 'HTTPS failed'),
-      new Response('200', [], json_encode([$feed_item])),
+      new Response(500, [], 'HTTPS failed'),
+      new Response(200, [], json_encode([$feed_item])),
     ]);
     $advisories = $this->getAdvisories();
 
@@ -657,7 +658,7 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
     $this->assertCount(1, $advisories);
     $this->assertSame('http://example.com', $advisories[0]->getUrl());
     $this->assertSame('SA title', $advisories[0]->getTitle());
-    $this->assertSame(["Server error: `GET https://updates.drupal.org/psa.json` resulted in a `500 Internal Server Error` response:\nHTTPS failed\n"], $this->watchdogExceptionMessages);
+    $this->assertSame(["Server error: `GET https://updates.drupal.org/psa.json` resulted in a `500 Internal Server Error` response:\nHTTPS failed\n"], $this->errorMessages);
   }
 
   /**
@@ -666,7 +667,7 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
    */
   public function testNoHttpFallback(): void {
     $this->setTestFeedResponses([
-      new Response('500', [], 'HTTPS failed'),
+      new Response(500, [], 'HTTPS failed'),
     ]);
 
     $exception_thrown = FALSE;
@@ -723,6 +724,7 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
     $this->container = $this->container->get('kernel')->getContainer();
     $this->container->get('logger.factory')->addLogger($this);
     $this->container->set('http_client', new Client(['handler' => $handler_stack]));
+    $this->container->setAlias(ClientInterface::class, 'http_client');
   }
 
   /**
@@ -743,7 +745,7 @@ class SecurityAdvisoriesFetcherTest extends KernelTestBase implements LoggerInte
    */
   public function log($level, $message, array $context = []): void {
     if (isset($context['@message'])) {
-      $this->watchdogExceptionMessages[] = $context['@message'];
+      $this->errorMessages[] = $context['@message'];
     }
     if ($level === RfcLogLevel::ERROR) {
       $this->logErrorMessages[] = $message;

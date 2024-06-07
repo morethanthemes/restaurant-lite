@@ -78,7 +78,7 @@ class EntityField extends FieldPluginBase implements CacheableDependencyInterfac
   protected $formatterOptions;
 
   /**
-   * The entity typemanager.
+   * The entity type manager.
    *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
@@ -125,6 +125,11 @@ class EntityField extends FieldPluginBase implements CacheableDependencyInterfac
    * @var \Drupal\views\Entity\Render\EntityFieldRenderer
    */
   protected $entityFieldRenderer;
+
+  /**
+   * The fields that we are actually grouping on.
+   */
+  public array $group_fields;
 
   /**
    * Constructs a \Drupal\field\Plugin\views\field\Field object.
@@ -308,7 +313,7 @@ class EntityField extends FieldPluginBase implements CacheableDependencyInterfac
   }
 
   /**
-   * Called to determine what to tell the clicksorter.
+   * Called to determine what to tell the click sorter.
    */
   public function clickSort($order) {
     // No column selected, can't continue.
@@ -535,7 +540,7 @@ class EntityField extends FieldPluginBase implements CacheableDependencyInterfac
       '#title' => $this->t('Display all values in the same row'),
       '#type' => 'checkbox',
       '#default_value' => $this->options['group_rows'],
-      '#description' => $this->t('If checked, multiple values for this field will be shown in the same row. If not checked, each value in this field will create a new row. If using group by, please make sure to group by "Entity ID" for this setting to have any effect.'),
+      '#description' => $this->t('If checked, multiple values for this field will be shown in the same row. If not checked, each value in this field will create a new row. If using group by, make sure to group by "Entity ID" for this setting to have any effect.'),
       '#fieldset' => 'multiple_field_settings',
     ];
 
@@ -895,7 +900,7 @@ class EntityField extends FieldPluginBase implements CacheableDependencyInterfac
    */
   protected function createEntityForGroupBy(EntityInterface $entity, ResultRow $row) {
     // Retrieve the correct translation object.
-    $processed_entity = clone $this->getEntityFieldRenderer()->getEntityTranslation($entity, $row);
+    $processed_entity = clone $this->getEntityFieldRenderer()->getEntityTranslationByRelationship($entity, $row);
 
     // Copy our group fields into the cloned entity. It is possible this will
     // cause some weirdness, but there is only so much we can hope to do.
@@ -1073,7 +1078,7 @@ class EntityField extends FieldPluginBase implements CacheableDependencyInterfac
     }
 
     // Retrieve the translated object.
-    $translated_entity = $this->getEntityFieldRenderer()->getEntityTranslation($entity, $values);
+    $translated_entity = $this->getEntityFieldRenderer()->getEntityTranslationByRelationship($entity, $values);
 
     // Some bundles might not have a specific field, in which case the entity
     // (potentially a fake one) doesn't have it either.

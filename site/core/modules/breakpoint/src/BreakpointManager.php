@@ -29,13 +29,12 @@ use Drupal\Core\StringTranslation\TranslationInterface;
  * @endcode
  * For example:
  * @code
- * bartik.mobile:
- *   label: mobile
- *   mediaQuery: '(min-width: 0px)'
- *   weight: 0
+ * olivero.lg:
+ *   label: Large
+ *   mediaQuery: 'all and (min-width: 1000px)'
+ *   weight: 2
  *   multipliers:
  *     - 1x
- *     - 2x
  * @endcode
  * Optionally a breakpoint can provide a group key. By default an extensions
  * breakpoints will be placed in a group labelled with the extension name.
@@ -133,8 +132,9 @@ class BreakpointManager extends DefaultPluginManager implements BreakpointManage
     if (!in_array('1x', $definition['multipliers'])) {
       $definition['multipliers'][] = '1x';
     }
-    // Ensure that multipliers are sorted correctly.
-    sort($definition['multipliers']);
+    // Ensure that multipliers are sorted numerically so 1x, 1.5x and 2x
+    // come out in that order instead of 1.5x, 1x, 2x.
+    sort($definition['multipliers'], SORT_NUMERIC);
   }
 
   /**

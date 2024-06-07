@@ -7,6 +7,7 @@ use Drupal\Tests\views\Functional\ViewTestBase;
 use Drupal\views\Views;
 use Drupal\language\Entity\ConfigurableLanguage;
 
+// cspell:ignore eerste laatste volgende vorige
 /**
  * Tests the pluggable pager system.
  *
@@ -351,6 +352,22 @@ class PagerTest extends ViewTestBase {
     // Test pager cache contexts.
     $this->drupalGet('test_pager_full');
     $this->assertCacheContexts(['languages:language_interface', 'theme', 'timezone', 'url.query_args', 'user.node_grants:view']);
+
+    // Set "Number of pager links visible" to 1 and check the active page number
+    // on the last page.
+    $view = Views::getView('test_pager_full');
+    $view->setDisplay();
+    $pager = [
+      'type' => 'full',
+      'options' => [
+        'items_per_page' => 5,
+        'quantity' => 1,
+      ],
+    ];
+    $view->display_handler->setOption('pager', $pager);
+    $view->save();
+    $this->drupalGet('test_pager_full', ['query' => ['page' => 2]]);
+    $this->assertEquals('Current page 3', $this->assertSession()->elementExists('css', '.pager__items li.is-active')->getText());
   }
 
   /**
@@ -369,7 +386,7 @@ class PagerTest extends ViewTestBase {
     $view->setAjaxEnabled(TRUE);
     $view->pager = NULL;
     $output = $view->render();
-    $output = \Drupal::service('renderer')->renderRoot($output);
+    $output = (string) \Drupal::service('renderer')->renderRoot($output);
     $this->assertEquals(0, preg_match('/<ul class="pager">/', $output), 'The pager is not rendered.');
   }
 

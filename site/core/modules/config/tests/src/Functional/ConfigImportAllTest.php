@@ -11,7 +11,11 @@ use Drupal\Tests\system\Functional\Module\ModuleTestBase;
 /**
  * Tests the largest configuration import possible with all available modules.
  *
+ * Note that the use of SchemaCheckTestTrait means that the schema conformance
+ * of all default configuration is also tested.
+ *
  * @group config
+ * @group #slow
  */
 class ConfigImportAllTest extends ModuleTestBase {
 
@@ -25,13 +29,21 @@ class ConfigImportAllTest extends ModuleTestBase {
   protected $webUser;
 
   /**
-   * The profile to install as a basis for testing.
+   * Modules to enable.
    *
-   * Using the standard profile as this has a lot of additional configuration.
-   *
-   * @var string
+   * @var array
    */
-  protected $profile = 'standard';
+  protected static $modules = ['config'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $profile = 'testing';
 
   /**
    * {@inheritdoc}
@@ -96,14 +108,14 @@ class ConfigImportAllTest extends ModuleTestBase {
 
     $all_modules = \Drupal::service('extension.list.module')->getList();
     $database_module = \Drupal::service('database')->getProvider();
-    $expected_modules = ['path_alias', 'system', 'user', 'standard', $database_module];
+    $expected_modules = ['path_alias', 'system', 'user', 'testing', $database_module];
 
     // Ensure that only core required modules and the install profile can not be uninstalled.
     $validation_reasons = \Drupal::service('module_installer')->validateUninstall(array_keys($all_modules));
     $validation_modules = array_keys($validation_reasons);
     $this->assertEqualsCanonicalizing($expected_modules, $validation_modules);
 
-    $modules_to_uninstall = array_filter($all_modules, function ($module) use ($validation_reasons) {
+    $modules_to_uninstall = array_filter($all_modules, function ($module) {
       // Filter required and not enabled modules.
       if (!empty($module->info['required']) || $module->status == FALSE) {
         return FALSE;

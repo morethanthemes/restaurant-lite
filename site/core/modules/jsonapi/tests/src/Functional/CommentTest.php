@@ -4,6 +4,7 @@ namespace Drupal\Tests\jsonapi\Functional;
 
 use Drupal\comment\Entity\Comment;
 use Drupal\comment\Entity\CommentType;
+use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\comment\Tests\CommentTestTrait;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\NestedArray;
@@ -20,6 +21,7 @@ use GuzzleHttp\RequestOptions;
  * JSON:API integration test for the "Comment" content entity type.
  *
  * @group jsonapi
+ * @group #slow
  */
 class CommentTest extends ResourceTestBase {
 
@@ -74,7 +76,7 @@ class CommentTest extends ResourceTestBase {
   /**
    * @var \Drupal\entity_test\Entity\EntityTest
    */
-  private $commented_entity;
+  private $commentedEntity;
 
   /**
    * {@inheritdoc}
@@ -111,11 +113,12 @@ class CommentTest extends ResourceTestBase {
     $this->addDefaultCommentField('entity_test', 'bar', 'comment');
 
     // Create a "Camelids" test entity that the comment will be assigned to.
-    $this->commented_entity = EntityTest::create([
+    $this->commentedEntity = EntityTest::create([
       'name' => 'Camelids',
       'type' => 'bar',
+      'comment' => CommentItemInterface::OPEN,
     ]);
-    $this->commented_entity->save();
+    $this->commentedEntity->save();
 
     // Create a "Llama" comment.
     $comment = Comment::create([
@@ -123,7 +126,7 @@ class CommentTest extends ResourceTestBase {
         'value' => 'The name "llama" was adopted by European settlers from native Peruvians.',
         'format' => 'plain_text',
       ],
-      'entity_id' => $this->commented_entity->id(),
+      'entity_id' => $this->commentedEntity->id(),
       'entity_type' => 'entity_test',
       'field_name' => 'comment',
     ]);
@@ -209,9 +212,9 @@ class CommentTest extends ResourceTestBase {
           ],
           'entity_id' => [
             'data' => [
-              'id' => $this->commented_entity->uuid(),
+              'id' => $this->commentedEntity->uuid(),
               'meta' => [
-                'drupal_internal__target_id' => (int) $this->commented_entity->id(),
+                'drupal_internal__target_id' => (int) $this->commentedEntity->id(),
               ],
               'type' => 'entity_test--bar',
             ],
@@ -242,7 +245,7 @@ class CommentTest extends ResourceTestBase {
         'attributes' => [
           'entity_type' => 'entity_test',
           'field_name' => 'comment',
-          'subject' => 'Dramallama',
+          'subject' => 'Drama llama',
           'comment_body' => [
             'value' => 'Llamas are awesome.',
             'format' => 'plain_text',

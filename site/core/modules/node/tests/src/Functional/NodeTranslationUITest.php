@@ -3,18 +3,29 @@
 namespace Drupal\Tests\node\Functional;
 
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Tests\content_translation\Functional\ContentTranslationUITestBase;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Url;
-use Drupal\node\Entity\Node;
+use Drupal\Tests\content_translation\Functional\ContentTranslationUITestBase;
+use Drupal\Tests\language\Traits\LanguageTestTrait;
+use Drupal\comment\Tests\CommentTestTrait;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\node\Entity\Node;
+use Drupal\user\Entity\Role;
+use Drupal\user\RoleInterface;
 
 /**
  * Tests the Node Translation UI.
  *
  * @group node
+ * @group #slow
  */
 class NodeTranslationUITest extends ContentTranslationUITestBase {
+
+  use LanguageTestTrait;
+  use CommentTestTrait;
 
   /**
    * {@inheritdoc}
@@ -25,18 +36,11 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
    * {@inheritdoc}
    */
   protected $defaultCacheContexts = [
-    'languages:language_interface',
     'theme',
-    'route',
     'timezone',
-    'url.path.parent',
     'url.query_args:_wrapper_format',
     'url.site',
-    'user.roles',
-    'url.path.is_front',
-    // These two cache contexts are added by BigPipe.
-    'cookies:big_pipe_nojs',
-    'session.exists',
+    'user.permissions',
   ];
 
   /**
@@ -49,17 +53,8 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
     'language',
     'content_translation',
     'node',
-    'datetime',
     'field_ui',
-    'help',
   ];
-
-  /**
-   * The profile to install as a basis for testing.
-   *
-   * @var string
-   */
-  protected $profile = 'standard';
 
   /**
    * {@inheritdoc}
@@ -69,14 +64,15 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
     $this->bundle = 'article';
     parent::setUp();
 
+    // Create the bundle.
+    $this->drupalCreateContentType(['type' => 'article', 'title' => 'Article']);
+    $this->doSetup();
+
     // Ensure the help message is shown even with prefixed paths.
     $this->drupalPlaceBlock('help_block', ['region' => 'content']);
 
     // Display the language selector.
-    $this->drupalLogin($this->administrator);
-    $edit = ['language_configuration[language_alterable]' => TRUE];
-    $this->drupalGet('admin/structure/types/manage/article');
-    $this->submitForm($edit, 'Save content type');
+    static::enableBundleTranslation('node', 'article');
     $this->drupalLogin($this->translator);
   }
 
@@ -97,10 +93,6 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
     // Delete all fields.
     $this->drupalGet('admin/structure/types/manage/article/fields');
     $this->drupalGet('admin/structure/types/manage/article/fields/node.article.' . $this->fieldName . '/delete');
-    $this->submitForm([], 'Delete');
-    $this->drupalGet('admin/structure/types/manage/article/fields/node.article.field_tags/delete');
-    $this->submitForm([], 'Delete');
-    $this->drupalGet('admin/structure/types/manage/article/fields/node.article.field_image/delete');
     $this->submitForm([], 'Delete');
 
     // Add a node.
@@ -311,6 +303,14 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
    * Tests that translations are rendered properly.
    */
   public function testTranslationRendering() {
+    // Add a comment field to the article content type.
+    \Drupal::service('module_installer')->install(['comment']);
+    $this->addDefaultCommentField('node', 'article');
+
+    // Add 'post comments' permission to the authenticated role.
+    $role = Role::load(RoleInterface::AUTHENTICATED_ID);
+    $role->grantPermission('post comments')->save();
+
     $default_langcode = $this->langcodes[0];
     $values[$default_langcode] = $this->getNewEntityValues($default_langcode);
     $this->entityId = $this->createEntity($values[$default_langcode], $default_langcode);
@@ -338,7 +338,7 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
     $display['display_options']['rendering_language'] = '***LANGUAGE_entity_translation***';
     $view->save();
 
-    // Need to check from the beginning, including the base_path, in the url
+    // Need to check from the beginning, including the base_path, in the URL
     // since the pattern for the default language might be a substring of
     // the strings for other languages.
     $base_path = base_path();
@@ -555,17 +555,33 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
    * Tests title is not escaped (but XSS-filtered) for details form element.
    */
   public function testDetailsTitleIsNotEscaped() {
+    // Create an image field.
+    \Drupal::service('module_installer')->install(['image']);
+    FieldStorageConfig::create([
+      'entity_type' => 'node',
+      'field_name' => 'field_image',
+      'type' => 'image',
+    ])->save();
+    FieldConfig::create([
+      'entity_type' => 'node',
+      'field_name' => 'field_image',
+      'bundle' => 'article',
+      'translatable' => TRUE,
+    ])->save();
+
     $this->drupalLogin($this->administrator);
     // Make the image field a multi-value field in order to display a
     // details form element.
-    $edit = ['cardinality_number' => 2];
-    $this->drupalGet('admin/structure/types/manage/article/fields/node.article.field_image/storage');
-    $this->submitForm($edit, 'Save field settings');
+    $edit = ['field_storage[subform][cardinality_number]' => 2];
+    $this->drupalGet('admin/structure/types/manage/article/fields/node.article.field_image');
+    $this->submitForm($edit, 'Save');
+
+    // Enable the display of the image field.
+    EntityFormDisplay::load('node.article.default')
+      ->setComponent('field_image', ['region' => 'content'])->save();
 
     // Make the image field non-translatable.
-    $edit = ['settings[node][article][fields][field_image]' => FALSE];
-    $this->drupalGet('admin/config/regional/content-language');
-    $this->submitForm($edit, 'Save configuration');
+    static::setFieldTranslatable('node', 'article', 'field_image', FALSE);
 
     // Create a node.
     $nid = $this->createEntity(['title' => 'Node with multi-value image field en title'], 'en');
@@ -575,6 +591,28 @@ class NodeTranslationUITest extends ContentTranslationUITestBase {
     $markup = 'Image <span class="translation-entity-all-languages">(all languages)</span>';
     $this->assertSession()->assertNoEscaped($markup);
     $this->assertSession()->responseContains($markup);
+  }
+
+  /**
+   * Test that when content is language neutral, it uses interface language.
+   *
+   * When language neutral content is displayed on interface language, it should
+   * consider the interface language for creating the content link.
+   */
+  public function testUrlPrefixOnLanguageNeutralContent() {
+    $this->drupalLogin($this->administrator);
+    $neutral_langcodes = [
+      LanguageInterface::LANGCODE_NOT_APPLICABLE,
+      LanguageInterface::LANGCODE_NOT_SPECIFIED,
+    ];
+    foreach ($neutral_langcodes as $langcode) {
+      $article = $this->drupalCreateNode(['type' => 'article', 'langcode' => $langcode]);
+      $this->drupalGet("{$this->langcodes[1]}/admin/content");
+      $this->assertSession()->linkByHrefExists("{$this->langcodes[1]}/node/{$article->id()}");
+
+      $this->drupalGet("{$this->langcodes[2]}/admin/content");
+      $this->assertSession()->linkByHrefExists("{$this->langcodes[2]}/node/{$article->id()}");
+    }
   }
 
 }

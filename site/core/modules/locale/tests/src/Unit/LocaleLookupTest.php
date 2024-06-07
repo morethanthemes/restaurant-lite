@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\locale\Unit;
 
 use Drupal\Component\Gettext\PoItem;
@@ -68,6 +70,8 @@ class LocaleLookupTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->storage = $this->createMock('Drupal\locale\StringStorageInterface');
     $this->cache = $this->createMock('Drupal\Core\Cache\CacheBackendInterface');
     $this->lock = $this->createMock('Drupal\Core\Lock\LockBackendInterface');
@@ -361,7 +365,6 @@ class LocaleLookupTest extends UnitTestCase {
 
     $o = new \ReflectionObject($locale_lookup);
     $method = $o->getMethod('getCid');
-    $method->setAccessible(TRUE);
     $cid = $method->invoke($locale_lookup, 'getCid');
 
     $this->assertEquals($expected, $cid);

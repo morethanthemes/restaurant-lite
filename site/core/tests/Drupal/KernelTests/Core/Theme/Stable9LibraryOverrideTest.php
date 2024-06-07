@@ -10,6 +10,25 @@ namespace Drupal\KernelTests\Core\Theme;
 class Stable9LibraryOverrideTest extends StableLibraryOverrideTestBase {
 
   /**
+   * A list of libraries to skip checking, in the format extension/library_name.
+   *
+   * @var string[]
+   */
+  protected $librariesToSkip = [
+    'core/drupal.dialog.off_canvas',
+    'layout_builder/drupal.layout_builder',
+    'views/views.responsive-grid',
+    'field_ui/drupal.field_ui.manage_fields',
+    'comment/drupal.comment-icon',
+    'file/drupal.file-icon',
+    'text/drupal.text-icon',
+    'link/drupal.link-icon',
+    'media/drupal.media-icon',
+    'options/drupal.options-icon',
+    'telephone/drupal.telephone-icon',
+  ];
+
+  /**
    * {@inheritdoc}
    */
   protected static $modules = ['system', 'user', 'path_alias'];
@@ -52,7 +71,7 @@ class Stable9LibraryOverrideTest extends StableLibraryOverrideTestBase {
           continue;
         }
         // Skip internal libraries.
-        if (substr($library_name, 0, 9) === 'internal.') {
+        if (str_starts_with($library_name, 'internal.')) {
           continue;
         }
         $library_after = $libraries_after[$extension][$library_name];

@@ -14,6 +14,7 @@ use Drupal\editor\Entity\Editor;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\filter\Entity\FilterFormat;
 use Drupal\Tests\SchemaCheckTestTrait;
+use Drupal\TestTools\Random;
 use org\bovigo\vfs\vfsStream;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\FrozenParameterBag;
@@ -79,6 +80,16 @@ class CKEditor5PluginManagerTest extends KernelTestBase {
     ])->save();
     $this->manager = $this->container->get('plugin.manager.ckeditor5.plugin');
     $this->typedConfig = $this->container->get('config.typed');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function enableModules(array $modules) {
+    parent::enableModules($modules);
+    // Ensure the CKEditor 5 plugin manager instance on the test reflects the
+    // status after the module is installed.
+    $this->manager = $this->container->get('plugin.manager.ckeditor5.plugin');
   }
 
   /**
@@ -172,7 +183,7 @@ YAML,
   }
 
   /**
-   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginManager::processDefinition()
+   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginManager::processDefinition
    * @dataProvider providerTestInvalidPluginDefinitions
    */
   public function testInvalidPluginDefinitions(string $yaml, ?string $expected_message, array $additional_files = []): void {
@@ -1046,8 +1057,8 @@ PHP,
    * @return array
    *   Test scenarios.
    */
-  public function providerProvidedElementsInvalidElementSubset(): array {
-    $random_tag_name = strtolower($this->randomMachineName());
+  public static function providerProvidedElementsInvalidElementSubset(): array {
+    $random_tag_name = strtolower(Random::machineName());
     $random_tag = "<$random_tag_name>";
     return [
       'superset: random tag not listed in the plugin definition' => [
@@ -1074,12 +1085,14 @@ PHP,
     // Case 1: no extra CKEditor 5 plugins.
     $definitions = array_keys($this->manager->getEnabledDefinitions($editor));
     $default_plugins = [
+      'ckeditor5_autoformat',
       'ckeditor5_bold',
       'ckeditor5_emphasis',
       'ckeditor5_essentials',
       'ckeditor5_globalAttributeDir',
       'ckeditor5_globalAttributeLang',
       'ckeditor5_heading',
+      'ckeditor5_htmlComments',
       'ckeditor5_paragraph',
       'ckeditor5_pasteFromOffice',
     ];
@@ -1088,6 +1101,7 @@ PHP,
       'ckeditor5/internal.drupal.ckeditor5',
       'ckeditor5/internal.drupal.ckeditor5.emphasis',
       'ckeditor5/internal.drupal.ckeditor5.htmlEngine',
+      'core/ckeditor5.autoformat',
       'core/ckeditor5.basic',
       'core/ckeditor5.essentials',
       'core/ckeditor5.htmlSupport',
@@ -1196,10 +1210,12 @@ PHP,
     $definitions = array_keys($this->manager->getEnabledDefinitions($editor));
     $default_plugins = [
       'ckeditor5_arbitraryHtmlSupport',
+      'ckeditor5_autoformat',
       'ckeditor5_bold',
       'ckeditor5_emphasis',
       'ckeditor5_essentials',
       'ckeditor5_heading',
+      'ckeditor5_htmlComments',
       'ckeditor5_paragraph',
       'ckeditor5_pasteFromOffice',
     ];
@@ -1208,6 +1224,7 @@ PHP,
       'ckeditor5/internal.drupal.ckeditor5',
       'ckeditor5/internal.drupal.ckeditor5.emphasis',
       'ckeditor5/internal.drupal.ckeditor5.htmlEngine',
+      'core/ckeditor5.autoformat',
       'core/ckeditor5.basic',
       'core/ckeditor5.essentials',
       'core/ckeditor5.htmlSupport',
@@ -1251,6 +1268,11 @@ PHP,
       $text_editor->getConfigDependencyName(),
       $text_editor->toArray()
     );
+    // @todo Remove in https://www.drupal.org/project/drupal/issues/3361534, which moves this into ::assertConfigSchema()
+    $this->assertSame([], array_map(
+      fn ($v) => sprintf("[%s] %s", $v->getPropertyPath(), (string) $v->getMessage()),
+      iterator_to_array($this->typedConfig->createFromNameAndData($text_editor->getConfigDependencyName(), $text_editor->toArray())->validate())
+    ));
 
     $provided_elements = $this->manager->getProvidedElements($plugins, $text_editor);
     $this->assertSame($expected_elements, $provided_elements);
@@ -1369,6 +1391,10 @@ PHP,
         ],
         'text_editor_settings' => [
           'plugins' => [],
+          // Deviate from the default toolbar items because that would cause
+          // the `ckeditor5_heading` plugin to be enabled.
+          // @see \Drupal\ckeditor5\Plugin\Editor\CKEditor5::getDefaultSettings()
+          'toolbar' => ['items' => ['bold', 'italic']],
         ],
         'expected_elements' => [
           'p' => [
@@ -1523,7 +1549,7 @@ PHP,
   }
 
   /**
-   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginDefinition::validateCKEditor5Aspects()
+   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginDefinition::validateCKEditor5Aspects
    */
   public function testAutomaticLinkDecoratorsDisallowed(): void {
     $this->expectException(InvalidPluginDefinitionException::class);
@@ -1535,7 +1561,7 @@ PHP,
   }
 
   /**
-   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginDefinition::validateCKEditor5Aspects()
+   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginDefinition::validateCKEditor5Aspects
    */
   public function testExternalLinkAutomaticLinkDecoratorDisallowed(): void {
     $this->expectException(InvalidPluginDefinitionException::class);
@@ -1547,7 +1573,7 @@ PHP,
   }
 
   /**
-   * @covers ::getDiscovery
+   * @covers \Drupal\ckeditor5\Plugin\CKEditor5PluginManager::getDiscovery
    * @dataProvider providerTestDerivedPluginDefinitions
    */
   public function testDerivedPluginDefinitions(string $yaml, ?string $expected_message, array $additional_files = [], ?array $expected_derived_plugin_definitions = NULL): void {

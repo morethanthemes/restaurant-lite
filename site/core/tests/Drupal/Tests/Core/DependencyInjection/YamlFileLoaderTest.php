@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\DependencyInjection;
 
 use Drupal\Component\FileCache\FileCacheFactory;
@@ -91,7 +93,7 @@ services:
   _defaults:
     invalid: string
 YAML,
-        'The configuration key "invalid" cannot be used to define a default value in "vfs://drupal/modules/example/example.yml". Allowed keys are "public", "tags", "autowire".',
+        'The configuration key "invalid" cannot be used to define a default value in "vfs://drupal/modules/example/example.yml". Allowed keys are "public", "tags", "autowire", "autoconfigure".',
       ],
       'default tags must be an array' => [<<<YAML
 services:
@@ -168,6 +170,18 @@ services:
   service: string
 YAML,
         'A service definition must be an array or a string starting with "@" but string found for service "service" in vfs://drupal/modules/example/example.yml. Check your YAML syntax.',
+      ],
+      'YAML must be valid' => [<<<YAML
+   do not:
+      do: this: for the love of Foo Bar!
+YAML,
+        'The file "vfs://drupal/modules/example/example.yml" does not contain valid YAML',
+      ],
+      'YAML must have expected keys' => [<<<YAML
+      "do not":
+        do: this
+      YAML,
+        'The service file "vfs://drupal/modules/example/example.yml" is not valid: it contains invalid root key(s) "do not". Services have to be added under "services" and Parameters under "parameters".',
       ],
     ];
   }

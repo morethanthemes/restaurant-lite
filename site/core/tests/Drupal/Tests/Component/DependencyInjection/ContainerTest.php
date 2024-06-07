@@ -1,15 +1,12 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\DependencyInjection\ContainerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\DependencyInjection;
 
 use Drupal\Component\Utility\Crypt;
-use Drupal\Tests\PhpUnitCompatibilityTrait;
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Bridge\PhpUnit\ExpectDeprecationTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
@@ -26,7 +23,7 @@ use Prophecy\Argument;
  */
 class ContainerTest extends TestCase {
   use ExpectDeprecationTrait;
-  use PhpUnitCompatibilityTrait;
+  use ProphecyTrait;
 
   /**
    * The tested container.
@@ -168,7 +165,7 @@ class ContainerTest extends TestCase {
     $this->assertEquals($some_parameter, $service->getSomeParameter(), '%some_config% was injected via constructor.');
     $this->assertEquals($this->container, $service->getContainer(), 'Container was injected via setter injection.');
     $this->assertEquals($some_other_parameter, $service->getSomeOtherParameter(), '%some_other_config% was injected via setter injection.');
-    $this->assertEquals('foo', $service->_someProperty, 'Service has added properties.');
+    $this->assertEquals('foo', $service->someProperty, 'Service has added properties.');
   }
 
   /**
@@ -594,6 +591,21 @@ class ContainerTest extends TestCase {
   }
 
   /**
+   * Tests that services wrapped in a closure work correctly.
+   *
+   * @covers ::get
+   * @covers ::createService
+   * @covers ::resolveServicesAndParameters
+   */
+  public function testResolveServicesAndParametersForServiceReferencedViaServiceClosure() {
+    $service = $this->container->get('service_within_service_closure');
+    $other_service = $this->container->get('other.service');
+    $factory_function = $service->getSomeOtherService();
+    $this->assertInstanceOf(\Closure::class, $factory_function);
+    $this->assertEquals($other_service, call_user_func($factory_function));
+  }
+
+  /**
    * Tests that an invalid argument throw an Exception.
    *
    * @covers ::get
@@ -745,7 +757,7 @@ class ContainerTest extends TestCase {
         $this->getServiceCall('other.service'),
         $this->getParameterCall('some_config'),
       ]),
-      'properties' => $this->getCollection(['_someProperty' => 'foo']),
+      'properties' => $this->getCollection(['someProperty' => 'foo']),
       'calls' => [
         [
           'setContainer',
@@ -845,6 +857,14 @@ class ContainerTest extends TestCase {
 
     ];
 
+    $services['service_within_service_closure'] = [
+      'class' => '\Drupal\Tests\Component\DependencyInjection\MockService',
+      'arguments' => $this->getCollection([
+        $this->getServiceClosureCall('other.service', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE),
+        $this->getParameterCall('some_private_config'),
+      ]),
+    ];
+
     $services['factory_service'] = [
       'class' => '\Drupal\service_container\ServiceContainer\ControllerInterface',
       'factory' => [
@@ -886,12 +906,9 @@ class ContainerTest extends TestCase {
     $services['synthetic'] = [
       'synthetic' => TRUE,
     ];
-    // The file could have been named as a .php file. The reason it is a .data
-    // file is that SimpleTest tries to load it. SimpleTest does not like such
-    // fixtures and hence we use a neutral name like .data.
     $services['container_test_file_service_test'] = [
       'class' => '\stdClass',
-      'file' => __DIR__ . '/Fixture/container_test_file_service_test_service_function.data',
+      'file' => __DIR__ . '/Fixture/container_test_file_service_test_service_function.php',
     ];
 
     // Test multiple arguments.
@@ -979,6 +996,17 @@ class ContainerTest extends TestCase {
   protected function getServiceCall($id, $invalid_behavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE) {
     return (object) [
       'type' => 'service',
+      'id' => $id,
+      'invalidBehavior' => $invalid_behavior,
+    ];
+  }
+
+  /**
+   * Helper function to return a service closure definition.
+   */
+  protected function getServiceClosureCall($id, $invalid_behavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE) {
+    return (object) [
+      'type' => 'service_closure',
       'id' => $id,
       'invalidBehavior' => $invalid_behavior,
     ];
@@ -1109,6 +1137,11 @@ class MockService {
    * @var string
    */
   protected $someOtherParameter;
+
+  /**
+   * @var string
+   */
+  public string $someProperty;
 
   /**
    * Constructs a MockService object.

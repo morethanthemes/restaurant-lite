@@ -74,6 +74,7 @@ class ContentTranslationWorkflowsTest extends ContentTranslationTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
+    $this->doSetup();
 
     $field_storage = FieldStorageConfig::create([
       'field_name' => 'field_reference',
@@ -151,7 +152,7 @@ class ContentTranslationWorkflowsTest extends ContentTranslationTestBase {
   /**
    * Creates a test entity and translate it.
    *
-   * @param Drupal\User\UserInterface|null $user
+   * @param \Drupal\User\UserInterface|null $user
    *   (optional) The entity owner.
    */
   protected function setupEntity(UserInterface $user = NULL) {

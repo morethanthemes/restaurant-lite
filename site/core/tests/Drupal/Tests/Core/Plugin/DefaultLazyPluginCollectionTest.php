@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Plugin;
 
 use Drupal\Component\Plugin\ConfigurableInterface;
@@ -171,7 +173,7 @@ class DefaultLazyPluginCollectionTest extends LazyPluginCollectionTestBase {
    */
   public function testCount() {
     $this->setupPluginCollection();
-    $this->assertSame(3, $this->defaultPluginCollection->count());
+    $this->assertCount(3, $this->defaultPluginCollection);
   }
 
   /**

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Composer\Plugin\Scaffold\Functional;
 
 use Composer\Util\Filesystem;
@@ -52,6 +54,8 @@ class ComposerHookTest extends BuildTestBase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->fileSystem = new Filesystem();
     $this->fixtures = new Fixtures();
     $this->fixtures->createIsolatedComposerCacheDir();
@@ -66,6 +70,8 @@ class ComposerHookTest extends BuildTestBase {
   protected function tearDown(): void {
     // Remove any temporary directories et. al. that were created.
     $this->fixtures->tearDown();
+
+    parent::tearDown();
   }
 
   /**
@@ -140,6 +146,17 @@ class ComposerHookTest extends BuildTestBase {
     $stdout = $this->mustExec("composer scaffold --no-ansi", $sut);
     $this->assertStringContainsString('- Copy [web-root]/index.php from assets/index.php', $stdout);
     $this->assertStringNotContainsString('- Copy [web-root]/update.php from assets/update.php', $stdout);
+  }
+
+  /**
+   * Tests to see if scaffold events are dispatched and picked up by the plugin.
+   */
+  public function testScaffoldEvents(): void {
+    $topLevelProjectDir = 'scaffold-events-fixture';
+    $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
+    $output = $this->mustExec("composer install --no-ansi", $sut);
+    $this->assertStringContainsString('Hello preDrupalScaffoldCmd', $output);
+    $this->assertStringContainsString('Hello postDrupalScaffoldCmd', $output);
   }
 
 }

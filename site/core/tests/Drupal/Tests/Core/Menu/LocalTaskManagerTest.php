@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Menu;
 
 use Drupal\Core\Access\AccessResult;
@@ -13,7 +15,7 @@ use Drupal\Core\Menu\LocalTaskInterface;
 use Drupal\Core\Menu\LocalTaskManager;
 use Drupal\Tests\UnitTestCase;
 use Prophecy\Argument;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -207,7 +209,7 @@ class LocalTaskManagerTest extends UnitTestCase {
 
     $this->setupLocalTaskManager();
 
-    $result = $this->getLocalTasksCache($mock_plugin);
+    $result = $this->getLocalTasksCache();
 
     $this->cacheBackend->expects($this->once())
       ->method('get')
@@ -258,11 +260,9 @@ class LocalTaskManagerTest extends UnitTestCase {
     $this->manager = new LocalTaskManager($this->argumentResolver, $request_stack, $this->routeMatch, $this->routeProvider, $module_handler, $this->cacheBackend, $language_manager, $this->accessManager, $this->account);
 
     $property = new \ReflectionProperty('Drupal\Core\Menu\LocalTaskManager', 'discovery');
-    $property->setAccessible(TRUE);
     $property->setValue($this->manager, $this->pluginDiscovery);
 
     $property = new \ReflectionProperty('Drupal\Core\Menu\LocalTaskManager', 'factory');
-    $property->setAccessible(TRUE);
     $property->setValue($this->manager, $this->factory);
 
   }
@@ -428,7 +428,7 @@ class LocalTaskManagerTest extends UnitTestCase {
       ->willReturn('menu_local_task_test_tasks_view');
     $this->routeMatch->expects($this->any())
       ->method('getRawParameters')
-      ->willReturn(new ParameterBag());
+      ->willReturn(new InputBag());
 
     $cacheability = new CacheableMetadata();
     $this->manager->getTasksBuild('menu_local_task_test_tasks_view', $cacheability);

@@ -128,7 +128,7 @@ class Container implements ContainerInterface, ResetInterface {
   /**
    * {@inheritdoc}
    */
-  public function get($id, $invalid_behavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE) {
+  public function get($id, $invalid_behavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE): ?object {
     if ($this->hasParameter('_deprecated_service_list')) {
       if ($deprecation = $this->getParameter('_deprecated_service_list')[$id] ?? '') {
         @trigger_error($deprecation, E_USER_DEPRECATED);
@@ -161,7 +161,7 @@ class Container implements ContainerInterface, ResetInterface {
     // is used, the actual wanted behavior is to re-try getting the service at a
     // later point.
     if (!$definition) {
-      return;
+      return NULL;
     }
 
     // Definition is a keyed array, so [0] is only defined when it is a
@@ -181,7 +181,7 @@ class Container implements ContainerInterface, ResetInterface {
       unset($this->services[$id]);
 
       if (ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE !== $invalid_behavior) {
-        return;
+        return NULL;
       }
 
       throw $e;
@@ -304,6 +304,9 @@ class Container implements ContainerInterface, ResetInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
+   * @return void
    */
   public function set($id, $service) {
     $this->services[$id] = $service;
@@ -312,15 +315,15 @@ class Container implements ContainerInterface, ResetInterface {
   /**
    * {@inheritdoc}
    */
-  public function has($id) {
+  public function has($id): bool {
     return isset($this->aliases[$id]) || isset($this->services[$id]) || isset($this->serviceDefinitions[$id]);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getParameter($name) {
-    if (!(isset($this->parameters[$name]) || array_key_exists($name, $this->parameters))) {
+  public function getParameter($name): array|bool|string|int|float|NULL {
+    if (!\array_key_exists($name, $this->parameters)) {
       if (!$name) {
         throw new ParameterNotFoundException('');
       }
@@ -334,12 +337,15 @@ class Container implements ContainerInterface, ResetInterface {
   /**
    * {@inheritdoc}
    */
-  public function hasParameter($name) {
-    return isset($this->parameters[$name]) || array_key_exists($name, $this->parameters);
+  public function hasParameter($name): bool {
+    return \array_key_exists($name, $this->parameters);
   }
 
   /**
    * {@inheritdoc}
+   *
+   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
+   * @return void
    */
   public function setParameter($name, $value) {
     if ($this->frozen) {
@@ -352,12 +358,12 @@ class Container implements ContainerInterface, ResetInterface {
   /**
    * {@inheritdoc}
    */
-  public function initialized($id) {
+  public function initialized($id): bool {
     if (isset($this->aliases[$id])) {
       $id = $this->aliases[$id];
     }
 
-    return isset($this->services[$id]) || array_key_exists($id, $this->services);
+    return \array_key_exists($id, $this->services);
   }
 
   /**
@@ -453,6 +459,13 @@ class Container implements ContainerInterface, ResetInterface {
 
           continue;
         }
+        elseif ($type == 'service_closure') {
+          $arguments[$key] = function () use ($argument) {
+            return $this->get($argument->id, $argument->invalidBehavior);
+          };
+
+          continue;
+        }
         // Check for collection.
         elseif ($type == 'collection') {
           $value = $argument->value;
@@ -497,7 +510,7 @@ class Container implements ContainerInterface, ResetInterface {
     $alternatives = [];
     foreach ($keys as $key) {
       $lev = levenshtein($search_key, $key);
-      if ($lev <= strlen($search_key) / 3 || strpos($key, $search_key) !== FALSE) {
+      if ($lev <= strlen($search_key) / 3 || str_contains($key, $search_key)) {
         $alternatives[] = $key;
       }
     }

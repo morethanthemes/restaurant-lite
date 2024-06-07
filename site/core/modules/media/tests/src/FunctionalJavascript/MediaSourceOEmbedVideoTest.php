@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\media\FunctionalJavascript;
 
 use Drupal\Core\Session\AccountInterface;
@@ -160,22 +162,22 @@ class MediaSourceOEmbedVideoTest extends MediaSourceTestBase {
 
     // Try to create a media asset from a disallowed provider.
     $this->drupalGet("media/add/$media_type_id");
-    $assert_session->fieldExists('Remote video URL')->setValue('http://www.collegehumor.com/video/40003213/grant-and-katie-are-starting-their-own-company');
+    $assert_session->fieldExists('Remote video URL')->setValue('https://www.dailymotion.com/video/x2vzluh');
     $page->pressButton('Save');
 
-    $assert_session->pageTextContains('The CollegeHumor provider is not allowed.');
+    $assert_session->pageTextContains('The Dailymotion provider is not allowed.');
 
-    // Register a CollegeHumor video as a second oEmbed resource. Note that its
+    // Register a Dailymotion video as a second oEmbed resource. Note that its
     // thumbnail URL does not have a file extension.
     $media_type = MediaType::load($media_type_id);
     $source_configuration = $media_type->getSource()->getConfiguration();
-    $source_configuration['providers'][] = 'CollegeHumor';
+    $source_configuration['providers'][] = 'Dailymotion';
     $media_type->getSource()->setConfiguration($source_configuration);
     $media_type->save();
-    $video_url = 'http://www.collegehumor.com/video/40003213/let-not-get-a-drink-sometime';
-    ResourceController::setResourceUrl($video_url, $this->getFixturesDirectory() . '/video_collegehumor.xml');
+    $video_url = 'https://www.dailymotion.com/video/x2vzluh';
+    ResourceController::setResourceUrl($video_url, $this->getFixturesDirectory() . '/video_dailymotion.xml');
 
-    // Create a new media item using a CollegeHumor video.
+    // Create a new media item using a Dailymotion video.
     $this->drupalGet("media/add/$media_type_id");
     $assert_session->fieldExists('Remote video URL')->setValue($video_url);
     $assert_session->buttonExists('Save')->press();
@@ -194,20 +196,20 @@ class MediaSourceOEmbedVideoTest extends MediaSourceTestBase {
     // Without a hash should be denied.
     $no_hash_query = array_diff_key($query, ['hash' => '']);
     $this->drupalGet('media/oembed', ['query' => $no_hash_query]);
-    $assert_session->pageTextNotContains('By the power of Grayskull, Vimeo works!');
+    $assert_session->pageTextNotContains('Vimeo works!');
     $assert_session->pageTextContains('Client error');
 
     // A correct query should be allowed because the anonymous role has the
     // 'view media' permission.
     $this->drupalGet('media/oembed', ['query' => $query]);
-    $assert_session->pageTextContains('By the power of Grayskull, Vimeo works!');
+    $assert_session->pageTextContains('Vimeo works!');
 
     // Remove the 'view media' permission to test that this restricts access.
     $role = Role::load(AccountInterface::ANONYMOUS_ROLE);
     $role->revokePermission('view media');
     $role->save();
     $this->drupalGet('media/oembed', ['query' => $query]);
-    $assert_session->pageTextNotContains('By the power of Grayskull, Vimeo works!');
+    $assert_session->pageTextNotContains('Vimeo works!');
     $assert_session->pageTextContains('Access denied');
   }
 

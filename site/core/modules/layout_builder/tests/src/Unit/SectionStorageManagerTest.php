@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\layout_builder\Unit;
 
 use Drupal\Component\Plugin\Context\ContextInterface;
@@ -73,14 +75,12 @@ class SectionStorageManagerTest extends UnitTestCase {
 
     $this->discovery = $this->prophesize(DiscoveryInterface::class);
     $reflection_property = new \ReflectionProperty($this->manager, 'discovery');
-    $reflection_property->setAccessible(TRUE);
     $reflection_property->setValue($this->manager, $this->discovery->reveal());
 
     $this->plugin = $this->prophesize(SectionStorageInterface::class);
     $this->factory = $this->prophesize(FactoryInterface::class);
     $this->factory->createInstance('the_plugin_id', [])->willReturn($this->plugin->reveal());
     $reflection_property = new \ReflectionProperty($this->manager, 'factory');
-    $reflection_property->setAccessible(TRUE);
     $reflection_property->setValue($this->manager, $this->factory->reveal());
   }
 

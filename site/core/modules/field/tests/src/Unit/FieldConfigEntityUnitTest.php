@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\field\Unit\FieldConfigEntityUnitTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\field\Unit;
 
@@ -74,6 +71,8 @@ class FieldConfigEntityUnitTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->entityTypeId = $this->randomMachineName();
     $this->entityType = $this->createMock('\Drupal\Core\Config\Entity\ConfigEntityTypeInterface');
 

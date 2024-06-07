@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\migrate\Unit;
 
 use Drupal\migrate\Plugin\MigrateIdMapInterface;
@@ -361,7 +363,7 @@ class RowTest extends UnitTestCase {
    * @param array $expected_values
    *   An array of expected values.
    *
-   * @covers::getMultiple
+   * @covers ::getMultiple
    * @dataProvider getMultipleDataProvider
    */
   public function testGetMultiple(array $keys, array $expected_values) {

@@ -37,7 +37,7 @@ class TwigEnvironmentTest extends KernelTestBase {
     /** @var \Drupal\Core\Template\TwigEnvironment $environment */
     $environment = \Drupal::service('twig');
     $this->assertEquals('test-no-context', $environment->renderInline('test-no-context'));
-    $this->assertEquals('test-with-context muuh', $environment->renderInline('test-with-context {{ llama }}', ['llama' => 'muuh']));
+    $this->assertEquals('test-with-context social', $environment->renderInline('test-with-context {{ llama }}', ['llama' => 'social']));
 
     $element = [];
     $unsafe_string = '<script>alert(\'Danger! High voltage!\');</script>';
@@ -46,7 +46,7 @@ class TwigEnvironmentTest extends KernelTestBase {
       '#template' => 'test-with-context <label>{{ unsafe_content }}</label>',
       '#context' => ['unsafe_content' => $unsafe_string],
     ];
-    $this->assertEquals('test-with-context <label>' . Html::escape($unsafe_string) . '</label>', $renderer->renderRoot($element));
+    $this->assertSame('test-with-context <label>' . Html::escape($unsafe_string) . '</label>', (string) $renderer->renderRoot($element));
 
     // Enable twig_auto_reload and twig_debug.
     $settings = Settings::getAll();
@@ -61,12 +61,12 @@ class TwigEnvironmentTest extends KernelTestBase {
     $element['test'] = [
       '#type' => 'inline_template',
       '#template' => 'test-with-context {{ llama }}',
-      '#context' => ['llama' => 'muuh'],
+      '#context' => ['llama' => 'social'],
     ];
     $element_copy = $element;
     // Render it twice so that twig caching is triggered.
-    $this->assertEquals('test-with-context muuh', $renderer->renderRoot($element));
-    $this->assertEquals('test-with-context muuh', $renderer->renderRoot($element_copy));
+    $this->assertEquals('test-with-context social', $renderer->renderRoot($element));
+    $this->assertEquals('test-with-context social', $renderer->renderRoot($element_copy));
 
     // Tests caching of inline templates with long content to ensure the
     // generated cache key can be used as a filename.
@@ -106,7 +106,7 @@ class TwigEnvironmentTest extends KernelTestBase {
     $environment = \Drupal::service('twig');
 
     try {
-      $environment->loadTemplate('this-template-does-not-exist.html.twig')->render([]);
+      $environment->load('this-template-does-not-exist.html.twig')->render([]);
       $this->fail('Did not throw an exception as expected.');
     }
     catch (LoaderError $e) {
@@ -204,17 +204,17 @@ TWIG;
 <div>Hello after</div>
 TWIG;
 
-    $tempfile = tempnam(sys_get_temp_dir(), '__METHOD__') . '.html.twig';
-    file_put_contents($tempfile, $template_before);
+    $template_file = tempnam(sys_get_temp_dir(), '__METHOD__') . '.html.twig';
+    file_put_contents($template_file, $template_before);
 
     /** @var \Drupal\Core\Template\TwigEnvironment $environment */
     $environment = \Drupal::service('twig');
 
-    $output = $environment->load(basename($tempfile))->render();
+    $output = $environment->load(basename($template_file))->render();
     $this->assertEquals($template_before, $output);
 
-    file_put_contents($tempfile, $template_after);
-    $output = $environment->load(basename($tempfile))->render();
+    file_put_contents($template_file, $template_after);
+    $output = $environment->load(basename($template_file))->render();
     $this->assertEquals($template_before, $output);
 
     $environment->invalidate();
@@ -223,10 +223,9 @@ TWIG;
     // on a real site where you reload the page.
     $reflection = new \ReflectionClass(Environment::class);
     $property_reflection = $reflection->getProperty('templateClassPrefix');
-    $property_reflection->setAccessible(TRUE);
     $property_reflection->setValue($environment, 'otherPrefix');
 
-    $output = $environment->load(basename($tempfile))->render();
+    $output = $environment->load(basename($template_file))->render();
     $this->assertEquals($template_after, $output);
   }
 

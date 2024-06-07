@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\jsonapi\Unit\Normalizer;
 
 use Drupal\Core\Entity\EntityInterface;
@@ -7,7 +9,6 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
-use Drupal\jsonapi\Context\FieldResolver;
 use Drupal\jsonapi\ResourceType\ResourceType;
 use Drupal\jsonapi\Normalizer\JsonApiDocumentTopLevelNormalizer;
 use Drupal\Tests\UnitTestCase;
@@ -35,9 +36,10 @@ class JsonApiDocumentTopLevelNormalizerTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
+    parent::setUp();
+
     $resource_type_repository = $this->prophesize(ResourceTypeRepository::class);
-    $field_resolver = $this->prophesize(FieldResolver::class);
 
     $resource_type_repository
       ->getByTypeName(Argument::any())
@@ -68,8 +70,7 @@ class JsonApiDocumentTopLevelNormalizerTest extends UnitTestCase {
 
     $this->normalizer = new JsonApiDocumentTopLevelNormalizer(
       $entity_type_manager->reveal(),
-      $resource_type_repository->reveal(),
-      $field_resolver->reveal()
+      $resource_type_repository->reveal()
     );
 
     $serializer = $this->prophesize(DenormalizerInterface::class);

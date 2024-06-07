@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\config\Functional;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Core\Routing\RedirectDestinationTrait;
 use Drupal\config_test\Entity\ConfigTest;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -71,6 +72,13 @@ class ConfigEntityListTest extends BrowserTestBase {
       'delete' => [
         'title' => 'Delete',
         'weight' => 100,
+        'attributes' => [
+          'class' => ['use-ajax'],
+          'data-dialog-type' => 'modal',
+          'data-dialog-options' => Json::encode([
+            'width' => 880,
+          ]),
+        ],
         'url' => $entity->toUrl('delete-form')->setOption('query', $this->getRedirectDestination()->getAsArray()),
       ],
     ];
@@ -141,6 +149,13 @@ class ConfigEntityListTest extends BrowserTestBase {
       'delete' => [
         'title' => 'Delete',
         'weight' => 100,
+        'attributes' => [
+          'class' => ['use-ajax'],
+          'data-dialog-type' => 'modal',
+          'data-dialog-options' => Json::encode([
+            'width' => 880,
+          ]),
+        ],
         'url' => $entity->toUrl('delete-form')->setOption('query', $this->getRedirectDestination()->getAsArray()),
       ],
     ];
@@ -262,7 +277,7 @@ class ConfigEntityListTest extends BrowserTestBase {
     // Create 51 test entities.
     for ($i = 1; $i < 52; $i++) {
       $storage->create([
-        'id' => str_pad($i, 2, '0', STR_PAD_LEFT),
+        'id' => str_pad((string) $i, 2, '0', STR_PAD_LEFT),
         'label' => 'Test config entity ' . $i,
         'weight' => $i,
         'protected_property' => $i,

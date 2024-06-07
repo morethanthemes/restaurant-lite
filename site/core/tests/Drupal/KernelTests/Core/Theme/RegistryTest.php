@@ -5,10 +5,10 @@ namespace Drupal\KernelTests\Core\Theme;
 use Drupal\Core\Extension\ModuleExtensionList;
 use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Core\Path\PathMatcherInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Theme\Registry;
 use Drupal\Core\Utility\ThemeRegistry;
 use Drupal\KernelTests\KernelTestBase;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Tests the behavior of the ThemeRegistry class.
@@ -39,7 +39,7 @@ class RegistryTest extends KernelTestBase {
     // entry to be written in __construct().
     $cache = \Drupal::cache();
     $lock_backend = \Drupal::lock();
-    $registry = new ThemeRegistry($cid, $cache, $lock_backend, ['theme_registry'], $this->container->get('module_handler')->isLoaded());
+    $registry = new ThemeRegistry($cid, $cache, $lock_backend, [], $this->container->get('module_handler')->isLoaded());
 
     $this->assertNotEmpty(\Drupal::cache()->get($cid), 'Cache entry was created.');
 
@@ -59,7 +59,7 @@ class RegistryTest extends KernelTestBase {
     // Create a new instance of the class. Confirm that both the offset
     // requested previously, and one that has not yet been requested are both
     // available.
-    $registry = new ThemeRegistry($cid, $cache, $lock_backend, ['theme_registry'], $this->container->get('module_handler')->isLoaded());
+    $registry = new ThemeRegistry($cid, $cache, $lock_backend, [], $this->container->get('module_handler')->isLoaded());
     $this->assertNotEmpty($registry->get('theme_test_template_test'), 'Offset was returned correctly from the theme registry');
     $this->assertNotEmpty($registry->get('theme_test_template_test_2'), 'Offset was returned correctly from the theme registry');
   }
@@ -193,6 +193,26 @@ class RegistryTest extends KernelTestBase {
   }
 
   /**
+   * Tests page theme suggestions for 200 responses.
+   */
+  public function test200ThemeSuggestions() {
+    $path_matcher = $this->prophesize(PathMatcherInterface::class);
+    $path_matcher->isFrontPage()->willReturn(FALSE);
+    \Drupal::getContainer()->set('path.matcher', $path_matcher->reveal());
+
+    $path_current = $this->prophesize(CurrentPathStack::class);
+    $path_current->getPath()->willReturn('/node/123');
+    \Drupal::getContainer()->set('path.current', $path_current->reveal());
+
+    $suggestions = \Drupal::moduleHandler()->invokeAll('theme_suggestions_page', [[]]);
+    $this->assertSame([
+      'page__node',
+      'page__node__%',
+      'page__node__123',
+    ], $suggestions);
+  }
+
+  /**
    * Data provider for test40xThemeSuggestions().
    *
    * @return array
@@ -200,9 +220,9 @@ class RegistryTest extends KernelTestBase {
    */
   public function provider40xThemeSuggestions() {
     return [
-      ['system.401', 'page__401'],
-      ['system.403', 'page__403'],
-      ['system.404', 'page__404'],
+      [401, 'page__401'],
+      [403, 'page__403'],
+      [404, 'page__404'],
     ];
   }
 
@@ -211,19 +231,18 @@ class RegistryTest extends KernelTestBase {
    *
    * @dataProvider provider40xThemeSuggestions
    */
-  public function test40xThemeSuggestions($route, $suggestion) {
-    /** @var \Drupal\Core\Path\PathMatcherInterface $path_matcher */
+  public function test40xThemeSuggestions(int $httpCode, string $suggestion): void {
     $path_matcher = $this->prophesize(PathMatcherInterface::class);
     $path_matcher->isFrontPage()->willReturn(FALSE);
     \Drupal::getContainer()->set('path.matcher', $path_matcher->reveal());
-    /** @var \Drupal\Core\Path\CurrentPathStack $path_current */
+
     $path_current = $this->prophesize(CurrentPathStack::class);
     $path_current->getPath()->willReturn('/node/123');
     \Drupal::getContainer()->set('path.current', $path_current->reveal());
-    /** @var \Drupal\Core\Routing\RouteMatchInterface $route_matcher */
-    $route_matcher = $this->prophesize(RouteMatchInterface::class);
-    $route_matcher->getRouteName()->willReturn($route);
-    \Drupal::getContainer()->set('current_route_match', $route_matcher->reveal());
+
+    $exception = $this->prophesize(HttpExceptionInterface::class);
+    $exception->getStatusCode()->willReturn($httpCode);
+    \Drupal::requestStack()->getCurrentRequest()->attributes->set('exception', $exception->reveal());
 
     $suggestions = \Drupal::moduleHandler()->invokeAll('theme_suggestions_page', [[]]);
     $this->assertSame([
@@ -254,6 +273,36 @@ class RegistryTest extends KernelTestBase {
     ];
     $registry = $registry_theme->get();
     $this->assertEquals($expected, array_values($registry['theme_test_registered_by_module']['preprocess functions']));
+  }
+
+  /**
+   * Tests deprecated drupal_theme_rebuild() function.
+   *
+   * @see drupal_theme_rebuild()
+   * @group legacy
+   */
+  public function testLegacyThemeRegistryRebuild() {
+    $registry = \Drupal::service('theme.registry');
+    $runtime = $registry->getRuntime();
+    $hooks = $registry->get();
+    $this->expectDeprecation('drupal_theme_rebuild() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. Use theme.registry service reset() method instead. See https://www.drupal.org/node/3348853');
+    drupal_theme_rebuild();
+    $this->assertNotSame($runtime, $registry->getRuntime());
+    $this->assertSame($hooks, $registry->get());
+  }
+
+  /**
+   * Tests deprecated theme_get_registry function.
+   *
+   * @see theme_get_registry()
+   * @group legacy
+   */
+  public function testLegacyThemeGetRegistry() {
+    $registry = \Drupal::service('theme.registry');
+    $this->expectDeprecation('theme_get_registry() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. Use theme.registry service method get() instead. See https://www.drupal.org/node/3348850');
+    $this->assertEquals($registry->get(), theme_get_registry());
+    $this->expectDeprecation('theme_get_registry() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. Use theme.registry service method getRuntime() instead. See https://www.drupal.org/node/3348850');
+    $this->assertEquals($registry->getRuntime(), theme_get_registry(FALSE));
   }
 
 }

@@ -315,11 +315,11 @@ class EntityResource {
 
     $body = Json::decode($request->getContent());
     $data = $body['data'];
-    if ($data['id'] != $entity->uuid()) {
+    if (!isset($data['id']) || $data['id'] != $entity->uuid()) {
       throw new BadRequestHttpException(sprintf(
         'The selected entity (%s) does not match the ID in the payload (%s).',
         $entity->uuid(),
-        $data['id']
+        $data['id'] ?? '',
       ));
     }
     $data += ['attributes' => [], 'relationships' => []];
@@ -429,7 +429,7 @@ class EntityResource {
       // For example: getting users with a particular role, which is a config
       // entity type: https://www.drupal.org/project/drupal/issues/2959445.
       // @todo Remove the message parsing in https://www.drupal.org/project/drupal/issues/3028967.
-      if (strpos($e->getMessage(), 'Getting the base fields is not supported for entity type') === 0) {
+      if (str_starts_with($e->getMessage(), 'Getting the base fields is not supported for entity type')) {
         preg_match('/entity type (.*)\./', $e->getMessage(), $matches);
         $config_entity_type_id = $matches[1];
         $cacheability = (new CacheableMetadata())->addCacheContexts(['url.path', 'url.query_args:filter']);
@@ -1235,13 +1235,13 @@ class EntityResource {
    */
   protected function getJsonApiParams(Request $request, ResourceType $resource_type) {
     if ($request->query->has('filter')) {
-      $params[Filter::KEY_NAME] = Filter::createFromQueryParameter($request->query->get('filter'), $resource_type, $this->fieldResolver);
+      $params[Filter::KEY_NAME] = Filter::createFromQueryParameter($request->query->all('filter'), $resource_type, $this->fieldResolver);
     }
     if ($request->query->has('sort')) {
-      $params[Sort::KEY_NAME] = Sort::createFromQueryParameter($request->query->get('sort'));
+      $params[Sort::KEY_NAME] = Sort::createFromQueryParameter($request->query->all()['sort']);
     }
     if ($request->query->has('page')) {
-      $params[OffsetPage::KEY_NAME] = OffsetPage::createFromQueryParameter($request->query->get('page'));
+      $params[OffsetPage::KEY_NAME] = OffsetPage::createFromQueryParameter($request->query->all('page'));
     }
     else {
       $params[OffsetPage::KEY_NAME] = OffsetPage::createFromQueryParameter(['page' => ['offset' => OffsetPage::DEFAULT_OFFSET, 'limit' => OffsetPage::SIZE_MAX]]);

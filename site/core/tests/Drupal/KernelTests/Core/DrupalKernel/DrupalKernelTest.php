@@ -9,7 +9,6 @@ use Drupal\KernelTests\KernelTestBase;
 use org\bovigo\vfs\vfsStream;
 use Prophecy\Argument;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\KernelEvent;
 
 /**
  * Tests DIC compilation to disk.
@@ -22,12 +21,8 @@ class DrupalKernelTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp(): void {
-    // Do not invoke KernelTestBase::setUp(), since that would set up further
-    // environment aspects, which would distort this test, because it tests the
-    // DrupalKernel (re-)building itself.
-    $this->root = static::getDrupalRoot();
-    $this->bootEnvironment();
+  protected function bootKernel() {
+    // Do not boot the kernel, because we are testing aspects of this process.
   }
 
   /**
@@ -57,19 +52,6 @@ class DrupalKernelTest extends KernelTestBase {
     $kernel->boot();
 
     return $kernel;
-  }
-
-  /**
-   * Tests KernelEvent class_alias() override.
-   *
-   * @todo https://www.drupal.org/project/drupal/issues/3197482 Remove this test
-   *   once Drupal is using Symfony 5.3 or higher.
-   */
-  public function testKernelEvent() {
-    $request = Request::createFromGlobals();
-    $kernel = $this->getTestKernel($request);
-    $event = new KernelEvent($kernel, $request, $kernel::MASTER_REQUEST);
-    $this->assertTrue($event->isMainRequest());
   }
 
   /**

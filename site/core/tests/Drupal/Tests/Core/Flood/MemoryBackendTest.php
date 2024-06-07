@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Flood;
 
 use Drupal\Core\Flood\MemoryBackend;
@@ -23,6 +25,8 @@ class MemoryBackendTest extends UnitTestCase {
   protected $flood;
 
   protected function setUp(): void {
+    parent::setUp();
+
     $request = new RequestStack();
     $request_mock = $this->getMockBuilder(Request::class)
       ->onlyMethods(['getClientIp'])

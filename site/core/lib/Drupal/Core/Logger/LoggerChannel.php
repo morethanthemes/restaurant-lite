@@ -91,7 +91,7 @@ class LoggerChannel implements LoggerChannelInterface {
   /**
    * {@inheritdoc}
    */
-  public function log($level, $message, array $context = []) {
+  public function log($level, string|\Stringable $message, array $context = []): void {
     if ($this->callDepth == self::MAX_CALL_DEPTH) {
       return;
     }
@@ -166,7 +166,7 @@ class LoggerChannel implements LoggerChannelInterface {
    */
   protected function sortLoggers() {
     krsort($this->loggers);
-    return array_merge([], ...$this->loggers);
+    return array_merge(...$this->loggers);
   }
 
 }

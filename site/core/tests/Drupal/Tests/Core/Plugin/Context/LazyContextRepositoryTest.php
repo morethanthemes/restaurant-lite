@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Plugin\Context;
 
 use Drupal\Core\Plugin\Context\Context;
@@ -69,7 +71,7 @@ class LazyContextRepositoryTest extends UnitTestCase {
    */
   public function testInvalidContextId() {
     $lazy_context_repository = new LazyContextRepository($this->container, ['test_provider']);
-    $this->expectException(\InvalidArgumentException::class);
+    $this->expectException(\AssertionError::class);
     $this->expectExceptionMessage('You must provide the context IDs in the @{service_id}:{unqualified_context_id} format.');
     $lazy_context_repository->getRuntimeContexts(['test_context', '@test_provider:test_context1']);
   }

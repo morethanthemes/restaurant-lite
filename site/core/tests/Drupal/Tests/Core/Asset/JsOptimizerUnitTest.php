@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Asset;
 
 use Drupal\Core\Asset\JsOptimizer;
@@ -24,8 +26,8 @@ class JsOptimizerUnitTest extends UnitTestCase {
    */
   protected function setUp(): void {
     parent::setUp();
-
-    $this->optimizer = new JsOptimizer();
+    $logger = $this->createMock('\Psr\Log\LoggerInterface');
+    $this->optimizer = new JsOptimizer($logger);
   }
 
   /**
@@ -33,7 +35,7 @@ class JsOptimizerUnitTest extends UnitTestCase {
    *
    * @see \Drupal\Core\Asset\JsOptimizer::clean()
    *
-   * @returns array
+   * @return array
    *   An array of test data.
    */
   public function providerTestClean() {
@@ -80,7 +82,7 @@ class JsOptimizerUnitTest extends UnitTestCase {
    *
    * @see \Drupal\Core\Asset\JsOptimizer::optimize()
    *
-   * @returns array
+   * @return array
    *   An array of test data.
    */
   public function providerTestOptimize() {
@@ -110,6 +112,24 @@ class JsOptimizerUnitTest extends UnitTestCase {
           'attributes' => ['charset' => 'ISO-8859-15'],
         ],
         file_get_contents($path . 'latin_9.js.optimized.js'),
+      ],
+      3 => [
+        [
+          'type' => 'file',
+          'preprocess' => TRUE,
+          'data' => $path . 'to_be_minified.js',
+        ],
+        file_get_contents($path . 'to_be_minified.js.optimized.js'),
+      ],
+      4 => [
+        [
+          'type' => 'file',
+          'preprocess' => TRUE,
+          'data' => $path . 'syntax_error.js',
+        ],
+        // When there is a syntax error, the 'optimized' contents are the
+        // contents of the original file.
+        file_get_contents($path . 'syntax_error.js'),
       ],
     ];
   }

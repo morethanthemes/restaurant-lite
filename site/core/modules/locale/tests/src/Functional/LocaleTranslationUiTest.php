@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\locale\Functional;
 
+use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
 use Drupal\Core\Database\Database;
 use Drupal\language\Entity\ConfigurableLanguage;
@@ -59,7 +60,7 @@ class LocaleTranslationUiTest extends BrowserTestBase {
     // Code for the language.
     $langcode = 'xx';
     // The English name for the language. This will be translated.
-    $name = 'cucurbitaceae';
+    $name = 'Foo';
     // This will be the translation of $name.
     $translation = $this->randomMachineName(16);
     $translation_to_en = $this->randomMachineName(16);
@@ -179,11 +180,11 @@ class LocaleTranslationUiTest extends BrowserTestBase {
     // Test invalidation of 'rendered' cache tag after string translation.
     $this->drupalLogout();
     $this->drupalGet('xx/user/login');
-    $this->assertSession()->pageTextContains('Enter the password that accompanies your username.');
+    $this->assertSession()->pageTextContains('Password');
 
     $this->drupalLogin($translate_user);
     $search = [
-      'string' => 'accompanies your username',
+      'string' => 'Password',
       'langcode' => $langcode,
       'translation' => 'untranslated',
     ];
@@ -192,14 +193,14 @@ class LocaleTranslationUiTest extends BrowserTestBase {
     $textarea = $this->assertSession()->elementExists('xpath', '//textarea');
     $lid = $textarea->getAttribute('name');
     $edit = [
-      $lid => 'Please enter your Llama username.',
+      $lid => 'Llamas are larger than frogs.',
     ];
     $this->drupalGet('admin/config/regional/translate');
     $this->submitForm($edit, 'Save translations');
 
     $this->drupalLogout();
     $this->drupalGet('xx/user/login');
-    $this->assertSession()->pageTextContains('Please enter your Llama username.');
+    $this->assertSession()->pageTextContains('Llamas are larger than frogs.');
 
     // Delete the language.
     $this->drupalLogin($admin_user);
@@ -310,6 +311,18 @@ class LocaleTranslationUiTest extends BrowserTestBase {
     $this->assertFileDoesNotExist($js_file);
     _locale_rebuild_js($langcode);
     $this->assertFileExists($js_file);
+
+    // Test if JavaScript translation contains a custom string override.
+    $string_override = $this->randomMachineName();
+    $settings = Settings::getAll();
+    $settings['locale_custom_strings_' . $langcode] = ['' => [$string_override => $string_override]];
+    // Recreate the settings static.
+    new Settings($settings);
+    _locale_rebuild_js($langcode);
+    $locale_javascripts = \Drupal::state()->get('locale.translation.javascript', []);
+    $js_file = 'public://' . $config->get('javascript.directory') . '/' . $langcode . '_' . $locale_javascripts[$langcode] . '.js';
+    $content = file_get_contents($js_file);
+    $this->assertStringContainsString('"' . $string_override . '":"' . $string_override . '"', $content);
   }
 
   /**

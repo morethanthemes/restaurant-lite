@@ -1,4 +1,4 @@
-(function ($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings, once) {
   Drupal.behaviors.mtflexsliderInPage = {
     attach: function (context, settings) {
 
@@ -6,8 +6,8 @@
       var $window = $(window),
       flexslider;
 
-      $(context).find('.in-page-images-slider').once('mtflexsliderInPageSliderInit').each(function() {
-        $(this).flexslider({
+      once('mtflexsliderInPageSliderInit', ".in-page-images-slider", context).forEach(function(item) {
+        $(item).flexslider({
           useCSS: false,
           animation: drupalSettings.restaurant_lite.flexsliderInPageInit.inPageSliderEffect,
           controlNav: false,
@@ -17,11 +17,11 @@
           sync: ".in-page-images-carousel"
         });
 
-        $(this).fadeIn("slow");
+        $(item).fadeIn("slow");
 
       });
 
-      $(context).find('.in-page-images-carousel').once('mtflexsliderInPageCarouselInit').each(function() {
+      once('mtflexsliderInPageCarouselInit', '.in-page-images-carousel', context).forEach(function(item) {
 
         // tiny helper function to add breakpoints
         function getGridSize() {
@@ -29,7 +29,7 @@
         }
 
         // The slider being synced must be initialized first
-        $(this).flexslider({
+        $(item).flexslider({
           animation: "slide",
           controlNav: false,
           animationLoop: false,
@@ -53,10 +53,10 @@
           flexslider.vars.maxItems = gridSize;
         });
 
-        $(this).fadeIn("slow");
+        $(item).fadeIn("slow")
 
       });
 
     }
   };
-})(jQuery, Drupal, drupalSettings);
+})(jQuery, Drupal, drupalSettings, once);

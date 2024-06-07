@@ -3,27 +3,27 @@
  * Node Teaser specific styles.
  */
 
-@import "../base/variables.pcss.css";
+@import "../base/media-queries.pcss.css";
 
 .node--view-mode-teaser {
   position: relative; /* Anchor after pseudo-element. */
   margin-block-end: var(--sp1-5);
 
-  &:after {
+  &::after {
     position: absolute;
     inset-block-end: 0;
     width: var(--sp3);
     height: 0;
     content: "";
     /* Intentionally not using CSS logical properties. */
-    border-top: solid 2px var(--color--gray-80);
+    border-top: solid 2px var(--color--gray-95);
   }
 
   & .node__meta {
     margin-block-end: var(--sp);
 
     & a {
-      color: var(--color--blue-20);
+      color: var(--color-text-primary-medium);
       font-weight: bold;
     }
   }
@@ -47,7 +47,7 @@
 
     /* Ensure title does not wrap under image until necessary. */
     & + .node__title {
-      flex-basis: calc(100% - calc(4.5 * var(--sp)));
+      flex-basis: calc(100% - var(--sp4-5));
 
       @media (--lg) {
         flex-basis: auto;
@@ -59,47 +59,29 @@
     }
 
     & img {
-      width: calc(3.5 * var(--sp));
-      height: calc(3.5 * var(--sp));
+      width: var(--sp3-5);
+      height: var(--sp3-5);
       object-fit: cover;
       border-radius: 50%;
 
       @media (--lg) {
-        width: var(--grid-col-width--lg);
-        height: var(--grid-col-width--lg);
-      }
-
-      @media (--nav) {
-        width: var(--grid-col-width--nav);
-        height: var(--grid-col-width--nav);
-      }
-
-      @media (--grid-max) {
-        width: var(--grid-col-width--max);
-        height: var(--grid-col-width--max);
+        width: var(--grid-col-width);
+        height: var(--grid-col-width);
       }
     }
 
     @media (--lg) {
       position: absolute;
       inset-block-start: 0;
-      inset-inline-start: calc(-1 * ((var(--grid-col-width--lg) + var(--grid-gap--lg))));
+      inset-inline-start: calc(-1 * ((var(--grid-col-width) + var(--grid-gap))));
       margin: 0;
-    }
-
-    @media (--nav) {
-      inset-inline-start: calc(-1 * ((var(--grid-col-width--nav) + var(--grid-gap--nav))));
-    }
-
-    @media (--grid-max) {
-      inset-inline-start: calc(-1 * ((var(--grid-col-width--max) + var(--grid-gap--max))));
     }
   }
 
   & .node__title {
     margin: 0;
     margin-block-end: var(--sp1);
-    color: var(--color--gray-0);
+    color: var(--color-text-neutral-loud);
     font-size: 24px;
     line-height: var(--line-height-base);
 

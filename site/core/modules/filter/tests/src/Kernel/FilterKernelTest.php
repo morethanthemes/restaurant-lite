@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\filter\Kernel;
 
-use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Render\RenderContext;
@@ -60,40 +59,40 @@ class FilterKernelTest extends KernelTestBase {
 
     // Data-align attribute: all 3 allowed values.
     $input = '<img src="llama.jpg" data-align="left" />';
-    $expected = '<img src="llama.jpg" class="align-left" />';
+    $expected = '<img src="llama.jpg" class="align-left">';
     $this->assertSame($expected, $test($input)->getProcessedText());
     $input = '<img src="llama.jpg" data-align="center" />';
-    $expected = '<img src="llama.jpg" class="align-center" />';
+    $expected = '<img src="llama.jpg" class="align-center">';
     $this->assertSame($expected, $test($input)->getProcessedText());
     $input = '<img src="llama.jpg" data-align="right" />';
-    $expected = '<img src="llama.jpg" class="align-right" />';
+    $expected = '<img src="llama.jpg" class="align-right">';
     $this->assertSame($expected, $test($input)->getProcessedText());
 
     // Data-align attribute: a disallowed value.
     $input = '<img src="llama.jpg" data-align="left foobar" />';
-    $expected = '<img src="llama.jpg" />';
+    $expected = '<img src="llama.jpg">';
     $this->assertSame($expected, $test($input)->getProcessedText());
 
     // Empty data-align attribute.
     $input = '<img src="llama.jpg" data-align="" />';
-    $expected = '<img src="llama.jpg" />';
+    $expected = '<img src="llama.jpg">';
     $this->assertSame($expected, $test($input)->getProcessedText());
 
     // Ensure the filter also works with uncommon yet valid attribute quoting.
     $input = '<img src=llama.jpg data-align=right />';
-    $expected = '<img src="llama.jpg" class="align-right" />';
+    $expected = '<img src="llama.jpg" class="align-right">';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
 
     // Security test: attempt to inject an additional class.
     $input = '<img src="llama.jpg" data-align="center another-class-here" />';
-    $expected = '<img src="llama.jpg" />';
+    $expected = '<img src="llama.jpg">';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
 
     // Security test: attempt an XSS.
     $input = '<img src="llama.jpg" data-align="center \'onclick=\'alert(foo);" />';
-    $expected = '<img src="llama.jpg" />';
+    $expected = '<img src="llama.jpg">';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
   }
@@ -125,26 +124,38 @@ class FilterKernelTest extends KernelTestBase {
 
     // Data-caption attribute.
     $input = '<img src="llama.jpg" data-caption="Loquacious llama!" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // Empty data-caption attribute.
     $input = '<img src="llama.jpg" data-caption="" />';
-    $expected = '<img src="llama.jpg" />';
+    $expected = '<img src="llama.jpg">';
     $this->assertSame($expected, $test($input)->getProcessedText());
 
     // HTML entities in the caption.
     $input = '<img src="llama.jpg" data-caption="&ldquo;Loquacious llama!&rdquo;" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>“Loquacious llama!”</figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>“Loquacious llama!”</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // HTML encoded as HTML entities in data-caption attribute.
     $input = '<img src="llama.jpg" data-caption="&lt;em&gt;Loquacious llama!&lt;/em&gt;" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption><em>Loquacious llama!</em></figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption><em>Loquacious llama!</em></figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
@@ -153,40 +164,64 @@ class FilterKernelTest extends KernelTestBase {
     // not allowed by the HTML spec, but may happen when people manually write
     // HTML, so we explicitly support it.
     $input = '<img src="llama.jpg" data-caption="<em>Loquacious llama!</em>" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption><em>Loquacious llama!</em></figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption><em>Loquacious llama!</em></figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // Security test: attempt an XSS.
     $input = '<img src="llama.jpg" data-caption="<script>alert(\'Loquacious llama!\')</script>" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>alert(\'Loquacious llama!\')</figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>alert(\'Loquacious llama!\')</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // Ensure the filter also works with uncommon yet valid attribute quoting.
     $input = '<img src=llama.jpg data-caption=\'Loquacious llama!\' />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // Finally, ensure that this also works on any other tag.
     $input = '<video src="llama.jpg" data-caption="Loquacious llama!" />';
-    $expected = '<figure role="group"><video src="llama.jpg"></video><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group">
+<video src="llama.jpg"></video>
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
     $input = '<foobar data-caption="Loquacious llama!">baz</foobar>';
-    $expected = '<figure role="group"><foobar>baz</foobar><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group">
+<foobar>baz</foobar>
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // Ensure the caption filter works for linked images.
     $input = '<a href="http://example.com/llamas/are/awesome/but/kittens/are/cool/too"><img src="llama.jpg" data-caption="Loquacious llama!" /></a>';
-    $expected = '<figure role="group"><a href="http://example.com/llamas/are/awesome/but/kittens/are/cool/too"><img src="llama.jpg" /></a>' . "\n" . '<figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group">
+<a href="http://example.com/llamas/are/awesome/but/kittens/are/cool/too"><img src="llama.jpg"></a>
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
@@ -219,46 +254,74 @@ class FilterKernelTest extends KernelTestBase {
 
     // All the tricky cases encountered at https://www.drupal.org/node/2105841.
     // A plain URL preceded by text.
-    $input = '<img data-caption="See https://www.drupal.org" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>See https://www.drupal.org</figcaption></figure>';
+    $input = '<img data-caption="See https://www.drupal.org" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>See https://www.drupal.org</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
     $this->assertSame($input, $test_editor_xss_filter($input));
 
     // An anchor.
-    $input = '<img data-caption="This is a &lt;a href=&quot;https://www.drupal.org&quot;&gt;quick&lt;/a&gt; test…" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>This is a <a href="https://www.drupal.org">quick</a> test…</figcaption></figure>';
+    $input = '<img data-caption="This is a &lt;a href=&quot;https://www.drupal.org&quot;&gt;quick&lt;/a&gt; test…" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>This is a <a href="https://www.drupal.org">quick</a> test…</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
     $this->assertSame($input, $test_editor_xss_filter($input));
 
     // A plain URL surrounded by parentheses.
-    $input = '<img data-caption="(https://www.drupal.org)" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>(https://www.drupal.org)</figcaption></figure>';
+    $input = '<img data-caption="(https://www.drupal.org)" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>(https://www.drupal.org)</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
     $this->assertSame($input, $test_editor_xss_filter($input));
 
     // A source being credited.
-    $input = '<img data-caption="Source: Wikipedia" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>Source: Wikipedia</figcaption></figure>';
+    $input = '<img data-caption="Source: Wikipedia" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>Source: Wikipedia</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
     $this->assertSame($input, $test_editor_xss_filter($input));
 
     // A source being credited, without a space after the colon.
-    $input = '<img data-caption="Source:Wikipedia" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>Source:Wikipedia</figcaption></figure>';
+    $input = '<img data-caption="Source:Wikipedia" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>Source:Wikipedia</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
     $this->assertSame($input, $test_editor_xss_filter($input));
 
     // A pretty crazy edge case where we have two colons.
-    $input = '<img data-caption="Interesting (Scope resolution operator ::)" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>Interesting (Scope resolution operator ::)</figcaption></figure>';
+    $input = '<img data-caption="Interesting (Scope resolution operator ::)" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>Interesting (Scope resolution operator ::)</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
     $this->assertSame($input, $test_editor_xss_filter($input));
 
     // An evil anchor (to ensure XSS filtering is applied to the caption also).
-    $input = '<img data-caption="This is an &lt;a href=&quot;javascript:alert();&quot;&gt;evil&lt;/a&gt; test…" src="llama.jpg" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>This is an <a href="alert();">evil</a> test…</figcaption></figure>';
+    $input = '<img data-caption="This is an &lt;a href=&quot;javascript:alert();&quot;&gt;evil&lt;/a&gt; test…" src="llama.jpg">';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>This is an <a href="alert();">evil</a> test…</figcaption>
+</figure>
+';
     $this->assertSame($expected, $test_with_html_filter($input));
-    $expected_xss_filtered = '<img data-caption="This is an &lt;a href=&quot;alert();&quot;&gt;evil&lt;/a&gt; test…" src="llama.jpg" />';
+    $expected_xss_filtered = '<img data-caption="This is an &lt;a href=&quot;alert();&quot;&gt;evil&lt;/a&gt; test…" src="llama.jpg">';
     $this->assertSame($expected_xss_filtered, $test_editor_xss_filter($input));
   }
 
@@ -286,17 +349,29 @@ class FilterKernelTest extends KernelTestBase {
     // Both data-caption and data-align attributes: all 3 allowed values for the
     // data-align attribute.
     $input = '<img src="llama.jpg" data-caption="Loquacious llama!" data-align="left" />';
-    $expected = '<figure role="group" class="align-left"><img src="llama.jpg" /><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group" class="align-left">
+<img src="llama.jpg">
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
     $input = '<img src="llama.jpg" data-caption="Loquacious llama!" data-align="center" />';
-    $expected = '<figure role="group" class="align-center"><img src="llama.jpg" /><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group" class="align-center">
+<img src="llama.jpg">
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
     $input = '<img src="llama.jpg" data-caption="Loquacious llama!" data-align="right" />';
-    $expected = '<figure role="group" class="align-right"><img src="llama.jpg" /><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group" class="align-right">
+<img src="llama.jpg">
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
@@ -304,14 +379,22 @@ class FilterKernelTest extends KernelTestBase {
     // Both data-caption and data-align attributes, but a disallowed data-align
     // attribute value.
     $input = '<img src="llama.jpg" data-caption="Loquacious llama!" data-align="left foobar" />';
-    $expected = '<figure role="group"><img src="llama.jpg" /><figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group">
+<img src="llama.jpg">
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
 
     // Ensure both filters together work for linked images.
     $input = '<a href="http://example.com/llamas/are/awesome/but/kittens/are/cool/too"><img src="llama.jpg" data-caption="Loquacious llama!" data-align="center" /></a>';
-    $expected = '<figure role="group" class="align-center"><a href="http://example.com/llamas/are/awesome/but/kittens/are/cool/too"><img src="llama.jpg" /></a>' . "\n" . '<figcaption>Loquacious llama!</figcaption></figure>';
+    $expected = '<figure role="group" class="align-center">
+<a href="http://example.com/llamas/are/awesome/but/kittens/are/cool/too"><img src="llama.jpg"></a>
+<figcaption>Loquacious llama!</figcaption>
+</figure>
+';
     $output = $test($input);
     $this->assertSame($expected, $output->getProcessedText());
     $this->assertSame($attached_library, $output->getAttachments());
@@ -391,7 +474,7 @@ class FilterKernelTest extends KernelTestBase {
     $this->assertFilteredString($filter, $tests);
 
     // Very long string hitting PCRE limits.
-    $limit = max(ini_get('pcre.backtrack_limit'), ini_get('pcre.recursion_limit'));
+    $limit = max((int) ini_get('pcre.backtrack_limit'), (int) ini_get('pcre.recursion_limit'));
     $source = $this->randomMachineName($limit);
     $result = _filter_autop($source);
     $this->assertEquals($result, '<p>' . $source . "</p>\n", 'Line break filter can process very long strings.');
@@ -455,14 +538,13 @@ class FilterKernelTest extends KernelTestBase {
 
     $f = (string) $filter->process('<code onerror>&nbsp;</code>', Language::LANGCODE_NOT_SPECIFIED);
     $this->assertNoNormalized($f, 'onerror', 'HTML filter should remove empty on* attributes.');
-    // Note - this string has a decoded &nbsp; character.
-    $this->assertSame('<code> </code>', $f);
+    $this->assertSame('<code>&nbsp;</code>', $f);
 
     $f = (string) $filter->process('<br>', Language::LANGCODE_NOT_SPECIFIED);
-    $this->assertNormalized($f, '<br />', 'HTML filter should allow line breaks.');
+    $this->assertNormalized($f, '<br>', 'HTML filter should allow line breaks.');
 
     $f = (string) $filter->process('<br />', Language::LANGCODE_NOT_SPECIFIED);
-    $this->assertNormalized($f, '<br />', 'HTML filter should allow self-closing line breaks.');
+    $this->assertNormalized($f, '<br>', 'HTML filter should allow self-closing line breaks.');
 
     // All attributes of allowed tags are stripped by default.
     $f = (string) $filter->process('<a kitten="cute" llama="awesome">link</a>', Language::LANGCODE_NOT_SPECIFIED);
@@ -496,6 +578,17 @@ class FilterKernelTest extends KernelTestBase {
     $this->assertNormalized($f, '<a>link</a>', 'HTML filter removes allowed attributes that have a not explicitly allowed value.');
     $f = (string) $filter->process('<a href="/beautiful-animals" kitten="cute" llama="epic majestical">link</a>', Language::LANGCODE_NOT_SPECIFIED);
     $this->assertSame('<a href="/beautiful-animals" llama="epic majestical">link</a>', $f, 'HTML filter keeps explicitly allowed attributes with an attribute value that is also explicitly allowed.');
+
+    // Allow iframes and check that the subsequent tags are parsed correctly.
+    $filter->setConfiguration([
+      'settings' => [
+        'allowed_html' => '<iframe> <a href llama>',
+        'filter_html_help' => 1,
+        'filter_html_nofollow' => 0,
+      ],
+    ]);
+    $f = (string) $filter->process('<a kitten="cute" llama="awesome">link</a>', Language::LANGCODE_NOT_SPECIFIED);
+    $this->assertNormalized($f, '<a llama="awesome">link</a>');
   }
 
   /**
@@ -737,7 +830,7 @@ class FilterKernelTest extends KernelTestBase {
       ],
       '<p>Test &lt;br/&gt;: This is a www.example17.com example <strong>with</strong> various http://www.example18.com tags. *<br/>
        It is important www.example19.com to *<br/>test different URLs and http://www.example20.com in the same paragraph. *<br>
-      HTML www.example21.com soup by person@example22.com can litererally http://www.example23.com contain *img*<img> anything. Just a www.example24.com with http://www.example25.com thrown in. www.example26.com from person@example27.com with extra http://www.example28.com.
+       HTML www.example21.com soup by person@example22.com can literally http://www.example23.com contain *img*<img> anything. Just a www.example24.com with http://www.example25.com thrown in. www.example26.com from person@example27.com with extra http://www.example28.com.
       ' => [
         'href="http://www.example17.com"' => TRUE,
         'href="http://www.example18.com"' => TRUE,
@@ -846,18 +939,18 @@ class FilterKernelTest extends KernelTestBase {
       $result = $filter->process($source, $filter)->getProcessedText();
       foreach ($tasks as $value => $is_expected) {
         if ($is_expected) {
-          $this->assertStringContainsString($value, $result, new FormattableMarkup('@source: @value found. Filtered result: @result.', [
-            '@source' => var_export($source, TRUE),
-            '@value' => var_export($value, TRUE),
-            '@result' => var_export($result, TRUE),
-          ]));
+          $this->assertStringContainsString($value, $result, sprintf('%s: %s found. Filtered result: %s.',
+            var_export($source, TRUE),
+            var_export($value, TRUE),
+            var_export($result, TRUE),
+          ));
         }
         else {
-          $this->assertStringNotContainsString($value, $result, new FormattableMarkup('@source: @value not found. Filtered result: @result.', [
-            '@source' => var_export($source, TRUE),
-            '@value' => var_export($value, TRUE),
-            '@result' => var_export($result, TRUE),
-          ]));
+          $this->assertStringNotContainsString($value, $result, sprintf('%s: %s not found. Filtered result: %s.',
+            var_export($source, TRUE),
+            var_export($value, TRUE),
+            var_export($result, TRUE),
+          ));
         }
       }
     }
@@ -925,6 +1018,9 @@ class FilterKernelTest extends KernelTestBase {
     $f = Html::normalize('<p>text');
     $this->assertEquals('<p>text</p>', $f, 'HTML corrector -- tag closing at the end of input.');
 
+    $f = Html::normalize('<p>text <img alt="ao');
+    $this->assertEquals('<p>text <img alt="ao"></p>', $f, 'HTML corrector -- tag closing at the end of input + broken attribute.');
+
     $f = Html::normalize('<p>text<p><p>text');
     $this->assertEquals('<p>text</p><p></p><p>text</p>', $f, 'HTML corrector -- tag closing.');
 
@@ -934,48 +1030,47 @@ class FilterKernelTest extends KernelTestBase {
     $f = Html::normalize('<div id="d">content');
     $this->assertEquals('<div id="d">content</div>', $f, 'HTML corrector -- unclosed tag with attribute.');
 
-    // XHTML slash for empty elements.
     $f = Html::normalize('<hr><br>');
-    $this->assertEquals('<hr /><br />', $f, 'HTML corrector -- XHTML closing slash.');
+    $this->assertEquals('<hr><br>', $f, 'HTML corrector -- void element.');
 
     $f = Html::normalize('<P>test</P>');
-    $this->assertEquals('<p>test</p>', $f, 'HTML corrector -- Convert uppercased tags to proper lowercased ones.');
+    $this->assertEquals('<p>test</p>', $f, 'HTML corrector -- Convert upper cased tags to proper lowercased ones.');
 
     $f = Html::normalize('<P>test</p>');
-    $this->assertEquals('<p>test</p>', $f, 'HTML corrector -- Convert uppercased tags to proper lowercased ones.');
+    $this->assertEquals('<p>test</p>', $f, 'HTML corrector -- Convert upper cased tags to proper lowercased ones.');
 
     $f = Html::normalize('test<hr />');
-    $this->assertEquals('test<hr />', $f, 'HTML corrector -- Let proper XHTML pass through.');
+    $this->assertEquals('test<hr>', $f, 'HTML corrector -- convert self-closing element to HTML5 void element.');
 
     $f = Html::normalize('test<hr/>');
-    $this->assertEquals('test<hr />', $f, 'HTML corrector -- Let proper XHTML pass through, but ensure there is a single space before the closing slash.');
+    $this->assertEquals('test<hr>', $f, 'HTML corrector -- convert self-closing element to HTML5 void element.');
 
     $f = Html::normalize('test<hr    />');
-    $this->assertEquals('test<hr />', $f, 'HTML corrector -- Let proper XHTML pass through, but ensure there are not too many spaces before the closing slash.');
+    $this->assertEquals('test<hr>', $f, 'HTML corrector -- convert self-closing element with multiple spaces to HTML5 void element.');
 
     $f = Html::normalize('<span class="test" />');
     $this->assertEquals('<span class="test"></span>', $f, 'HTML corrector -- Convert XHTML that is properly formed but that would not be compatible with typical HTML user agents.');
 
     $f = Html::normalize('test1<br class="test">test2');
-    $this->assertEquals('test1<br class="test" />test2', $f, 'HTML corrector -- Automatically close single tags.');
+    $this->assertEquals('test1<br class="test">test2', $f, 'HTML corrector -- Keep self-closing tags.');
 
     $f = Html::normalize('line1<hr>line2');
-    $this->assertEquals('line1<hr />line2', $f, 'HTML corrector -- Automatically close single tags.');
+    $this->assertEquals('line1<hr>line2', $f, 'HTML corrector -- Keep self-closing tags.');
 
     $f = Html::normalize('line1<HR>line2');
-    $this->assertEquals('line1<hr />line2', $f, 'HTML corrector -- Automatically close single tags.');
+    $this->assertEquals('line1<hr>line2', $f, 'HTML corrector -- Keep self-closing tags.');
 
     $f = Html::normalize('<img src="http://example.com/test.jpg">test</img>');
-    $this->assertEquals('<img src="http://example.com/test.jpg" />test', $f, 'HTML corrector -- Automatically close single tags.');
+    $this->assertEquals('<img src="http://example.com/test.jpg">test', $f, 'HTML corrector -- Fix self-closing single tags.');
 
     $f = Html::normalize('<br></br>');
-    $this->assertEquals('<br />', $f, "HTML corrector -- Transform empty tags to a single closed tag if the tag's content model is EMPTY.");
+    $this->assertEquals('<br><br>', $f, "HTML corrector -- Transform empty tags to a self-closed tag if the tag's content model is EMPTY.");
 
     $f = Html::normalize('<div></div>');
     $this->assertEquals('<div></div>', $f, "HTML corrector -- Do not transform empty tags to a single closed tag if the tag's content model is not EMPTY.");
 
     $f = Html::normalize('<p>line1<br/><hr/>line2</p>');
-    $this->assertEquals('<p>line1<br /></p><hr />line2', $f, 'HTML corrector -- Move non-inline elements outside of inline containers.');
+    $this->assertEquals('<p>line1<br></p><hr>line2', $f, 'HTML corrector -- Move non-inline elements outside of inline containers.');
 
     $f = Html::normalize('<p>line1<div>line2</div></p>');
     $this->assertEquals('<p>line1</p><div>line2</div>', $f, 'HTML corrector -- Move non-inline elements outside of inline containers.');
@@ -984,7 +1079,7 @@ class FilterKernelTest extends KernelTestBase {
     $this->assertEquals('<p>test</p><p>test</p>\n', $f, 'HTML corrector -- Auto-close improperly nested tags.');
 
     $f = Html::normalize('<p>Line1<br><STRONG>bold stuff</b>');
-    $this->assertEquals('<p>Line1<br /><strong>bold stuff</strong></p>', $f, 'HTML corrector -- Properly close unclosed tags, and remove useless closing tags.');
+    $this->assertEquals('<p>Line1<br><strong>bold stuff</strong></p>', $f, 'HTML corrector -- Properly close unclosed tags, and remove useless closing tags.');
 
     $f = Html::normalize('test <!-- this is a comment -->');
     $this->assertEquals('test <!-- this is a comment -->', $f, 'HTML corrector -- Do not touch HTML comments.');
@@ -1013,106 +1108,66 @@ class FilterKernelTest extends KernelTestBase {
     $this->assertEquals('<p>دروبال</p>', $f, 'HTML corrector -- Encoding is correctly kept.');
     // cSpell:enable
 
-    $f = Html::normalize('<script>alert("test")</script>');
-    $this->assertEquals('<script>
-<!--//--><![CDATA[// ><!--
-alert("test")
-//--><!]]>
-</script>', $f, 'HTML corrector -- CDATA added to script element');
+    $html = '<script>alert("test")</script>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- script element');
 
-    $f = Html::normalize('<p><script>alert("test")</script></p>');
-    $this->assertEquals('<p><script>
-<!--//--><![CDATA[// ><!--
-alert("test")
-//--><!]]>
-</script></p>', $f, 'HTML corrector -- CDATA added to a nested script element');
+    $html = '<p><script>alert("test")</script></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- nested script element');
 
-    $f = Html::normalize('<p><style> /* Styling */ body {color:red}</style></p>');
-    $this->assertEquals('<p><style>
-<!--/*--><![CDATA[/* ><!--*/
- /* Styling */ body {color:red}
-/*--><!]]>*/
-</style></p>', $f, 'HTML corrector -- CDATA added to a style element.');
+    $html = '<p><style> /* Styling */ body {color:red}</style></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- style element.');
 
-    $filtered_data = Html::normalize('<p><style>
+    $html = '<p><style>
 /*<![CDATA[*/
 /* Styling */
 body {color:red}
 /*]]>*/
-</style></p>');
-    $this->assertEquals('<p><style>
-<!--/*--><![CDATA[/* ><!--*/
+</style></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- Existing cdata section /*<![CDATA[*/ properly escaped');
 
+    $html = '<p><style>
 /*<![CDATA[*/
-/* Styling */
-body {color:red}
-/*]]]]><![CDATA[>*/
-
-/*--><!]]>*/
-</style></p>', $filtered_data,
-      new FormattableMarkup('HTML corrector -- Existing cdata section @pattern_name properly escaped', ['@pattern_name' => '/*<![CDATA[*/'])
-    );
-
-    $filtered_data = Html::normalize('<p><style>
-  <!--/*--><![CDATA[/* ><!--*/
   /* Styling */
   body {color:red}
-  /*--><!]]>*/
-</style></p>');
-    $this->assertEquals('<p><style>
-<!--/*--><![CDATA[/* ><!--*/
+/*]]>*/
+</style></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- Existing cdata section <!--/*--><![CDATA[/* ><!--*/ properly escaped');
 
-  <!--/*--><![CDATA[/* ><!--*/
-  /* Styling */
-  body {color:red}
-  /*--><!]]]]><![CDATA[>*/
-
-/*--><!]]>*/
-</style></p>', $filtered_data,
-      new FormattableMarkup('HTML corrector -- Existing cdata section @pattern_name properly escaped', ['@pattern_name' => '<!--/*--><![CDATA[/* ><!--*/'])
-    );
-
-    $filtered_data = Html::normalize('<p><script>
-<!--//--><![CDATA[// ><!--
+    $html = '<p><script>
+//<![CDATA[
   alert("test");
-//--><!]]>
-</script></p>');
-    $this->assertEquals('<p><script>
-<!--//--><![CDATA[// ><!--
+//]]>
+</script></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- Existing cdata section <!--//--><![CDATA[// ><!-- properly escaped');
 
-<!--//--><![CDATA[// ><!--
-  alert("test");
-//--><!]]]]><![CDATA[>
-
-//--><!]]>
-</script></p>', $filtered_data,
-      new FormattableMarkup('HTML corrector -- Existing cdata section @pattern_name properly escaped', ['@pattern_name' => '<!--//--><![CDATA[// ><!--'])
-    );
-
-    $filtered_data = Html::normalize('<p><script>
+    $html = '<p><script>
 // <![CDATA[
   alert("test");
-// ]]>
-</script></p>');
-    $this->assertEquals('<p><script>
-<!--//--><![CDATA[// ><!--
+//]]>
+</script></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- Existing cdata section // <![CDATA[ properly escaped');
 
-// <![CDATA[
+    $html = '<p><script>
+// <![CDATA[![CDATA[![CDATA[
   alert("test");
-// ]]]]><![CDATA[>
+//]]]]]]>
+</script></p>';
+    $this->assertEquals($html, Html::normalize($html), 'HTML corrector -- Existing cdata section // <![CDATA[![CDATA[![CDATA[ properly escaped');
 
-//--><!]]>
-</script></p>', $filtered_data,
-      new FormattableMarkup('HTML corrector -- Existing cdata section @pattern_name properly escaped', ['@pattern_name' => '// <![CDATA['])
-    );
-
+    // Test calling Html::normalize() twice.
+    $html = '<p><script>
+// <![CDATA[![CDATA[![CDATA[
+  alert("test");
+//]]]]]]>
+</script></p>';
+    $this->assertEquals($html, Html::normalize(Html::normalize($html)), 'HTML corrector -- Existing cdata section // <![CDATA[![CDATA[![CDATA[ properly escaped');
   }
 
   /**
    * Asserts that a text transformed to lowercase with HTML entities decoded does contains a given string.
    *
    * Otherwise fails the test with a given message, similar to all the
-   * SimpleTest assert* functions.
+   * PHPUnit assert* functions.
    *
    * Note that this does not remove nulls, new lines and other characters that
    * could be used to obscure a tag or an attribute name.
@@ -1123,12 +1178,10 @@ body {color:red}
    *   Lowercase, plain text to look for.
    * @param string $message
    *   (optional) Message to display if failed. Defaults to an empty string.
-   * @param string $group
-   *   (optional) The group this message belongs to. Defaults to 'Other'.
    *
    * @internal
    */
-  public function assertNormalized(string $haystack, string $needle, string $message = '', string $group = 'Other'): void {
+  public function assertNormalized(string $haystack, string $needle, string $message = ''): void {
     $this->assertStringContainsString($needle, strtolower(Html::decodeEntities($haystack)), $message);
   }
 
@@ -1136,7 +1189,7 @@ body {color:red}
    * Asserts that text transformed to lowercase with HTML entities decoded does not contain a given string.
    *
    * Otherwise fails the test with a given message, similar to all the
-   * SimpleTest assert* functions.
+   * PHPUnit assert* functions.
    *
    * Note that this does not remove nulls, new lines, and other character that
    * could be used to obscure a tag or an attribute name.
@@ -1147,12 +1200,10 @@ body {color:red}
    *   Lowercase, plain text to look for.
    * @param string $message
    *   (optional) Message to display if failed. Defaults to an empty string.
-   * @param string $group
-   *   (optional) The group this message belongs to. Defaults to 'Other'.
    *
    * @internal
    */
-  public function assertNoNormalized(string $haystack, string $needle, string $message = '', string $group = 'Other'): void {
+  public function assertNoNormalized(string $haystack, string $needle, string $message = ''): void {
     $this->assertStringNotContainsString($needle, strtolower(Html::decodeEntities($haystack)), $message);
   }
 

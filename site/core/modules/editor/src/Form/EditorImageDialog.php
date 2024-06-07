@@ -17,6 +17,11 @@ use Drupal\Core\Entity\EntityStorageInterface;
 /**
  * Provides an image dialog for text editors.
  *
+ * @deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. There is no
+ * replacement.
+ *
+ * @see https://www.drupal.org/node/3291493
+ *
  * @internal
  */
 class EditorImageDialog extends FormBase {
@@ -35,6 +40,7 @@ class EditorImageDialog extends FormBase {
    *   The file storage service.
    */
   public function __construct(EntityStorageInterface $file_storage) {
+    @trigger_error(__NAMESPACE__ . '\EditorImageDialog is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. There is no replacement. See https://www.drupal.org/node/3291493', E_USER_DEPRECATED);
     $this->fileStorage = $file_storage;
   }
 
@@ -106,9 +112,9 @@ class EditorImageDialog extends FormBase {
       '#upload_location' => $image_upload['scheme'] . '://' . $image_upload['directory'],
       '#default_value' => $fid ? [$fid] : NULL,
       '#upload_validators' => [
-        'file_validate_extensions' => ['gif png jpg jpeg'],
-        'file_validate_size' => [$max_filesize],
-        'file_validate_image_resolution' => [$max_dimensions],
+        'FileExtension' => ['extensions' => 'gif png jpg jpeg'],
+        'FileSizeLimit' => ['fileLimit' => $max_filesize],
+        'FileImageDimensions' => ['maxDimensions' => $max_dimensions],
       ],
       '#required' => TRUE,
     ];

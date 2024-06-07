@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\HttpFoundation\SecuredRedirectResponseTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\HttpFoundation;
 

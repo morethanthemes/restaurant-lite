@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\big_pipe\Unit\Render;
 
 use Drupal\big_pipe\Render\BigPipe;
@@ -23,9 +25,12 @@ class ManyPlaceholderTest extends UnitTestCase {
    * @covers \Drupal\big_pipe\Render\BigPipe::sendNoJsPlaceholders
    */
   public function testManyNoJsPlaceHolders() {
+    $session = $this->prophesize(SessionInterface::class);
+    $session->start()->willReturn(TRUE);
+    $session->save()->shouldBeCalled();
     $bigpipe = new BigPipe(
       $this->prophesize(RendererInterface::class)->reveal(),
-      $this->prophesize(SessionInterface::class)->reveal(),
+      $session->reveal(),
       $this->prophesize(RequestStack::class)->reveal(),
       $this->prophesize(HttpKernelInterface::class)->reveal(),
       $this->prophesize(EventDispatcherInterface::class)->reveal(),

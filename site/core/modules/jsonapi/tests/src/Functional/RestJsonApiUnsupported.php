@@ -62,7 +62,7 @@ class RestJsonApiUnsupported extends ResourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->config('system.logging')->set('error_level', ERROR_REPORTING_HIDE)->save();

@@ -29,6 +29,7 @@ install:
   - dynamic_page_cache
   - taxonomy
   - dblog
+  - sdc
   - search
   - shortcut
   - toolbar
@@ -36,7 +37,6 @@ install:
   - file
   - views
   - views_ui
-  - tour
   - automated_cron
   - responsive_image
   - content_moderation
@@ -45,12 +45,13 @@ install:
   - locale
   - config_translation
   - content_translation
+  - announcements_feed
 themes:
   - claro
   - umami
 keep_english: true
 
-# Information added by Drupal.org packaging script on 2023-09-20
-version: '9.5.11'
+# Information added by Drupal.org packaging script on 2024-06-06
+version: '10.2.7'
 project: 'drupal'
-datestamp: 1695228127
+datestamp: 1717660126

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\media\FunctionalJavascript;
 
 use Drupal\field\FieldConfigInterface;
@@ -67,11 +69,11 @@ class MediaUiJavascriptTest extends MediaJavascriptTestBase {
     $page->selectFieldOption('source', 'test');
     $this->assertJsCondition("jQuery('.form-item-source-configuration-test-config-value').length > 0");
     $page->fillField('description', $description);
-    $page->pressButton('Save');
+    $page->pressButton('Save and manage fields');
     // The wait prevents intermittent test failures.
-    $result = $assert_session->waitForLink('Add media type');
+    $result = $assert_session->waitForLink('Create a new field');
     $this->assertNotEmpty($result);
-    $assert_session->addressEquals('admin/structure/media');
+    $assert_session->addressEquals('admin/structure/media/manage/' . $machine_name . '/fields');
     $assert_session->pageTextContains('The media type ' . $name . ' has been added.');
     $this->drupalGet('admin/structure/media');
     $assert_session->pageTextContains($name);
@@ -189,8 +191,10 @@ class MediaUiJavascriptTest extends MediaJavascriptTestBase {
 
     // Tests media type delete form.
     $page->clickLink('Delete');
-    $assert_session->addressEquals('admin/structure/media/manage/' . $this->testMediaType->id() . '/delete');
-    $page->pressButton('Delete');
+    $assert_session->assertWaitOnAjaxRequest();
+    $this->assertNotEmpty($assert_session->waitForElementVisible('css', '#drupal-modal'));
+    $assert_session->addressEquals('admin/structure/media/manage/' . $this->testMediaType->id());
+    $this->click('.ui-dialog button:contains("Delete")');
     $assert_session->addressEquals('admin/structure/media');
     $assert_session->pageTextContains('The media type ' . $new_name . ' has been deleted.');
 
@@ -202,8 +206,10 @@ class MediaUiJavascriptTest extends MediaJavascriptTestBase {
     $media->save();
     $this->drupalGet('admin/structure/media/manage/' . $media_type2->id());
     $page->clickLink('Delete');
-    $assert_session->addressEquals('admin/structure/media/manage/' . $media_type2->id() . '/delete');
-    $assert_session->buttonNotExists('edit-submit');
+    $assert_session->assertWaitOnAjaxRequest();
+    $this->assertNotEmpty($assert_session->waitForElementVisible('css', '#drupal-modal'));
+    $assert_session->addressEquals('admin/structure/media/manage/' . $media_type2->id());
+    $assert_session->elementNotExists('css', '.ui-dialog button:contains("Delete")');
     $assert_session->pageTextContains("$label2 is used by 1 media item on your site. You can not remove this media type until you have removed all of the $label2 media items.");
   }
 

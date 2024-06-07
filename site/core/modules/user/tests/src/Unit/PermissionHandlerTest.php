@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\user\Unit\PermissionHandlerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\user\Unit;
 

@@ -15,6 +15,7 @@ use Drupal\views\Entity\View;
  * Create, view, edit, delete, and change shortcut links.
  *
  * @group shortcut
+ * @group #slow
  */
 class ShortcutLinksTest extends ShortcutTestBase {
 
@@ -130,7 +131,7 @@ class ShortcutLinksTest extends ShortcutTestBase {
     $this->drupalLogin($this->adminUser);
     $edit = [
       'label' => $this->randomMachineName(),
-      'id' => strtolower($this->randomMachineName()),
+      'id' => $this->randomMachineName(),
     ];
     $this->drupalGet('admin/config/user-interface/shortcut/add-set');
     $this->submitForm($edit, 'Save');
@@ -218,8 +219,8 @@ class ShortcutLinksTest extends ShortcutTestBase {
       'revision' => FALSE,
     ])->save();
     // Test page with HTML tags in title.
-    $this->drupalGet('admin/structure/block/block-content/manage/basic');
-    $page_title = "Edit Basic block custom block type";
+    $this->drupalGet('admin/structure/block-content/manage/basic');
+    $page_title = "Edit Basic block block type";
     $this->assertSession()->pageTextContains($page_title);
     // Add shortcut to this page.
     $this->clickLink('Add to Default shortcuts');
@@ -372,7 +373,7 @@ class ShortcutLinksTest extends ShortcutTestBase {
     $this->drupalLogin($this->drupalCreateUser([
       'access toolbar', 'access shortcuts', 'administer site configuration',
     ]));
-    $this->clickLink('Shortcuts', 0, 'Shortcut link found on page.');
+    $this->clickLink('Shortcuts');
     $this->assertSession()->linkExists('Cron', 0, 'Cron shortcut link found on page.');
 
     $this->verifyAccessShortcutsPermissionForEditPages();
@@ -412,8 +413,8 @@ class ShortcutLinksTest extends ShortcutTestBase {
       'customize shortcut links',
       'switch shortcut sets',
     ];
-    $noaccess_user = $this->drupalCreateUser($test_permissions);
-    $this->drupalLogin($noaccess_user);
+    $no_access_user = $this->drupalCreateUser($test_permissions);
+    $this->drupalLogin($no_access_user);
 
     // Verify that set administration pages are inaccessible without the
     // 'access shortcuts' permission.
@@ -421,7 +422,7 @@ class ShortcutLinksTest extends ShortcutTestBase {
     $this->assertSession()->statusCodeEquals(403);
     $this->drupalGet('admin/config/user-interface/shortcut/manage/default');
     $this->assertSession()->statusCodeEquals(403);
-    $this->drupalGet('user/' . $noaccess_user->id() . '/shortcuts');
+    $this->drupalGet('user/' . $no_access_user->id() . '/shortcuts');
     $this->assertSession()->statusCodeEquals(403);
   }
 
@@ -465,7 +466,7 @@ class ShortcutLinksTest extends ShortcutTestBase {
    */
   protected function assertShortcutQuickLink(string $label, int $index = 0, string $message = ''): void {
     $links = $this->xpath('//a[normalize-space()=:label]', [':label' => $label]);
-    $message = ($message ? $message : new FormattableMarkup('Shortcut quick link with label %label found.', ['%label' => $label]));
+    $message = ($message ? $message : (string) new FormattableMarkup('Shortcut quick link with label %label found.', ['%label' => $label]));
     $this->assertArrayHasKey($index, $links, $message);
   }
 

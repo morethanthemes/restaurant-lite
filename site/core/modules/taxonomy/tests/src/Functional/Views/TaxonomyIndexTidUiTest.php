@@ -2,7 +2,7 @@
 
 namespace Drupal\Tests\taxonomy\Functional\Views;
 
-use Drupal\Tests\field\Traits\EntityReferenceTestTrait;
+use Drupal\Tests\field\Traits\EntityReferenceFieldCreationTrait;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\Tests\views_ui\Functional\UITestBase;
@@ -13,11 +13,12 @@ use Drupal\views\Entity\View;
  * Tests the taxonomy index filter handler UI.
  *
  * @group taxonomy
+ * @group #slow
  * @see \Drupal\taxonomy\Plugin\views\field\TaxonomyIndexTid
  */
 class TaxonomyIndexTidUiTest extends UITestBase {
 
-  use EntityReferenceTestTrait;
+  use EntityReferenceFieldCreationTrait;
 
   /**
    * Views used by this test.
@@ -90,6 +91,18 @@ class TaxonomyIndexTidUiTest extends UITestBase {
       }
     }
     ViewTestData::createTestViews(static::class, ['taxonomy_test_views']);
+
+    // Extra taxonomy and terms.
+    Vocabulary::create([
+      'vid' => 'other_tags',
+      'name' => 'Other tags',
+    ])->save();
+
+    $this->terms[3][0] = $term = Term::create([
+      'vid' => 'tags',
+      'name' => "Term 3.0",
+    ]);
+    $term->save();
 
     Vocabulary::create([
       'vid' => 'empty_vocabulary',
@@ -301,7 +314,7 @@ class TaxonomyIndexTidUiTest extends UITestBase {
     $this->submitForm($edit, 'Apply');
     $this->submitForm([], 'Save');
 
-    // Visit the view's page url and validate the results.
+    // Visit the view's page URL and validate the results.
     $this->drupalGet('/test-taxonomy-exposed-grouped-filter');
     $this->submitForm(['field_views_testing_tags_target_id' => 1], 'Apply');
     $this->assertSession()->pageTextContains($nodes[0]->getTitle());
@@ -356,6 +369,186 @@ class TaxonomyIndexTidUiTest extends UITestBase {
     // Make sure the unpublished term isn't shown to the anonymous user.
     $this->assertNotEmpty($this->cssSelect('option[value="' . $this->terms[0][0]->id() . '"]'));
     $this->assertEmpty($this->cssSelect('option[value="' . $this->terms[1][0]->id() . '"]'));
+  }
+
+  /**
+   * Tests using the TaxonomyIndexTid in a filter group.
+   */
+  public function testFilterGrouping() {
+    $node_type = $this->drupalCreateContentType(['type' => 'page']);
+
+    // Create the tag field itself.
+    $field_name = 'taxonomy_tags';
+    $this->createEntityReferenceField('node', $node_type->id(), $field_name, NULL, 'taxonomy_term');
+
+    // Create the other tag field itself.
+    $field_name2 = 'taxonomy_other_tags';
+    $this->createEntityReferenceField('node', $node_type->id(), $field_name2, NULL, 'taxonomy_term');
+
+    // Create 5 nodes: 1 node without any tagging, 2 nodes tagged with 1 term,
+    // 1 node with 2 tagged terms and 1 with other tags term.
+    $node_no_term = $this->drupalCreateNode();
+    $node_with_term_1_0 = $this->drupalCreateNode([
+      $field_name => [['target_id' => $this->terms[1][0]->id()]],
+    ]);
+    $node_with_terms_1_0_and_1_1 = $this->drupalCreateNode([
+      $field_name => [
+        ['target_id' => $this->terms[1][0]->id()],
+        ['target_id' => $this->terms[1][1]->id()],
+      ],
+    ]);
+    $node_with_term_2_0 = $this->drupalCreateNode([
+      $field_name => [['target_id' => $this->terms[2][0]->id()]],
+    ]);
+
+    $node_with_term_3_0 = $this->drupalCreateNode([
+      $field_name2 => [['target_id' => $this->terms[3][0]->id()]],
+    ]);
+
+    // Create two groups. The first group contains the published filter and set
+    // up the second group as an 'OR' group. The first subgroup of the second
+    // filter group will vary as follows:
+    // - multiple values vs single value
+    // - not vs or operator values
+    $view = View::load('test_filter_taxonomy_index_tid');
+    $display =& $view->getDisplay('default');
+    // Case 1:
+    // - filter "tid" with multiple terms as "is none of"
+    // - filter "tid_2" with a single term as "is one of"
+    $display['display_options']['filters']['tid']['value'][0] = $this->terms[1][0]->id();
+    $display['display_options']['filters']['tid']['value'][1] = $this->terms[1][1]->id();
+    $display['display_options']['filters']['tid']['operator'] = 'not';
+    $display['display_options']['filters']['tid']['group'] = 2;
+    $display['display_options']['filters']['tid_2'] = $display['display_options']['filters']['tid'];
+    $display['display_options']['filters']['tid_2']['id'] = 'tid_2';
+    $display['display_options']['filters']['tid_2']['value'][0] = $this->terms[2][0]->id();
+    $display['display_options']['filters']['tid_2']['operator'] = 'or';
+    $display['display_options']['filters']['tid_2']['group'] = 2;
+    $display['display_options']['filter_groups'] = [
+      'operator' => 'AND',
+      'groups' => [
+        1 => 'AND',
+        2 => 'OR',
+      ],
+    ];
+    $view->save();
+
+    $this->drupalGet('test-filter-taxonomy-index-tid');
+    // We expect no nodes tagged with term 1.0 or 1.1. The node tagged with
+    // term 2.0 and the untagged node will be shown.
+    $this->assertSession()->pageTextNotContains($node_with_term_1_0->label());
+    $this->assertSession()->pageTextNotContains($node_with_terms_1_0_and_1_1->label());
+    $this->assertSession()->pageTextContainsOnce($node_with_term_2_0->label());
+    $this->assertSession()->pageTextContainsOnce($node_no_term->label());
+
+    // Case 2:
+    // - filter "tid" with multiple terms as "is one of"
+    // - filter "tid_2" with a single term as "is one of"
+    $view = View::load('test_filter_taxonomy_index_tid');
+    $display =& $view->getDisplay('default');
+    $display['display_options']['filters']['tid']['value'][0] = $this->terms[1][0]->id();
+    $display['display_options']['filters']['tid']['value'][1] = $this->terms[1][1]->id();
+    $display['display_options']['filters']['tid']['operator'] = 'or';
+    $display['display_options']['filters']['tid']['group'] = 2;
+    $display['display_options']['filters']['tid_2'] = $display['display_options']['filters']['tid'];
+    $display['display_options']['filters']['tid_2']['id'] = 'tid_2';
+    $display['display_options']['filters']['tid_2']['value'][0] = $this->terms[2][0]->id();
+    $display['display_options']['filters']['tid_2']['operator'] = 'or';
+    $display['display_options']['filters']['tid_2']['group'] = 2;
+    $view->save();
+
+    $this->drupalGet('test-filter-taxonomy-index-tid');
+    // We expect all the tagged nodes but not the untagged node.
+    $this->assertSession()->pageTextContainsOnce($node_with_term_1_0->label());
+    // The view does not have DISTINCT query enabled, the node tagged with
+    // both 1.0 and 1.1 will appear twice.
+    $this->assertSession()->pageTextMatchesCount(2, "/{$node_with_terms_1_0_and_1_1->label()}/");
+    $this->assertSession()->pageTextContainsOnce($node_with_term_2_0->label());
+    $this->assertSession()->pageTextNotContains($node_no_term->label());
+
+    // Case 3:
+    // - filter "tid" with a single term as "is none of"
+    // - filter "tid_2" with a single term as "is one of"
+    $view = View::load('test_filter_taxonomy_index_tid');
+    $display =& $view->getDisplay('default');
+    $display['display_options']['filters']['tid']['value'] = [];
+    $display['display_options']['filters']['tid']['value'][0] = $this->terms[1][0]->id();
+    $display['display_options']['filters']['tid']['operator'] = 'not';
+    $display['display_options']['filters']['tid']['group'] = 2;
+    $display['display_options']['filters']['tid_2'] = $display['display_options']['filters']['tid'];
+    $display['display_options']['filters']['tid_2']['id'] = 'tid_2';
+    $display['display_options']['filters']['tid_2']['value'][0] = $this->terms[2][0]->id();
+    $display['display_options']['filters']['tid_2']['operator'] = 'or';
+    $display['display_options']['filters']['tid_2']['group'] = 2;
+    $view->save();
+
+    $this->drupalGet('test-filter-taxonomy-index-tid');
+    // We expect none of the nodes tagged with term 1.0. The node tagged with
+    // term 2.0 and the untagged node should be shown.
+    $this->assertSession()->pageTextNotContains($node_with_term_1_0->label());
+    $this->assertSession()->pageTextNotContains($node_with_terms_1_0_and_1_1->label());
+    $this->assertSession()->pageTextContainsOnce($node_with_term_2_0->label());
+    $this->assertSession()->pageTextContainsOnce($node_no_term->label());
+
+    // Case 4:
+    // - filter "tid" with a single term as "is one of"
+    // - filter "tid_2" with a single term as "is one of"
+    $view = View::load('test_filter_taxonomy_index_tid');
+    $display =& $view->getDisplay('default');
+    $display['display_options']['filters']['tid']['value'] = [];
+    $display['display_options']['filters']['tid']['value'][0] = $this->terms[1][0]->id();
+    $display['display_options']['filters']['tid']['operator'] = 'or';
+    $display['display_options']['filters']['tid']['group'] = 2;
+    $display['display_options']['filters']['tid_2'] = $display['display_options']['filters']['tid'];
+    $display['display_options']['filters']['tid_2']['id'] = 'tid_2';
+    $display['display_options']['filters']['tid_2']['value'][0] = $this->terms[2][0]->id();
+    $view->save();
+
+    $this->drupalGet('test-filter-taxonomy-index-tid');
+    // We expect all the tagged nodes to be shown but not the untagged node.
+    $this->assertSession()->pageTextContainsOnce($node_with_term_1_0->label());
+    $this->assertSession()->pageTextContainsOnce($node_with_terms_1_0_and_1_1->label());
+    $this->assertSession()->pageTextContainsOnce($node_with_term_2_0->label());
+    $this->assertSession()->pageTextNotContains($node_no_term->label());
+
+    // Different fields/taxonomies filters/values.
+    // Case 5: OR
+    // - filter "tid" with terms from tags as "is one of"
+    // - filter "taxonomy_other_tags_target_id" with term from other tags
+    // as "is one of".
+    $view = View::load('test_filter_taxonomy_index_tid');
+    $display = &$view->getDisplay('default');
+    $display['display_options']['filters']['tid']['value'][0] = $this->terms[1][0]->id();
+    $display['display_options']['filters']['tid']['value'][1] = $this->terms[1][1]->id();
+    $display['display_options']['filters']['tid']['operator'] = 'or';
+    $display['display_options']['filters']['tid']['group'] = 2;
+    $display['display_options']['filters']['taxonomy_other_tags_target_id'] = $display['display_options']['filters']['tid'];
+    $display['display_options']['filters']['taxonomy_other_tags_target_id']['id'] = 'taxonomy_other_tags_target_id';
+    $display['display_options']['filters']['taxonomy_other_tags_target_id']['value'][0] = $this->terms[3][0]->id();
+    $display['display_options']['filters']['taxonomy_other_tags_target_id']['operator'] = 'or';
+    $display['display_options']['filters']['taxonomy_other_tags_target_id']['group'] = 2;
+    $display['display_options']['filters']['taxonomy_other_tags_target_id']['table'] = 'node__taxonomy_other_tags';
+    $display['display_options']['filters']['taxonomy_other_tags_target_id']['field'] = 'taxonomy_other_tags_target_id';
+    unset($display['display_options']['filters']['tid_2']);
+    $display['display_options']['filter_groups'] = [
+      'operator' => 'AND',
+      'groups' => [
+        1 => 'AND',
+        2 => 'OR',
+      ],
+    ];
+    $view->save();
+
+    $this->drupalGet('test-filter-taxonomy-index-tid');
+    // We expect no nodes tagged with term 1.0 or 1.1. The node tagged with
+    // term 3.0 and the untagged node will be shown.
+    $this->assertSession()->pageTextContainsOnce($node_with_term_1_0->label());
+    // The view does not have DISTINCT query enabled, the node tagged with
+    // both 1.0 and 1.1 will appear twice.
+    $this->assertSession()->pageTextMatchesCount(2, "/{$node_with_terms_1_0_and_1_1->label()}/");
+    $this->assertSession()->pageTextContainsOnce($node_with_term_3_0->label());
+    $this->assertSession()->pageTextNotContains($node_with_term_2_0->label());
+    $this->assertSession()->pageTextNotContains($node_no_term->label());
   }
 
 }

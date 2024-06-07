@@ -8,10 +8,12 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\workflows\Entity\Workflow;
+use Prophecy\Prophet;
 
 /**
  * @coversDefaultClass \Drupal\workflows\WorkflowAccessControlHandler
  * @group workflows
+ * @group #slow
  */
 class WorkflowAccessControlHandlerTest extends KernelTestBase {
 
@@ -54,9 +56,7 @@ class WorkflowAccessControlHandlerTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
 
-    $this->installEntitySchema('workflow');
     $this->installEntitySchema('user');
-    $this->installSchema('system', ['sequences']);
 
     $this->accessControlHandler = $this->container->get('entity_type.manager')->getAccessControlHandler('workflow');
 
@@ -75,14 +75,12 @@ class WorkflowAccessControlHandlerTest extends KernelTestBase {
     $this->assertEquals(
       AccessResult::neutral()
         ->addCacheContexts(['user.permissions'])
-        ->setReason("The 'administer workflows' permission is required.")
-        ->addCacheTags(['workflow_type_plugins']),
+        ->setReason("The 'administer workflows' permission is required."),
       $this->accessControlHandler->createAccess(NULL, $this->user, [], TRUE)
     );
     $this->assertEquals(
       AccessResult::allowed()
-        ->addCacheContexts(['user.permissions'])
-        ->addCacheTags(['workflow_type_plugins']),
+        ->addCacheContexts(['user.permissions']),
       $this->accessControlHandler->createAccess(NULL, $this->adminUser, [], TRUE)
     );
 
@@ -92,8 +90,7 @@ class WorkflowAccessControlHandlerTest extends KernelTestBase {
     $this->accessControlHandler->resetCache();
     $this->assertEquals(
       AccessResult::neutral()
-        ->addCacheContexts(['user.permissions'])
-        ->addCacheTags(['workflow_type_plugins']),
+        ->addCacheContexts(['user.permissions']),
       $this->accessControlHandler->createAccess(NULL, $this->adminUser, [], TRUE)
     );
   }
@@ -106,6 +103,7 @@ class WorkflowAccessControlHandlerTest extends KernelTestBase {
     $workflow = Workflow::create([
       'type' => 'workflow_type_test',
       'id' => 'test_workflow',
+      'label' => 'Test workflow',
     ]);
     $workflow->save();
     $workflow_type = $workflow->getTypePlugin();
@@ -123,7 +121,7 @@ class WorkflowAccessControlHandlerTest extends KernelTestBase {
    */
   public function checkAccessProvider() {
     $container = new ContainerBuilder();
-    $cache_contexts_manager = $this->prophesize(CacheContextsManager::class);
+    $cache_contexts_manager = (new Prophet())->prophesize(CacheContextsManager::class);
     $cache_contexts_manager->assertValidTokens()->willReturn(TRUE);
     $cache_contexts_manager->reveal();
     $container->set('cache_contexts_manager', $cache_contexts_manager);

@@ -26,9 +26,16 @@ class RedirectResponseSubscriber implements EventSubscriberInterface {
   protected $unroutedUrlAssembler;
 
   /**
+   * Whether to ignore the destination query parameter when redirecting.
+   *
+   * @var bool
+   */
+  protected bool $ignoreDestination = FALSE;
+
+  /**
    * The request context.
    */
-  protected $requestContext;
+  protected RequestContext $requestContext;
 
   /**
    * Constructs a RedirectResponseSubscriber object.
@@ -58,7 +65,7 @@ class RedirectResponseSubscriber implements EventSubscriberInterface {
       // If $response is already a SecuredRedirectResponse, it might reject the
       // new target as invalid, in which case proceed with the old target.
       $destination = $request->query->get('destination');
-      if ($destination) {
+      if ($destination && !$this->ignoreDestination) {
         // The 'Location' HTTP header must always be absolute.
         $destination = $this->getDestinationAsAbsoluteUrl($destination, $request->getSchemeAndHttpHost());
         try {
@@ -112,7 +119,7 @@ class RedirectResponseSubscriber implements EventSubscriberInterface {
       // not including the scheme and host, but its path is expected to be
       // absolute (start with a '/'). For such a case, prepend the scheme and
       // host, because the 'Location' header must be absolute.
-      if (strpos($destination, '/') === 0) {
+      if (str_starts_with($destination, '/')) {
         $destination = $scheme_and_host . $destination;
       }
       else {
@@ -134,12 +141,23 @@ class RedirectResponseSubscriber implements EventSubscriberInterface {
   }
 
   /**
+   * Set whether the redirect response will ignore the destination query param.
+   *
+   * @param bool $status
+   *   (optional) TRUE if the destination query parameter should be ignored.
+   *   FALSE if not. Defaults to TRUE.
+   */
+  public function setIgnoreDestination($status = TRUE) {
+    $this->ignoreDestination = $status;
+  }
+
+  /**
    * Registers the methods in this class that should be listeners.
    *
    * @return array
    *   An array of event listener definitions.
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[KernelEvents::RESPONSE][] = ['checkRedirectUrl'];
     return $events;
   }

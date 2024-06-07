@@ -65,7 +65,7 @@ class NodeAccessFieldTest extends NodeTestBase {
     ]);
 
     // Add a custom field to the page content type.
-    $this->fieldName = mb_strtolower($this->randomMachineName() . '_field_name');
+    $this->fieldName = $this->randomMachineName() . '_field_name';
     FieldStorageConfig::create([
       'field_name' => $this->fieldName,
       'entity_type' => 'node',
@@ -106,7 +106,9 @@ class NodeAccessFieldTest extends NodeTestBase {
     $this->assertSession()->pageTextContains('Access denied');
 
     // Modify the field default as the content admin.
-    $edit = [];
+    $edit = [
+      'set_default_value' => '1',
+    ];
     $default = 'Sometimes words have two meanings';
     $edit["default_value_input[{$this->fieldName}][0][value]"] = $default;
     $this->drupalGet("admin/structure/types/manage/page/fields/node.page.{$this->fieldName}");

@@ -53,7 +53,7 @@ class ContentEntityFormFieldValidationFilteringTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $defaultTheme = 'starterkit_theme';
+  protected $defaultTheme = 'stark';
 
   /**
    * {@inheritdoc}
@@ -135,9 +135,9 @@ class ContentEntityFormFieldValidationFilteringTest extends BrowserTestBase {
     // The 'Test multiple' field is the only multi-valued field in the form, so
     // try to add a new item for it. This tests the '#limit_validation_errors'
     // property set by \Drupal\Core\Field\WidgetBase::formMultipleElements().
-    $assert_session->elementsCount('css', 'div#edit-test-multiple-wrapper div.form-type-textfield input', 1);
+    $assert_session->elementsCount('css', 'div#edit-test-multiple-wrapper div.js-form-type-textfield input', 1);
     $this->submitForm([], 'Add another item');
-    $assert_session->elementsCount('css', 'div#edit-test-multiple-wrapper div.form-type-textfield input', 2);
+    $assert_session->elementsCount('css', 'div#edit-test-multiple-wrapper div.js-form-type-textfield input', 2);
 
     // Now try to upload a file. This tests the '#limit_validation_errors'
     // property set by
@@ -151,14 +151,14 @@ class ContentEntityFormFieldValidationFilteringTest extends BrowserTestBase {
     $assert_session->elementExists('css', 'input#edit-test-file-0-remove-button');
 
     // Make the 'Test multiple' field required and check that adding another
-    // item throws a validation error.
+    // item does not throw a validation error.
     $field_config = FieldConfig::loadByName($this->entityTypeId, $this->entityTypeId, $this->fieldNameMultiple);
     $field_config->setRequired(TRUE);
     $field_config->save();
 
     $this->drupalGet($this->entityTypeId . '/add');
     $this->submitForm([], 'Add another item');
-    $assert_session->pageTextContains('Test multiple (value 1) field is required.');
+    $assert_session->pageTextNotContains('Test multiple (value 1) field is required.');
 
     // Check that saving the form without entering any value for the required
     // field still throws the proper validation errors.

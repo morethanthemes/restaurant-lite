@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Block;
 
 use Drupal\Component\Plugin\Discovery\DiscoveryInterface;
@@ -79,7 +81,6 @@ class BlockManagerTest extends UnitTestCase {
     ]);
     // Force the discovery object onto the block manager.
     $property = new \ReflectionProperty(BlockManager::class, 'discovery');
-    $property->setAccessible(TRUE);
     $property->setValue($this->blockManager, $discovery->reveal());
   }
 

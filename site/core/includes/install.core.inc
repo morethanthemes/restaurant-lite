@@ -7,6 +7,7 @@
 
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Batch\BatchBuilder;
+use Drupal\Core\Cache\NullBackend;
 use Drupal\Core\Config\ConfigImporter;
 use Drupal\Core\Config\ConfigImporterException;
 use Drupal\Core\Config\Importer\ConfigImporterBatch;
@@ -15,6 +16,7 @@ use Drupal\Core\Config\StorageComparer;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Database\DatabaseExceptionWrapper;
+use Drupal\Core\Extension\Exception\UnknownExtensionException;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Installer\Exception\AlreadyInstalledException;
@@ -318,7 +320,7 @@ function install_begin_request($class_loader, &$install_state) {
   // running tests. However, for security reasons, it is imperative that no
   // installation be permitted using such a prefix.
   $user_agent = $request->cookies->get('SIMPLETEST_USER_AGENT') ?: $request->server->get('HTTP_USER_AGENT');
-  if ($install_state['interactive'] && strpos($user_agent, 'simpletest') !== FALSE && !drupal_valid_test_ua()) {
+  if ($install_state['interactive'] && str_contains($user_agent, 'simpletest') && !drupal_valid_test_ua()) {
     header($request->server->get('SERVER_PROTOCOL') . ' 403 Forbidden');
     exit;
   }
@@ -338,9 +340,7 @@ function install_begin_request($class_loader, &$install_state) {
   // since the error/exception handlers depend on them.
   require_once __DIR__ . '/../modules/system/system.install';
   require_once __DIR__ . '/common.inc';
-  require_once __DIR__ . '/file.inc';
   require_once __DIR__ . '/install.inc';
-  require_once __DIR__ . '/schema.inc';
   require_once __DIR__ . '/form.inc';
   require_once __DIR__ . '/batch.inc';
 
@@ -370,9 +370,16 @@ function install_begin_request($class_loader, &$install_state) {
     ->addArgument(Settings::getInstance())
     ->addArgument((new LoggerChannelFactory())->get('file'));
 
+  // Register the database driver extension list provider.
+  $container
+    ->register('extension.list.database_driver', 'Drupal\Core\Extension\DatabaseDriverList')
+    ->addArgument(dirname(__DIR__, 2))
+    ->addArgument('database_driver')
+    ->addArgument(new NullBackend('database_driver'));
+
   // Register the class loader so contrib and custom database drivers can be
   // autoloaded.
-  // @see drupal_get_database_types()
+  // @see \Drupal\Core\Extension\DatabaseDriverList
   $container->set('class_loader', $class_loader);
 
   \Drupal::setContainer($container);
@@ -962,7 +969,16 @@ function install_get_form($form_id, array &$install_state) {
     // values taken from the installation state.
     $install_form_id = $form_builder->getFormId($form_id, $form_state);
     if (!empty($install_state['forms'][$install_form_id])) {
-      $form_state->setValues($install_state['forms'][$install_form_id]);
+      $values = $install_state['forms'][$install_form_id];
+      if ($install_form_id === 'install_settings_form' && isset($values['driver']) && !str_contains($values['driver'], "\\")) {
+        @trigger_error("Passing a database driver name '{$values['driver']}' to " . __FUNCTION__ . '() is deprecated in drupal:10.2.0 and is removed from drupal:11.0.0. Pass a database driver namespace instead. See https://www.drupal.org/node/3258175', E_USER_DEPRECATED);
+        $driverExtension = Database::getDriverList()->getFromDriverName($values['driver']);
+        $tmp = [];
+        $tmp['driver'] = $driverExtension->getName();
+        $tmp[$driverExtension->getName()] = $values[$values['driver']];
+        $values = $tmp;
+      }
+      $form_state->setValues($values);
     }
     $form_builder->submitForm($form_id, $form_state);
 
@@ -1106,14 +1122,6 @@ function install_base_system(&$install_state) {
   // system.module in order to work.
   \Drupal::service('file.htaccess_writer')->ensure();
 
-  // Prime the module list static cache with the user module's exact location.
-  // @todo Remove as part of https://www.drupal.org/node/2186491
-  \Drupal::service('extension.list.module')->setPathname('user', 'core/modules/user/user.info.yml');
-
-  // Install the User module so that installing from configuration works and to
-  // ensure the anonymous user is created with a langcode of 'en'.
-  \Drupal::service('module_installer')->install(['user'], FALSE);
-
   $install_state['base_system_verified'] = TRUE;
 }
 
@@ -1194,15 +1202,10 @@ function install_verify_database_ready() {
 function install_database_errors($database, $settings_file) {
   $errors = [];
 
-  // Check database type.
-  $database_types = drupal_get_database_types();
-  $driver = $database['driver'];
-  if (!isset($database_types[$driver])) {
-    $errors['driver'] = t("In your %settings_file file you have configured @drupal to use a %driver server, however your PHP installation currently does not support this database type.", ['%settings_file' => $settings_file, '@drupal' => drupal_install_profile_distribution_name(), '%driver' => $driver]);
-  }
-  else {
+  try {
+    $driverExtension = Database::getDriverList()->get($database['namespace']);
     // Run driver specific validation
-    $errors += $database_types[$driver]->validateDatabaseSettings($database);
+    $errors = $driverExtension->getInstallTasks()->validateDatabaseSettings($database);
     if (!empty($errors)) {
       // No point to try further.
       return $errors;
@@ -1210,8 +1213,10 @@ function install_database_errors($database, $settings_file) {
     // Run tasks associated with the database type. Any errors are caught in the
     // calling function.
     Database::addConnectionInfo('default', 'default', $database);
-
-    $errors = db_installer_object($driver, $database['namespace'] ?? NULL)->runTasks();
+    $errors = $driverExtension->getInstallTasks()->runTasks();
+  }
+  catch (UnknownExtensionException $e) {
+    $errors['driver'] = t("In your %settings_file file you have configured @drupal to use a %driver server, however your PHP installation currently does not support this database type.", ['%settings_file' => $settings_file, '@drupal' => drupal_install_profile_distribution_name(), '%driver' => $database['driver']]);
   }
   return $errors;
 }
@@ -1582,9 +1587,8 @@ function install_profile_modules(&$install_state) {
       $modules = array_merge($modules, array_keys($files[$module]->requires));
     }
   }
-  // The System and User modules have already been installed by
-  // install_base_system().
-  $modules = array_diff(array_unique($modules), ['system', 'user']);
+  // The System module has already been installed by install_base_system().
+  $modules = array_diff(array_unique($modules), ['system']);
   foreach ($modules as $module) {
     if (!empty($files[$module]->info['required'])) {
       $required[$module] = $files[$module]->sort;
@@ -1596,16 +1600,17 @@ function install_profile_modules(&$install_state) {
   arsort($required);
   arsort($non_required);
 
-  $operations = [];
+  $batch_builder = new BatchBuilder();
   foreach ($required + $non_required as $module => $weight) {
-    $operations[] = ['_install_module_batch', [$module, $files[$module]->info['name']]];
+    $batch_builder->addOperation(
+      '_install_module_batch',
+      [$module, $files[$module]->info['name']],
+    );
   }
-  $batch = [
-    'operations' => $operations,
-    'title' => t('Installing @drupal', ['@drupal' => drupal_install_profile_distribution_name()]),
-    'error_message' => t('The installation has encountered an error.'),
-  ];
-  return $batch;
+  $batch_builder
+    ->setTitle(t('Installing @drupal', ['@drupal' => drupal_install_profile_distribution_name()]))
+    ->setErrorMessage(t('The installation has encountered an error.'));
+  return $batch_builder->toArray();
 }
 
 /**
@@ -1729,30 +1734,40 @@ function install_import_translations(&$install_state) {
 
   // If there is more than one language or the single one is not English, we
   // should import translations.
-  $operations = install_download_additional_translations_operations($install_state);
+  $batch_builder = (new BatchBuilder())
+    ->setFile(\Drupal::service('extension.path.resolver')->getPath('module', 'locale') . '/locale.batch.inc');
+  foreach (install_download_additional_translations_operations($install_state) as $operation) {
+    $batch_builder->addOperation($operation[0], $operation[1]);
+  }
   $languages = \Drupal::languageManager()->getLanguages();
   if (count($languages) > 1 || !isset($languages['en'])) {
-    $operations[] = ['_install_prepare_import', [array_keys($languages), $install_state['server_pattern']]];
+    $batch_builder->addOperation(
+      '_install_prepare_import',
+      [array_keys($languages), $install_state['server_pattern']],
+    );
 
     // Set up a batch to import translations for drupal core. Translation import
     // for contrib modules happens in install_import_translations_remaining.
     foreach ($languages as $language) {
       if (locale_translation_use_remote_source()) {
-        $operations[] = ['locale_translation_batch_fetch_download', ['drupal', $language->getId()]];
+        $batch_builder->addOperation(
+          'locale_translation_batch_fetch_download',
+          ['drupal', $language->getId()],
+        );
       }
-      $operations[] = ['locale_translation_batch_fetch_import', ['drupal', $language->getId(), []]];
+      $batch_builder->addOperation(
+        'locale_translation_batch_fetch_import',
+        ['drupal', $language->getId(), []],
+      );
     }
 
     $module_handler->loadInclude('locale', 'inc', 'locale.fetch');
-    $batch = [
-      'operations' => $operations,
-      'title' => t('Updating translations.'),
-      'progress_message' => '',
-      'error_message' => t('Error importing translation files'),
-      'finished' => 'locale_translation_batch_fetch_finished',
-      'file' => \Drupal::service('extension.list.module')->getPath('locale') . '/locale.batch.inc',
-    ];
-    return $batch;
+    $batch_builder
+      ->setTitle(t('Updating translations.'))
+      ->setProgressMessage('')
+      ->setErrorMessage(t('Error importing translation files'))
+      ->setFinishCallback('locale_translation_batch_fetch_finished');
+    return $batch_builder->toArray();
   }
 }
 
@@ -1777,8 +1792,9 @@ function _install_prepare_import($langcodes, $server_pattern) {
     if (is_object($file)) {
       $filename = $file->filename;
       preg_match('/drupal-([0-9a-z\.-]+)\.' . $langcode . '\.po/', $filename, $matches);
-      // Get the version information.
-      if ($version = $matches[1]) {
+      // Get the version information. Custom translation files may not have a
+      // version number.
+      if (isset($matches[1]) && $version = $matches[1]) {
         $info = _install_get_version_info($version);
         // Picking the first file does not necessarily result in the right file. So
         // we check if at least the major version number is available.
@@ -2195,7 +2211,7 @@ function install_check_requirements($install_state) {
       }
       // If the $file is not writable, throw an error.
       if (!$writable) {
-        $requirements["$file file writeable"] = [
+        $requirements["$file file writable"] = [
           'title' => $default_file_info['title'],
           'value' => t('The %file is not writable.', ['%file' => $default_file_info['title']]),
           'severity' => REQUIREMENT_ERROR,

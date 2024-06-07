@@ -98,7 +98,7 @@ class TermAutocompleteTest extends TaxonomyTestBase {
 
     // Create a taxonomy_term_reference field on the article Content Type that
     // uses a taxonomy_autocomplete widget.
-    $this->fieldName = mb_strtolower($this->randomMachineName());
+    $this->fieldName = $this->randomMachineName();
     FieldStorageConfig::create([
       'field_name' => $this->fieldName,
       'entity_type' => 'node',
@@ -137,7 +137,7 @@ class TermAutocompleteTest extends TaxonomyTestBase {
     $this->adminUser = $this->drupalCreateUser(['create article content']);
     $this->drupalLogin($this->adminUser);
 
-    // Retrieve the autocomplete url.
+    // Retrieve the autocomplete URL.
     $this->drupalGet('node/add/article');
     $field = $this->assertSession()->fieldExists("{$this->fieldName}[0][target_id]");
     $this->autocompleteUrl = $this->getAbsoluteUrl($field->getAttribute('data-autocomplete-path'));

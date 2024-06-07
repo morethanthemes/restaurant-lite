@@ -21,25 +21,22 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Via the @Plugin definition the plugin may specify a theme function or
  * template to be used for the plugin. It also can auto-register the theme
  * implementation for that file or function.
- * - theme: the theme implementation to use in the plugin. This may be the name
- *   of the function (without theme_ prefix) or the template file (without
- *   template engine extension).
- *   If a template file should be used, the file has to be placed in the
- *   module's templates folder.
+ * - theme: the theme implementation to use in the plugin. This must be the
+ *   name of the template file (without template engine extension). The file
+ *   has to be placed in the module's templates folder.
  *   Example: theme = "mymodule_row" of module "mymodule" will implement
  *   mymodule-row.html.twig in the [..]/modules/mymodule/templates folder.
  * - register_theme: (optional) When set to TRUE (default) the theme is
  *   registered automatically. When set to FALSE the plugin reuses an existing
  *   theme implementation, defined by another module or views plugin.
- * - theme_file: (optional) the location of an include file that may hold the
- *   theme or preprocess function. The location has to be relative to module's
- *   root directory.
+ * - theme_file: (optional) the location of an include file that holds any
+ *   preprocess functions. The location has to be relative to the module's root
+ *   directory.
  * - module: machine name of the module. It must be present for any plugin that
  *   wants to register a theme.
  *
  * @ingroup views_plugins
  */
-#[\AllowDynamicProperties]
 abstract class PluginBase extends ComponentPluginBase implements ContainerFactoryPluginInterface, ViewsPluginInterface, DependentPluginInterface, TrustedCallbackInterface {
 
   /**
@@ -108,6 +105,11 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
    * @var \Drupal\Core\Render\RendererInterface
    */
   protected $renderer;
+
+  /**
+   * The handler position.
+   */
+  public int $position;
 
   /**
    * Constructs a PluginBase object.
@@ -367,7 +369,7 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
       // Twig wants a token replacement array stripped of curly-brackets.
       // Some Views tokens come with curly-braces, others do not.
       // @todo: https://www.drupal.org/node/2544392
-      if (strpos($token, '{{') !== FALSE) {
+      if (str_contains($token, '{{')) {
         // Twig wants a token replacement array stripped of curly-brackets.
         $token = trim(str_replace(['{{', '}}'], '', $token));
       }
@@ -375,7 +377,7 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
       // Check for arrays in Twig tokens. Internally these are passed as
       // dot-delimited strings, but need to be turned into associative arrays
       // for parsing.
-      if (strpos($token, '.') === FALSE) {
+      if (!str_contains($token, '.')) {
         // We need to validate tokens are valid Twig variables. Twig uses the
         // same variable naming rules as PHP.
         // @see http://php.net/manual/language.variables.basics.php

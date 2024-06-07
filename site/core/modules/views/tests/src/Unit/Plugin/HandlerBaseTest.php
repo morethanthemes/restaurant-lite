@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\views\Unit\Plugin\HandlerBaseTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\views\Unit\Plugin;
 

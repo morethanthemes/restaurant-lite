@@ -48,12 +48,6 @@ class CommentLinksTest extends CommentTestBase {
    * Tests that comment links are output and can be hidden.
    */
   public function testCommentLinks() {
-    // Bartik theme alters comment links, so use a different theme.
-    \Drupal::service('theme_installer')->install(['stark']);
-    $this->config('system.theme')
-      ->set('default', 'stark')
-      ->save();
-
     // Remove additional user permissions from $this->webUser added by setUp(),
     // since this test is limited to anonymous and authenticated roles only.
     $roles = $this->webUser->getRoles();
@@ -89,7 +83,6 @@ class CommentLinksTest extends CommentTestBase {
 
     // Change comment settings.
     $this->setCommentSettings('form_location', CommentItemInterface::FORM_BELOW, 'Set comment form location');
-    $this->setCommentAnonymous(TRUE);
     $this->node->comment = CommentItemInterface::OPEN;
     $this->node->save();
 

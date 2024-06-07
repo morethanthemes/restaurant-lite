@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Composer\Plugin\Scaffold;
 
 use Composer\Console\Application;
@@ -301,7 +303,7 @@ class Fixtures {
   /**
    * Calls 'tearDown' in any test that copies fixtures to transient locations.
    */
-  public function tearDown(): void {
+  public function tearDown() {
     // Remove any temporary directories that were created.
     $filesystem = new Filesystem();
     foreach ($this->tmpDirs as $dir) {

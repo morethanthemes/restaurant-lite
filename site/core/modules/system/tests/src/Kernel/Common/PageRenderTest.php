@@ -58,7 +58,7 @@ class PageRenderTest extends KernelTestBase {
     $page = [];
     try {
       $html_renderer->invokePageAttachmentHooks($page);
-      $this->error($assertion);
+      $this->fail($assertion);
     }
     catch (\LogicException $e) {
       $this->assertEquals('Only #attached and #cache may be set in ' . $hook . '().', $e->getMessage());
@@ -71,7 +71,7 @@ class PageRenderTest extends KernelTestBase {
     $page = [];
     try {
       $html_renderer->invokePageAttachmentHooks($page);
-      $this->error($assertion);
+      $this->fail($assertion);
     }
     catch (\LogicException $e) {
       $this->assertEquals('Only #attached and #cache may be set in ' . $hook . '().', $e->getMessage());

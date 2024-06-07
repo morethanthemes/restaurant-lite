@@ -285,6 +285,7 @@ abstract class ConfigEntityBase extends EntityBase implements ConfigEntityInterf
    * {@inheritdoc}
    */
   public function preSave(EntityStorageInterface $storage) {
+    /** @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface $storage */
     parent::preSave($storage);
 
     if ($this instanceof EntityWithPluginCollectionInterface) {
@@ -394,7 +395,7 @@ abstract class ConfigEntityBase extends EntityBase implements ConfigEntityInterf
   /**
    * {@inheritdoc}
    */
-  public function toUrl($rel = 'edit-form', array $options = []) {
+  public function toUrl($rel = NULL, array $options = []) {
     // Unless language was already provided, avoid setting an explicit language.
     $options += ['language' => NULL];
     return parent::toUrl($rel, $options);

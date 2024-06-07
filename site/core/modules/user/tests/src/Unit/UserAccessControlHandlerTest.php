@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\user\Unit;
 
 use Drupal\Core\Access\AccessResult;
@@ -28,28 +30,28 @@ class UserAccessControlHandlerTest extends UnitTestCase {
   /**
    * The mock user account with view access.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\user\UserInterface
    */
   protected $viewer;
 
   /**
    * The mock user account with 'view user email addresses' permission.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\user\UserInterface
    */
   protected $emailViewer;
 
   /**
    * The mock user account that is able to change their own account name.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\user\UserInterface
    */
   protected $owner;
 
   /**
    * The mock administrative test user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\user\UserInterface
    */
   protected $admin;
 
@@ -73,7 +75,7 @@ class UserAccessControlHandlerTest extends UnitTestCase {
     $container->set('cache_contexts_manager', $cache_contexts_manager);
     \Drupal::setContainer($container);
 
-    $this->viewer = $this->createMock('\Drupal\Core\Session\AccountInterface');
+    $this->viewer = $this->createMock('\Drupal\user\UserInterface');
     $this->viewer
       ->expects($this->any())
       ->method('hasPermission')
@@ -83,7 +85,7 @@ class UserAccessControlHandlerTest extends UnitTestCase {
       ->method('id')
       ->willReturn(1);
 
-    $this->owner = $this->createMock('\Drupal\Core\Session\AccountInterface');
+    $this->owner = $this->createMock('\Drupal\user\UserInterface');
     $this->owner
       ->expects($this->any())
       ->method('hasPermission')
@@ -97,13 +99,13 @@ class UserAccessControlHandlerTest extends UnitTestCase {
       ->method('id')
       ->willReturn(2);
 
-    $this->admin = $this->createMock('\Drupal\Core\Session\AccountInterface');
+    $this->admin = $this->createMock('\Drupal\user\UserInterface');
     $this->admin
       ->expects($this->any())
       ->method('hasPermission')
       ->willReturn(TRUE);
 
-    $this->emailViewer = $this->createMock('\Drupal\Core\Session\AccountInterface');
+    $this->emailViewer = $this->createMock('\Drupal\user\UserInterface');
     $this->emailViewer
       ->expects($this->any())
       ->method('hasPermission')

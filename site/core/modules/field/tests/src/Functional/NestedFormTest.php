@@ -28,17 +28,17 @@ class NestedFormTest extends FieldTestBase {
   /**
    * @var array
    */
-  protected $fieldStorageSingle;
+  protected array $fieldStorageSingle;
 
   /**
    * @var array
    */
-  protected $fieldStorageUnlimited;
+  protected array $fieldStorageUnlimited;
 
   /**
    * @var array
    */
-  protected $field;
+  protected array $field;
 
   /**
    * {@inheritdoc}
@@ -217,7 +217,7 @@ class NestedFormTest extends FieldTestBase {
 
     // Display the 'combined form'.
     $this->drupalGet("test-entity-constraints/nested/{$entity_1->id()}/{$entity_2->id()}");
-    $assert_session->hiddenFieldValueEquals('entity_2[changed]', REQUEST_TIME);
+    $assert_session->hiddenFieldValueEquals('entity_2[changed]', (string) REQUEST_TIME);
 
     // Submit the form and check that the entities are updated accordingly.
     $assert_session->hiddenFieldExists('entity_2[changed]')

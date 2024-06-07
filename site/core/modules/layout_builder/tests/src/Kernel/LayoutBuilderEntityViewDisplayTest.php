@@ -9,6 +9,7 @@ use Drupal\layout_builder\Entity\LayoutBuilderEntityViewDisplay;
  * @coversDefaultClass \Drupal\layout_builder\Entity\LayoutBuilderEntityViewDisplay
  *
  * @group layout_builder
+ * @group #slow
  */
 class LayoutBuilderEntityViewDisplayTest extends SectionListTestBase {
 
@@ -37,7 +38,7 @@ class LayoutBuilderEntityViewDisplayTest extends SectionListTestBase {
    */
   public function testInvalidConfiguration() {
     $this->expectException(SchemaIncompleteException::class);
-    $this->sectionList->getSection(0)->getComponent('first-uuid')->setConfiguration(['id' => 'foo', 'bar' => 'baz']);
+    $this->sectionList->getSection(0)->getComponent('10000000-0000-1000-a000-000000000000')->setConfiguration(['id' => 'foo', 'bar' => 'baz']);
     $this->sectionList->save();
   }
 

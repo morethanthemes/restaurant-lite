@@ -110,15 +110,14 @@
  * @section sec_rest Enabling REST for entities and the log
  * Here are the steps to take to use the REST operations provided by Drupal
  * Core:
- * - Enable the REST module, plus Basic Auth (or another authentication method)
- *   and HAL.
+ * - Enable the REST module, plus Basic Auth or another authentication method.
  * - Node entity support is configured by default. If you would like to support
  *   other types of entities, you can copy
- *   core/modules/hal/config/optional/rest.resource.entity.node.yml to your sync
- *   configuration directory, appropriately modified for other entity types,
- *   and import it. Support for GET on the log from the Database Logging module
- *   can also be enabled in this way; in this case, the 'entity:node' line
- *   in the configuration would be replaced by the appropriate plugin ID,
+ *   core/modules/rest/config/optional/rest.resource.entity.node.yml to your
+ *   sync configuration directory, appropriately modified for other entity
+ *   types, and import it. Support for GET on the log from the Database Logging
+ *   module can also be enabled in this way; in this case, the 'entity:node'
+ *   line in the configuration would be replaced by the appropriate plugin ID,
  *   'dblog'.
  * - Set up permissions to allow the desired REST operations for a role, and set
  *   up one or more user accounts to perform the operations.
@@ -129,7 +128,7 @@
  *   - The request method must be set to the REST method you are using (POST,
  *     GET, PATCH, etc.).
  *   - The content type for the data you send, or the accept type for the
- *     data you are receiving, must be set to 'application/hal+json'.
+ *     data you are receiving, must be set to 'application/json'.
  *   - If you are sending data, it must be JSON-encoded.
  *   - You'll also need to make sure the authentication information is sent
  *     with the request, unless you have allowed access to anonymous users.
@@ -163,9 +162,7 @@
  *     implements \GuzzleHttp\ClientInterface. See the
  *     @link container Services topic @endlink for more information on
  *     services. If you cannot use dependency injection to retrieve this
- *     service, the \Drupal::httpClient() method is available. A good example
- *     of how to use this service can be found in
- *     \Drupal\aggregator\Plugin\aggregator\fetcher\DefaultFetcher
+ *     service, the \Drupal::httpClient() method is available.
  *   - \Drupal\Component\Serialization\Json (JSON encoding and decoding).
  *   - PHP has functions and classes for parsing XML; see
  *     http://php.net/manual/refs.xml.php
@@ -249,7 +246,10 @@
  *   module B some time later, then module A's config/optional directory will be
  *   scanned at that time for newly met dependencies, and the configuration will
  *   be installed then. If module B is never installed, the configuration item
- *   will not be installed either.
+ *   will not be installed either. Optional configuration items are ignored if
+ *   they already exist or if they are not configuration entities (this also
+ *   includes configuration that has an implicit dependency on modules that
+ *   are not yet installed).
  * - Exporting and importing configuration.
  *
  * The file storage format for configuration information in Drupal is
@@ -455,9 +455,9 @@
  *
  * When you request a cache object, you can specify the bin name in your call to
  * \Drupal::cache(). Alternatively, you can request a bin by getting service
- * "cache.nameofbin" from the container. The default bin is called "default", with
- * service name "cache.default", it is used to store common and frequently used
- * caches.
+ * "cache.name_of_bin" from the container. The default bin is called "default",
+ * with service name "cache.default", it is used to store common and frequently
+ * used caches.
  *
  * Other common cache bins are the following:
  *   - bootstrap: Data needed from the beginning to the end of most requests,
@@ -470,14 +470,14 @@
  *
  * A module can define a cache bin by defining a service in its
  * modulename.services.yml file as follows (substituting the desired name for
- * "nameofbin"):
+ * "name_of_bin"):
  * @code
- * cache.nameofbin:
+ * cache.name_of_bin:
  *   class: Drupal\Core\Cache\CacheBackendInterface
  *   tags:
  *     - { name: cache.bin }
  *   factory: ['@cache_factory', 'get']
- *   arguments: [nameofbin]
+ *   arguments: [name_of_bin]
  * @endcode
  * See the @link container Services topic @endlink for more on defining
  * services.
@@ -792,11 +792,6 @@
  * be passed in; see the section at https://www.drupal.org/node/2133171 for more
  * detailed information.
  *
- * Services using factories can be defined as shown in the above example, if the
- * factory is itself a service. The factory can also be a class; details of how
- * to use service factories can be found in the section at
- * https://www.drupal.org/node/2133171.
- *
  * @section sec_container Accessing a service through the container
  * As noted above, if you need to use a service in your code, you should always
  * instantiate the service class via a call to the container, using the machine
@@ -1043,7 +1038,7 @@
  *   Typically, you will want to extend one of the classes listed in the
  *   sections above as a starting point.
  * - Make your class into a DataType plugin. To do that, put it in namespace
- *   \Drupal\yourmodule\Plugin\DataType (where "yourmodule" is your module's
+ *   \Drupal\your_module\Plugin\DataType (where "your_module" is your module's
  *   short name), and add annotation of type
  *   \Drupal\Core\TypedData\Annotation\DataType to the documentation header.
  *   See the @link plugin_api Plugin API topic @endlink and the
@@ -1103,8 +1098,8 @@
  *     (database, settings, etc.) and web browser are not needed for the test,
  *     or if the Drupal environment can be replaced by a "mock" object.
  *   - Base class: \Drupal\Tests\UnitTestCase
- *   - Namespace: \Drupal\Tests\yourmodule\Unit (or a subdirectory)
- *   - Directory location: yourmodule/tests/src/Unit (or a subdirectory)
+ *   - Namespace: \Drupal\Tests\your_module\Unit (or a subdirectory)
+ *   - Directory location: your_module/tests/src/Unit (or a subdirectory)
  * - Kernel tests:
  *   - Purpose: Test functionality of a class if the full Drupal environment
  *     and web browser are not needed for the test, but the functionality has
@@ -1114,21 +1109,21 @@
  *     are only installed to the point of having services and hooks, unless you
  *     install them explicitly.
  *   - Base class: \Drupal\KernelTests\KernelTestBase
- *   - Namespace: \Drupal\Tests\yourmodule\Kernel (or a subdirectory)
- *   - Directory location: yourmodule/tests/src/Kernel (or a subdirectory)
+ *   - Namespace: \Drupal\Tests\your_module\Kernel (or a subdirectory)
+ *   - Directory location: your_module/tests/src/Kernel (or a subdirectory)
  * - Browser tests:
  *   - Purpose: Test functionality with the full Drupal environment and an
  *     internal simulated web browser, if JavaScript is not needed.
  *   - Base class: \Drupal\Tests\BrowserTestBase
- *   - Namespace: \Drupal\Tests\yourmodule\Functional (or a subdirectory)
- *   - Directory location: yourmodule/tests/src/Functional (or a subdirectory)
+ *   - Namespace: \Drupal\Tests\your_module\Functional (or a subdirectory)
+ *   - Directory location: your_module/tests/src/Functional (or a subdirectory)
  * - Browser tests with JavaScript:
  *   - Purpose: Test functionality with the full Drupal environment and an
  *     internal web browser that includes JavaScript execution.
  *   - Base class: \Drupal\FunctionalJavascriptTests\WebDriverTestBase
- *   - Namespace: \Drupal\Tests\yourmodule\FunctionalJavascript (or a
+ *   - Namespace: \Drupal\Tests\your_module\FunctionalJavascript (or a
  *     subdirectory)
- *   - Directory location: yourmodule/tests/src/FunctionalJavascript (or a
+ *   - Directory location: your_module/tests/src/FunctionalJavascript (or a
  *     subdirectory)
  * - Build tests:
  *   - Purpose: Test building processes and their outcomes, such as whether a
@@ -1137,9 +1132,9 @@
  *     workspace and a PHP-native HTTP server to send requests to the site
  *     you've built.
  *   - Base class: \Drupal\BuildTests\Framework\BuildTestBase
- *   - Namespace: \Drupal\Tests\yourmodule\Build (or a
+ *   - Namespace: \Drupal\Tests\your_module\Build (or a
  *     subdirectory)
- *   - Directory location: yourmodule/tests/src/Build (or a
+ *   - Directory location: your_module/tests/src/Build (or a
  *     subdirectory)
  *
  * Some notes about writing PHP test classes:
@@ -1153,7 +1148,7 @@
  *   test methods need to have a phpDoc block with @covers annotation telling
  *   which class method they are testing.
  * - In some cases, you may need to write a test module to support your test;
- *   put such modules under the yourmodule/tests/modules directory.
+ *   put such modules under the your_module/tests/modules directory.
  *
  * Besides the PHPUnit tests described above, Drupal Core also includes a few
  * JavaScript-only tests, which use the Nightwatch.js framework to test
@@ -1216,7 +1211,7 @@
  * Drupal has several distinct types of information, each with its own methods
  * for storage and retrieval:
  * - Content: Information meant to be displayed on your site: articles, basic
- *   pages, images, files, custom blocks, etc. Content is stored and accessed
+ *   pages, images, files, content blocks, etc. Content is stored and accessed
  *   using @link entity_api Entities @endlink.
  * - Session: Information about individual users' interactions with the site,
  *   such as whether they are logged in. This is really "state" information, but
@@ -1560,9 +1555,7 @@
  * Ideally, all code that is included in Drupal Core and contributed modules,
  * themes, and distributions will be secure, internationalized, maintainable,
  * and efficient. In order to facilitate this, the Drupal community has
- * developed a set of guidelines and standards for developers to follow. Most of
- * these standards can be found under
- * @link https://www.drupal.org/developing/best-practices Best practices on Drupal.org @endlink
+ * developed a set of guidelines and standards for developers to follow.
  *
  * Standards and best practices that developers should be aware of include:
  * - Security: https://www.drupal.org/writing-secure-code and the
@@ -1841,14 +1834,13 @@
  * where a strict FIFO ordering will likely not be preserved. Another example
  * would be an in-memory queue backend which might lose items if it crashes.
  * However, such a backend would be able to deal with significantly more writes
- * than a reliable queue and for many tasks this is more important. See
- * aggregator_cron() for an example of how to effectively use a non-reliable
- * queue. Another example is doing Twitter statistics -- the small possibility
- * of losing a few items is insignificant next to power of the queue being able
- * to keep up with writes. As described in the processing section, regardless
- * of the queue being reliable or not, the processing code should be aware that
- * an item might be handed over for processing more than once (because the
- * processing code might time out before it finishes).
+ * than a reliable queue and for many tasks this is more important. Another
+ * example is doing Twitter statistics -- the small possibility of losing a
+ * few items is insignificant next to power of the queue being able to keep
+ * up with writes. As described in the processing section, regardless of the
+ * queue being reliable or not, the processing code should be aware that an
+ * might be handed over for processing more than once (because the processing
+ * code might time out before it finishes).
  * @}
  */
 
@@ -1940,8 +1932,8 @@ function hook_cron() {
 
   // Long-running operation example, leveraging a queue:
   // Queue news feeds for updates once their refresh interval has elapsed.
-  $queue = \Drupal::queue('aggregator_feeds');
-  $ids = \Drupal::entityTypeManager()->getStorage('aggregator_feed')->getFeedIdsToRefresh();
+  $queue = \Drupal::queue('mymodule.feeds');
+  $ids = \Drupal::entityTypeManager()->getStorage('mymodule_feed')->getFeedIdsToRefresh();
   foreach (Feed::loadMultiple($ids) as $feed) {
     if ($queue->createItem($feed)) {
       // Add timestamp to avoid queueing item more than once.
@@ -1949,7 +1941,7 @@ function hook_cron() {
       $feed->save();
     }
   }
-  $ids = \Drupal::entityQuery('aggregator_feed')
+  $ids = \Drupal::entityQuery('mymodule_feed')
     ->accessCheck(FALSE)
     ->condition('queued', $request_time - (3600 * 6), '<')
     ->execute();
@@ -1992,7 +1984,7 @@ function hook_data_type_info_alter(&$data_types) {
 function hook_queue_info_alter(&$queues) {
   // This site has many feeds so let's spend 90 seconds on each cron run
   // updating feeds instead of the default 60.
-  $queues['aggregator_feeds']['cron']['time'] = 90;
+  $queues['mymodule_feeds']['cron']['time'] = 90;
 }
 
 /**
@@ -2048,9 +2040,8 @@ function hook_condition_info_alter(array &$definitions) {
  *     An array of optional parameters supplied by the caller of
  *     MailManagerInterface->mail() that is used to build the message before
  *     hook_mail_alter() is invoked.
- *   - 'language':
- *     The language object used to build the message before hook_mail_alter()
- *     is invoked.
+ *   - 'langcode':
+ *     The langcode used to build the message before invoking hook_mail_alter().
  *   - 'send':
  *     Set to FALSE to abort sending this email message.
  *

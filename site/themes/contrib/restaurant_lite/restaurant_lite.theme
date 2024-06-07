@@ -907,11 +907,11 @@ function restaurant_lite_preprocess_node__article(&$variables) {
 
   // Count the words of article in order to calculate the reading time
   $node_content = $variables['content'];
-  $node_content = render($node_content);
+  $node_content = \Drupal::service('renderer')->render($node_content);
   $words = str_word_count(strip_tags($node_content));
   if (isset($variables['content']['comment'])) {
     $node_comments = $variables['content']['comment'];
-    $node_comments = render($node_comments);
+    $node_comments = \Drupal::service('renderer')->render($node_comments);
     $words = $words - str_word_count(strip_tags($node_comments));
   }
   $variables['minutes'] = floor($words / 275);

@@ -84,19 +84,15 @@ class FileUploadForm extends AddFormBase {
    *   The opener resolver.
    * @param \Drupal\file\FileUsage\FileUsageInterface $file_usage
    *   The file usage service.
-   * @param \Drupal\file\FileRepositoryInterface|null $file_repository
+   * @param \Drupal\file\FileRepositoryInterface $file_repository
    *   The file repository service.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, MediaLibraryUiBuilder $library_ui_builder, ElementInfoManagerInterface $element_info, RendererInterface $renderer, FileSystemInterface $file_system, OpenerResolverInterface $opener_resolver, FileUsageInterface $file_usage, FileRepositoryInterface $file_repository = NULL) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, MediaLibraryUiBuilder $library_ui_builder, ElementInfoManagerInterface $element_info, RendererInterface $renderer, FileSystemInterface $file_system, OpenerResolverInterface $opener_resolver, FileUsageInterface $file_usage, FileRepositoryInterface $file_repository) {
     parent::__construct($entity_type_manager, $library_ui_builder, $opener_resolver);
     $this->elementInfo = $element_info;
     $this->renderer = $renderer;
     $this->fileSystem = $file_system;
     $this->fileUsage = $file_usage;
-    if (!$file_repository) {
-      @trigger_error('Calling ' . __METHOD__ . ' without the $file_repository argument is deprecated in drupal:9.3.0 and will be required in drupal:10.0.0. See https://www.drupal.org/node/3223520', E_USER_DEPRECATED);
-      $file_repository = \Drupal::service('file.repository');
-    }
     $this->fileRepository = $file_repository;
   }
 
@@ -169,8 +165,11 @@ class FileUploadForm extends AddFormBase {
       // @todo Move validation in https://www.drupal.org/node/2988215
       '#process' => array_merge(['::validateUploadElement'], $process, ['::processUploadElement']),
       '#upload_validators' => $item->getUploadValidators(),
-      '#multiple' => $slots > 1 || $slots === FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
-      '#cardinality' => $slots,
+      '#multiple' => TRUE,
+      // Do not limit the number uploaded. There is validation based on the
+      // number selected in the media library that prevents overages.
+      // @see Drupal\media_library\Form\AddFormBase::updateLibrary()
+      '#cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       '#remaining_slots' => $slots,
     ];
 

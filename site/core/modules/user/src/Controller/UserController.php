@@ -133,9 +133,10 @@ class UserController extends ControllerBase {
       // A different user is already logged in on the computer.
       else {
         /** @var \Drupal\user\UserInterface $reset_link_user */
-        if ($reset_link_user = $this->userStorage->load($uid)) {
+        $reset_link_user = $this->userStorage->load($uid);
+        if ($reset_link_user && $this->validatePathParameters($reset_link_user, $timestamp, $hash)) {
           $this->messenger()
-            ->addWarning($this->t('Another user (%other_user) is already logged into the site on this computer, but you tried to use a one-time link for user %resetting_user. Please <a href=":logout">log out</a> and try using the link again.',
+            ->addWarning($this->t('Another user (%other_user) is already logged into the site on this computer, but you tried to use a one-time link for user %resetting_user. <a href=":logout">Log out</a> and try using the link again.',
               [
                 '%other_user' => $account->getAccountName(),
                 '%resetting_user' => $reset_link_user->getAccountName(),
@@ -247,8 +248,8 @@ class UserController extends ControllerBase {
     $this->flood->clear('user.http_login', $identifier);
 
     user_login_finalize($user);
-    $this->logger->notice('User %name used one-time login link at time %timestamp.', ['%name' => $user->getDisplayName(), '%timestamp' => $timestamp]);
-    $this->messenger()->addStatus($this->t('You have just used your one-time login link. It is no longer necessary to use this link to log in. Please set your password.'));
+    $this->logger->info('User %name used one-time login link at time %timestamp.', ['%name' => $user->getDisplayName(), '%timestamp' => $timestamp]);
+    $this->messenger()->addStatus($this->t('You have just used your one-time login link. It is no longer necessary to use this link to log in. It is recommended that you set your password.'));
     // Let the user's password be changed without the current password
     // check.
     $token = Crypt::randomBytesBase64(55);
@@ -299,16 +300,37 @@ class UserController extends ControllerBase {
     $timeout = $this->config('user.settings')->get('password_reset_timeout');
     // No time out for first time login.
     if ($user->getLastLoginTime() && $current - $timestamp > $timeout) {
-      $this->messenger()->addError($this->t('You have tried to use a one-time login link that has expired. Please request a new one using the form below.'));
+      $this->messenger()->addError($this->t('You have tried to use a one-time login link that has expired. Request a new one using the form below.'));
       return $this->redirect('user.pass');
     }
-    elseif ($user->isAuthenticated() && ($timestamp >= $user->getLastLoginTime()) && ($timestamp <= $current) && hash_equals($hash, user_pass_rehash($user, $timestamp))) {
+    elseif ($user->isAuthenticated() && $this->validatePathParameters($user, $timestamp, $hash, $timeout)) {
       // The information provided is valid.
       return NULL;
     }
 
-    $this->messenger()->addError($this->t('You have tried to use a one-time login link that has either been used or is no longer valid. Please request a new one using the form below.'));
+    $this->messenger()->addError($this->t('You have tried to use a one-time login link that has either been used or is no longer valid. Request a new one using the form below.'));
     return $this->redirect('user.pass');
+  }
+
+  /**
+   * Validates hash and timestamp.
+   *
+   * @param \Drupal\user\UserInterface $user
+   *   User requesting reset.
+   * @param int $timestamp
+   *   The timestamp.
+   * @param string $hash
+   *   Login link hash.
+   * @param int $timeout
+   *   Link expiration timeout.
+   *
+   * @return bool
+   *   Whether the provided data are valid.
+   */
+  protected function validatePathParameters(UserInterface $user, int $timestamp, string $hash, int $timeout = 0): bool {
+    $current = \Drupal::time()->getRequestTime();
+    $timeout_valid = ((!empty($timeout) && $current - $timestamp < $timeout) || empty($timeout));
+    return ($timestamp >= $user->getLastLoginTime()) && $timestamp <= $current && $timeout_valid && hash_equals($hash, user_pass_rehash($user, $timestamp));
   }
 
   /**
@@ -382,13 +404,12 @@ class UserController extends ControllerBase {
   public function confirmCancel(UserInterface $user, $timestamp = 0, $hashed_pass = '') {
     // Time out in seconds until cancel URL expires; 24 hours = 86400 seconds.
     $timeout = 86400;
-    $current = REQUEST_TIME;
 
     // Basic validation of arguments.
     $account_data = $this->userData->get('user', $user->id());
     if (isset($account_data['cancel_method']) && !empty($timestamp) && !empty($hashed_pass)) {
       // Validate expiration and hashed password/login.
-      if ($timestamp <= $current && $current - $timestamp < $timeout && $user->id() && $timestamp >= $user->getLastLoginTime() && hash_equals($hashed_pass, user_pass_rehash($user, $timestamp))) {
+      if ($user->id() && $this->validatePathParameters($user, $timestamp, $hashed_pass, $timeout)) {
         $edit = [
           'user_cancel_notify' => $account_data['cancel_notify'] ?? $this->config('user.settings')->get('notify.status_canceled'),
         ];
@@ -399,7 +420,7 @@ class UserController extends ControllerBase {
         return batch_process('<front>');
       }
       else {
-        $this->messenger()->addError($this->t('You have tried to use an account cancellation link that has expired. Please request a new one using the form below.'));
+        $this->messenger()->addError($this->t('You have tried to use an account cancellation link that has expired. Request a new one using the form below.'));
         return $this->redirect('entity.user.cancel_form', ['user' => $user->id()], ['absolute' => TRUE]);
       }
     }

@@ -68,6 +68,16 @@ class UpdateRegistry implements EventSubscriberInterface {
   protected $sitePath;
 
   /**
+   * A static cache of all the extension updates scanned for.
+   *
+   * This array is keyed by Drupal root, site path, extension name and update
+   * type. The value if the extension has been searched for is TRUE.
+   *
+   * @var array
+   */
+  protected static array $loadedFiles = [];
+
+  /**
    * Constructs a new UpdateRegistry.
    *
    * @param string $root
@@ -185,6 +195,7 @@ class UpdateRegistry implements EventSubscriberInterface {
     if (file_exists($filename)) {
       include_once $filename;
     }
+    self::$loadedFiles[$this->root][$this->sitePath][$extension->getName()][$this->updateType] = TRUE;
   }
 
   /**
@@ -247,31 +258,15 @@ class UpdateRegistry implements EventSubscriberInterface {
    */
   public function getUpdateFunctions($extension_name) {
     $this->scanExtensionsAndLoadUpdateFiles($extension_name);
-    $all_functions = $this->getAvailableUpdateFunctions();
 
-    return array_filter($all_functions, function ($function_name) use ($extension_name) {
-      [$function_extension_name] = explode("_{$this->updateType}_", $function_name);
-      return $function_extension_name === $extension_name;
-    });
-  }
-
-  /**
-   * Returns all available updates for a given module.
-   *
-   * @param string $module_name
-   *   The module name.
-   *
-   * @return callable[]
-   *   A list of update functions.
-   *
-   * @deprecated in drupal:9.4.0 and is removed from drupal:10.0.0. Use
-   *   \Drupal\Core\Update\UpdateRegistry::getUpdateFunctions() instead.
-   *
-   * @see https://www.drupal.org/node/3260162
-   */
-  public function getModuleUpdateFunctions($module_name) {
-    @trigger_error(__CLASS__ . '\getModuleUpdateFunctions() is deprecated in drupal:9.4.0 and is removed from drupal:10.0.0. Use \Drupal\Core\Update\UpdateRegistry::getUpdateFunctions() instead. See https://www.drupal.org/node/3260162', E_USER_DEPRECATED);
-    return $this->getUpdateFunctions($module_name);
+    $updates = [];
+    $functions = get_defined_functions();
+    foreach (preg_grep('/^' . $extension_name . '_' . $this->updateType . '_/', $functions['user']) as $function) {
+      $updates[] = $function;
+    }
+    // Ensure that the update order is deterministic.
+    sort($updates);
+    return $updates;
   }
 
   /**
@@ -282,6 +277,10 @@ class UpdateRegistry implements EventSubscriberInterface {
    *   extension.
    */
   protected function scanExtensionsAndLoadUpdateFiles(string $extension = NULL) {
+    if ($extension !== NULL && isset(self::$loadedFiles[$this->root][$this->sitePath][$extension][$this->updateType])) {
+      // We've already checked for this file and, if it exists, loaded it.
+      return;
+    }
     // Scan for extensions.
     $extension_discovery = new ExtensionDiscovery($this->root, TRUE, [], $this->sitePath);
     $module_extensions = $extension_discovery->scan('module');
@@ -307,27 +306,10 @@ class UpdateRegistry implements EventSubscriberInterface {
     $existing_update_functions = $this->keyValue->get('existing_updates', []);
 
     $remaining_update_functions = array_filter($existing_update_functions, function ($function_name) use ($extension) {
-      return strpos($function_name, "{$extension}_{$this->updateType}_") !== 0;
+      return !str_starts_with($function_name, "{$extension}_{$this->updateType}_");
     });
 
     $this->keyValue->set('existing_updates', array_values($remaining_update_functions));
-  }
-
-  /**
-   * Filters out already executed update functions by module.
-   *
-   * @param string $module
-   *   The module name.
-   *
-   * @deprecated in drupal:9.4.0 and is removed from drupal:10.0.0. Use
-   *   \Drupal\Core\Update\UpdateRegistry::filterOutInvokedUpdatesByExtension()
-   *   instead.
-   *
-   * @see https://www.drupal.org/node/3260162
-   */
-  public function filterOutInvokedUpdatesByModule($module) {
-    @trigger_error(__CLASS__ . '\filterOutInvokedUpdatesByModule() is deprecated in drupal:9.4.0 and is removed from drupal:10.0.0. Use \Drupal\Core\Update\UpdateRegistry::filterOutInvokedUpdatesByExtension() instead. See https://www.drupal.org/node/3260162', E_USER_DEPRECATED);
-    $this->filterOutInvokedUpdatesByExtension($module);
   }
 
   /**

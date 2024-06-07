@@ -114,11 +114,7 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
    * @param \Psr\Log\LoggerInterface $logger
    *   A logger instance.
    */
-  public function __construct($user_flood_control, UserStorageInterface $user_storage, CsrfTokenGenerator $csrf_token, UserAuthInterface $user_auth, RouteProviderInterface $route_provider, Serializer $serializer, array $serializer_formats, LoggerInterface $logger) {
-    if (!$user_flood_control instanceof UserFloodControlInterface) {
-      @trigger_error('Passing the flood service to ' . __METHOD__ . ' is deprecated in drupal:9.1.0 and is replaced by user.flood_control in drupal:10.0.0. See https://www.drupal.org/node/3067148', E_USER_DEPRECATED);
-      $user_flood_control = \Drupal::service('user.flood_control');
-    }
+  public function __construct(UserFloodControlInterface $user_flood_control, UserStorageInterface $user_storage, CsrfTokenGenerator $csrf_token, UserAuthInterface $user_auth, RouteProviderInterface $route_provider, Serializer $serializer, array $serializer_formats, LoggerInterface $logger) {
     $this->userFloodControl = $user_flood_control;
     $this->userStorage = $user_storage;
     $this->csrfToken = $csrf_token;
@@ -244,18 +240,24 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
     }
 
     // Load by name if provided.
+    $identifier = '';
     if (isset($credentials['name'])) {
-      $users = $this->userStorage->loadByProperties(['name' => trim($credentials['name'])]);
+      $identifier = $credentials['name'];
+      $users = $this->userStorage->loadByProperties(['name' => trim($identifier)]);
     }
     elseif (isset($credentials['mail'])) {
-      $users = $this->userStorage->loadByProperties(['mail' => trim($credentials['mail'])]);
+      $identifier = $credentials['mail'];
+      $users = $this->userStorage->loadByProperties(['mail' => trim($identifier)]);
     }
 
     /** @var \Drupal\Core\Session\AccountInterface $account */
     $account = reset($users);
     if ($account && $account->id()) {
       if ($this->userIsBlocked($account->getAccountName())) {
-        throw new BadRequestHttpException('The user has not been activated or is blocked.');
+        $this->logger->error('Unable to send password reset email for blocked or not yet activated user %identifier.', [
+          '%identifier' => $identifier,
+        ]);
+        return new Response();
       }
 
       // Send the password reset email.
@@ -264,13 +266,16 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
         throw new BadRequestHttpException('Unable to send email. Contact the site administrator if the problem persists.');
       }
       else {
-        $this->logger->notice('Password reset instructions mailed to %name at %email.', ['%name' => $account->getAccountName(), '%email' => $account->getEmail()]);
+        $this->logger->info('Password reset instructions mailed to %name at %email.', ['%name' => $account->getAccountName(), '%email' => $account->getEmail()]);
         return new Response();
       }
     }
 
     // Error if no users found with provided name or mail.
-    throw new BadRequestHttpException('Unrecognized username or email address.');
+    $this->logger->error('Unable to send password reset email for unrecognized username or email address %identifier.', [
+      '%identifier' => $identifier,
+    ]);
+    return new Response();
   }
 
   /**

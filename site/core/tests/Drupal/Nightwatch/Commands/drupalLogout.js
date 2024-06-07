@@ -1,6 +1,3 @@
-import { execSync } from 'child_process';
-import { URL } from 'url';
-
 /**
  * Logs out from a Drupal site.
  *

@@ -133,7 +133,7 @@ class EntityConverter implements ParamConverterInterface {
     }
 
     // Do not inject the context repository as it is not an actual dependency:
-    // it will be removed once both the TODOs below are fixed.
+    // it will be removed once both the todo items below are fixed.
     /** @var \Drupal\Core\Plugin\Context\ContextRepositoryInterface $contexts_repository */
     $contexts_repository = \Drupal::service('context.repository');
     // @todo Consider deprecating the legacy context operation altogether in
@@ -169,7 +169,7 @@ class EntityConverter implements ParamConverterInterface {
   public function applies($definition, $name, Route $route) {
     if (!empty($definition['type']) && strpos($definition['type'], 'entity:') === 0) {
       $entity_type_id = substr($definition['type'], strlen('entity:'));
-      if (strpos($definition['type'], '{') !== FALSE) {
+      if (str_contains($definition['type'], '{')) {
         $entity_type_slug = substr($entity_type_id, 1, -1);
         return $name != $entity_type_slug && in_array($entity_type_slug, $route->compile()->getVariables(), TRUE);
       }

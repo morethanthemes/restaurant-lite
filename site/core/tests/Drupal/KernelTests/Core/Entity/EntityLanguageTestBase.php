@@ -44,7 +44,7 @@ abstract class EntityLanguageTestBase extends EntityKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->languageManager = $this->container->get('language_manager');
@@ -66,10 +66,10 @@ abstract class EntityLanguageTestBase extends EntityKernelTestBase {
     $this->state->set('entity_test.translation', TRUE);
 
     // Create a translatable test field.
-    $this->fieldName = mb_strtolower($this->randomMachineName() . '_field_name');
+    $this->fieldName = $this->randomMachineName() . '_field_name';
 
     // Create an untranslatable test field.
-    $this->untranslatableFieldName = mb_strtolower($this->randomMachineName() . '_field_name');
+    $this->untranslatableFieldName = $this->randomMachineName() . '_field_name';
 
     // Create field fields in all entity variations.
     foreach (entity_test_entity_types() as $entity_type) {

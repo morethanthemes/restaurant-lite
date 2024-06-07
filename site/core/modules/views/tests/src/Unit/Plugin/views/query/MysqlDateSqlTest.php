@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Plugin\views\query;
 
 use Drupal\Core\Database\Connection;
@@ -25,7 +27,7 @@ class MysqlDateSqlTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
     parent::setUp();
     $this->database = $this->prophesize(Connection::class)->reveal();
   }
@@ -65,7 +67,7 @@ class MysqlDateSqlTest extends UnitTestCase {
     return [
       ['foo.field', 'Y-y-M-m', '%Y-%y-%b-%m'],
       ['bar.field', 'n-F D d l', '%c-%M %a %d %W'],
-      ['baz.bar_field', 'j/W/H-h i s A', '%e/%v/%H-%h %i %s %p'],
+      ['baz.bar_field', 'o j/W/H-h i s A', '%x %e/%v/%H-%h %i %s %p'],
     ];
   }
 

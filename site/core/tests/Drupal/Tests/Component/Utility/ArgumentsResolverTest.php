@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\Utility\ArgumentsResolverTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\Utility;
 
@@ -65,6 +62,15 @@ class ArgumentsResolverTest extends TestCase {
     $objects = ['foo' => new \stdClass()];
     $data[] = [
       function ($foo) {}, $scalars, $objects, [], ['baz'],
+    ];
+
+    // Test a static method string.
+    $data[] = [
+      TestStaticMethodClass::class . "::access",
+      [],
+      ['foo' => NULL],
+      [],
+      [NULL],
     ];
 
     return $data;
@@ -193,6 +199,13 @@ class ArgumentsResolverTest extends TestCase {
 class TestClass {
 
   public function access($foo) {
+  }
+
+}
+
+class TestStaticMethodClass {
+
+  public static function access($foo) {
   }
 
 }

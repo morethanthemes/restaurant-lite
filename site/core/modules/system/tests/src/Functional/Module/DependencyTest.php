@@ -9,6 +9,7 @@ use Drupal\Component\Utility\Unicode;
  * Enable module without dependency enabled.
  *
  * @group Module
+ * @group #slow
  */
 class DependencyTest extends ModuleTestBase {
 
@@ -171,6 +172,7 @@ class DependencyTest extends ModuleTestBase {
    * Tests enabling modules with different core version specifications.
    */
   public function testCoreCompatibility() {
+    $this->markTestSkipped('Skipped due to major version-specific logic. See https://www.drupal.org/project/drupal/issues/3359322');
     $assert_session = $this->assertSession();
 
     // Test incompatible 'core_version_requirement'.
@@ -266,46 +268,6 @@ class DependencyTest extends ModuleTestBase {
     // Check the actual order which is saved by module_test_modules_enabled().
     $module_order = \Drupal::state()->get('module_test.install_order', []);
     $this->assertSame($expected_order, $module_order);
-  }
-
-  /**
-   * Tests attempting to uninstall a module that has installed dependents.
-   */
-  public function testUninstallDependents() {
-    // Enable the forum module.
-    $edit = ['modules[forum][enable]' => 'forum'];
-    $this->drupalGet('admin/modules');
-    $this->submitForm($edit, 'Install');
-    $this->submitForm([], 'Continue');
-    $this->assertModules(['forum'], TRUE);
-
-    // Check that the comment module cannot be uninstalled.
-    $this->drupalGet('admin/modules/uninstall');
-    $this->assertSession()->fieldDisabled('uninstall[comment]');
-
-    // Delete any forum terms.
-    $vid = $this->config('forum.settings')->get('vocabulary');
-    // Ensure taxonomy has been loaded into the test-runner after forum was
-    // enabled.
-    \Drupal::moduleHandler()->load('taxonomy');
-    $storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
-    $terms = $storage->loadByProperties(['vid' => $vid]);
-    $storage->delete($terms);
-
-    // Uninstall the forum module, and check that taxonomy now can also be
-    // uninstalled.
-    $edit = ['uninstall[forum]' => 'forum'];
-    $this->drupalGet('admin/modules/uninstall');
-    $this->submitForm($edit, 'Uninstall');
-    $this->submitForm([], 'Uninstall');
-    $this->assertSession()->pageTextContains('The selected modules have been uninstalled.');
-
-    // Uninstall comment module.
-    $edit = ['uninstall[comment]' => 'comment'];
-    $this->drupalGet('admin/modules/uninstall');
-    $this->submitForm($edit, 'Uninstall');
-    $this->submitForm([], 'Uninstall');
-    $this->assertSession()->pageTextContains('The selected modules have been uninstalled.');
   }
 
 }

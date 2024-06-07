@@ -42,7 +42,6 @@ class TextFormatElementFormTest extends KernelTestBase implements FormInterface 
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('user');
-    $this->installSchema('system', ['sequences']);
     $this->installConfig(['filter', 'filter_test']);
 
     // Create user 1 so that the user created later in the test has a different
@@ -130,15 +129,6 @@ class TextFormatElementFormTest extends KernelTestBase implements FormInterface 
     $this->assertRaw('<h4>Filtered HTML</h4>');
     $this->assertRaw('<h4>Test format</h4>');
     $this->assertNoPattern('|<h4[^>]*></h4>|', 'No empty H4 element found.');
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getUrl() {
-    // \Drupal\simpletest\AssertContentTrait needs this for ::assertFieldByName
-    // to work.
-    return 'Internal rendering';
   }
 
 }

@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\media_library\FunctionalJavascript;
 
 use Drupal\media\Entity\Media;
 use Drupal\Tests\TestFileCreationTrait;
 
 /**
- * Tests that uploads in the Media library's widget works as expected.
+ * Tests that uploads in the 'media_library_widget' works as expected.
  *
  * @group media_library
  *
@@ -23,7 +25,7 @@ class WidgetUploadTest extends MediaLibraryTestBase {
   protected $defaultTheme = 'stark';
 
   /**
-   * Tests that uploads in the Media library's widget works as expected.
+   * Tests that uploads in the 'media_library_widget' works as expected.
    */
   public function testWidgetUpload() {
     $assert_session = $this->assertSession();
@@ -204,13 +206,14 @@ class WidgetUploadTest extends MediaLibraryTestBase {
     // Assert we can now only upload one more media item.
     $this->openMediaLibraryForField('field_twin_media');
     $this->switchToMediaType('Four');
-    $this->assertFalse($assert_session->fieldExists('Add file')->hasAttribute('multiple'));
+    // Despite the 'One file only' text, we don't limit the number of uploads.
+    $this->assertTrue($assert_session->fieldExists('Add file')->hasAttribute('multiple'));
     $assert_session->pageTextContains('One file only.');
 
     // Assert media type four should only allow jpg files by trying a png file
     // first.
     $png_uri_4 = $file_system->copy($png_image->uri, 'public://');
-    $this->addMediaFileToField('Add file', $file_system->realpath($png_uri_4), FALSE);
+    $this->addMediaFileToField('Add file', $file_system->realpath($png_uri_4));
     $this->waitForText('Only files with the following extensions are allowed');
     // Assert that jpg files are accepted by type four.
     $jpg_uri_2 = $file_system->copy($jpg_image->uri, 'public://');
@@ -547,13 +550,14 @@ class WidgetUploadTest extends MediaLibraryTestBase {
     // Assert we can now only upload one more media item.
     $this->openMediaLibraryForField('field_twin_media');
     $this->switchToMediaType('Four');
-    $this->assertFalse($assert_session->fieldExists('Add file')->hasAttribute('multiple'));
+    // Despite the 'One file only' text, we don't limit the number of uploads.
+    $this->assertTrue($assert_session->fieldExists('Add file')->hasAttribute('multiple'));
     $assert_session->pageTextContains('One file only.');
 
     // Assert media type four should only allow jpg files by trying a png file
     // first.
     $png_uri_4 = $file_system->copy($png_image->uri, 'public://');
-    $this->addMediaFileToField('Add file', $file_system->realpath($png_uri_4), FALSE);
+    $this->addMediaFileToField('Add file', $file_system->realpath($png_uri_4));
     $this->waitForText('Only files with the following extensions are allowed');
     // Assert that jpg files are accepted by type four.
     $jpg_uri_2 = $file_system->copy($jpg_image->uri, 'public://');
@@ -618,7 +622,9 @@ class WidgetUploadTest extends MediaLibraryTestBase {
     $selection_area = $this->getSelectionArea();
     $assert_session->checkboxChecked("Select $existing_media_name", $selection_area);
     $selection_area->uncheckField("Select $existing_media_name");
-    $assert_session->hiddenFieldValueEquals('current_selection', '');
+    $page->waitFor(10, function () use ($page) {
+      return $page->find('hidden_field_selector', ['hidden_field', 'current_selection'])->getValue() === '';
+    });
     // Close the details element so that clicking the Save and select works.
     // @todo Fix dialog or test so this is not necessary to prevent random
     //   fails. https://www.drupal.org/project/drupal/issues/3055648

@@ -21,6 +21,12 @@ function locale_install() {
     \Drupal::configFactory()->getEditable('locale.settings')->set('translation.path', $directory)->save();
   }
   \Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+
+  $t_args = [
+    ':translate_status' => base_path() . 'admin/reports/translations/check?destination=' . urlencode(base_path() . 'admin/reports/translations'),
+  ];
+  $message = t('Check <a href=":translate_status">available translations</a> for your language(s).', $t_args);
+  \Drupal::messenger()->addStatus($message);
 }
 
 /**
@@ -230,12 +236,14 @@ function locale_schema() {
         'not null' => FALSE,
         'default' => 0,
         'description' => 'Unix timestamp of the imported file.',
+        'size' => 'big',
       ],
       'last_checked' => [
         'type' => 'int',
         'not null' => FALSE,
         'default' => 0,
         'description' => 'Unix timestamp of the last time this translation was confirmed to be the most recent release available.',
+        'size' => 'big',
       ],
     ],
     'primary key' => ['project', 'langcode'],
@@ -308,19 +316,34 @@ function locale_requirements($phase) {
 }
 
 /**
- * Delete an unnecessary index on the locales_location table.
- */
-function locale_update_9101() {
-  $schema = \Drupal::database()->schema();
-  $table = 'locales_location';
-  if ($schema->indexExists($table, 'string_id')) {
-    $schema->dropIndex($table, 'string_id');
-  }
-}
-
-/**
  * Implements hook_update_last_removed().
  */
 function locale_update_last_removed() {
-  return 8800;
+  return 9101;
+}
+
+/**
+ * Remove the year 2038 date limitation.
+ */
+function locale_update_10100(&$sandbox = NULL) {
+  $connection = \Drupal::database();
+  if ($connection->schema()->tableExists('locale_file') && $connection->databaseType() != 'sqlite') {
+    $new = [
+      'type' => 'int',
+      'not null' => FALSE,
+      'default' => 0,
+      'description' => 'Unix timestamp of the imported file.',
+      'size' => 'big',
+    ];
+    $connection->schema()->changeField('locale_file', 'timestamp', 'timestamp', $new);
+
+    $new = [
+      'type' => 'int',
+      'not null' => FALSE,
+      'default' => 0,
+      'description' => 'Unix timestamp of the last time this translation was confirmed to be the most recent release available.',
+      'size' => 'big',
+    ];
+    $connection->schema()->changeField('locale_file', 'last_checked', 'last_checked', $new);
+  }
 }

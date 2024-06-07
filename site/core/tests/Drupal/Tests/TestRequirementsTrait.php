@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests;
 
 use Drupal\Core\Extension\ExtensionDiscovery;
@@ -83,7 +85,7 @@ trait TestRequirementsTrait {
     // Make a list of required modules.
     $required_modules = [];
     foreach ($annotations as $requirement) {
-      if (strpos($requirement, 'module ') === 0) {
+      if (str_starts_with($requirement, 'module ')) {
         $required_modules[] = trim(str_replace('module ', '', $requirement));
       }
     }

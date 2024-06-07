@@ -154,7 +154,7 @@ class UserCancelTest extends BrowserTestBase {
     // Attempt bogus account cancellation request confirmation.
     $bogus_timestamp = $timestamp + 60;
     $this->drupalGet("user/" . $account->id() . "/cancel/confirm/$bogus_timestamp/" . user_pass_rehash($account, $bogus_timestamp));
-    $this->assertSession()->pageTextContains('You have tried to use an account cancellation link that has expired. Please request a new one using the form below.');
+    $this->assertSession()->pageTextContains('You have tried to use an account cancellation link that has expired. Request a new one using the form below.');
     $user_storage->resetCache([$account->id()]);
     $account = $user_storage->load($account->id());
     $this->assertTrue($account->isActive(), 'User account was not canceled.');
@@ -162,7 +162,7 @@ class UserCancelTest extends BrowserTestBase {
     // Attempt expired account cancellation request confirmation.
     $bogus_timestamp = $timestamp - 86400 - 60;
     $this->drupalGet("user/" . $account->id() . "/cancel/confirm/$bogus_timestamp/" . user_pass_rehash($account, $bogus_timestamp));
-    $this->assertSession()->pageTextContains('You have tried to use an account cancellation link that has expired. Please request a new one using the form below.');
+    $this->assertSession()->pageTextContains('You have tried to use an account cancellation link that has expired. Request a new one using the form below.');
     $user_storage->resetCache([$account->id()]);
     $account = $user_storage->load($account->id());
     $this->assertTrue($account->isActive(), 'User account was not canceled.');
@@ -274,7 +274,7 @@ class UserCancelTest extends BrowserTestBase {
     $node_storage->resetCache([$node->id()]);
     $test_node = $node_storage->load($node->id());
     $this->assertFalse($test_node->isPublished(), 'Node of the user has been unpublished.');
-    $test_node = node_revision_load($node->getRevisionId());
+    $test_node = $node_storage->loadRevision($node->getRevisionId());
     $this->assertFalse($test_node->isPublished(), 'Node revision of the user has been unpublished.');
 
     $storage = \Drupal::entityTypeManager()->getStorage('comment');
@@ -390,7 +390,7 @@ class UserCancelTest extends BrowserTestBase {
     $test_node = $node_storage->load($node->id());
     $this->assertEquals(0, $test_node->getOwnerId(), 'Node of the user has been attributed to anonymous user.');
     $this->assertTrue($test_node->isPublished());
-    $test_node = node_revision_load($revision, TRUE);
+    $test_node = $node_storage->loadRevision($revision);
     $this->assertEquals(0, $test_node->getRevisionUser()->id(), 'Node revision of the user has been attributed to anonymous user.');
     $this->assertTrue($test_node->isPublished());
     $node_storage->resetCache([$revision_node->id()]);
@@ -527,7 +527,7 @@ class UserCancelTest extends BrowserTestBase {
     // Confirm that user's content has been deleted.
     $node_storage->resetCache([$node->id()]);
     $this->assertNull($node_storage->load($node->id()), 'Node of the user has been deleted.');
-    $this->assertNull(node_revision_load($revision), 'Node revision of the user has been deleted.');
+    $this->assertNull($node_storage->loadRevision($revision), 'Node revision of the user has been deleted.');
     $node_storage->resetCache([$revision_node->id()]);
     $this->assertInstanceOf(Node::class, $node_storage->load($revision_node->id()));
     \Drupal::entityTypeManager()->getStorage('comment')->resetCache([$comment->id()]);
@@ -626,7 +626,7 @@ class UserCancelTest extends BrowserTestBase {
     $this->submitForm([], 'Confirm');
     $status = TRUE;
     foreach ($users as $account) {
-      $status = $status && (strpos($this->getTextContent(), "Account {$account->getAccountName()} has been deleted.") !== FALSE);
+      $status = $status && (str_contains($this->getTextContent(), "Account {$account->getAccountName()} has been deleted."));
       $user_storage->resetCache([$account->id()]);
       $status = $status && !$user_storage->load($account->id());
     }

@@ -21,6 +21,16 @@ use Drupal\Core\Url;
 class Rss extends StylePluginBase {
 
   /**
+   * The RSS namespaces.
+   */
+  public array $namespaces;
+
+  /**
+   * The channel elements.
+   */
+  public array $channel_elements;
+
+  /**
    * {@inheritdoc}
    */
   protected $usesRowPlugin = TRUE;
@@ -122,6 +132,11 @@ class Rss extends StylePluginBase {
       '#view' => $this->view,
       '#options' => $this->options,
       '#rows' => $rows,
+      '#attached' => [
+        'http_header' => [
+          ['Content-Type', 'application/rss+xml; charset=utf-8'],
+        ],
+      ],
     ];
     unset($this->view->row_index);
     return $build;

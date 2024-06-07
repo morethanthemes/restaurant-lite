@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit;
 
 use Drupal\Tests\UnitTestCase;
@@ -59,7 +61,6 @@ class ViewsHandlerManagerTest extends UnitTestCase {
 
     $reflection = new \ReflectionClass($this->handlerManager);
     $property = $reflection->getProperty('factory');
-    $property->setAccessible(TRUE);
     $property->setValue($this->handlerManager, $this->factory);
   }
 

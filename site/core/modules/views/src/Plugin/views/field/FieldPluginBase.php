@@ -108,6 +108,21 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
   protected $renderer;
 
   /**
+   * The last rendered value.
+   */
+  public string|MarkupInterface|NULL $last_render;
+
+  /**
+   * The last rendered text.
+   */
+  public string|MarkupInterface|NULL $last_render_text;
+
+  /**
+   * The last rendered tokens.
+   */
+  public array $last_tokens;
+
+  /**
    * Keeps track of the last render index.
    *
    * @var int|null
@@ -345,7 +360,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    * {@inheritdoc}
    */
   public function tokenizeValue($value, $row_index = NULL) {
-    if (strpos($value, '{{') !== FALSE) {
+    if (str_contains($value, '{{')) {
       $fake_item = [
         'alter_text' => TRUE,
         'text' => $value,
@@ -405,12 +420,35 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    */
   public function getEntity(ResultRow $values) {
     $relationship_id = $this->options['relationship'];
+    $entity = NULL;
     if ($relationship_id == 'none') {
-      return $values->_entity;
+      $entity = $values->_entity;
     }
     elseif (isset($values->_relationship_entities[$relationship_id])) {
-      return $values->_relationship_entities[$relationship_id];
+      $entity = $values->_relationship_entities[$relationship_id];
     }
+
+    if ($entity === NULL) {
+      // Don't log an error if we're getting an entity for an optional
+      // relationship.
+      if ($relationship_id !== 'none') {
+        $relationship = $this->view->relationship[$relationship_id] ?? NULL;
+        if ($relationship && !$relationship->options['required']) {
+          return NULL;
+        }
+      }
+      \Drupal::logger('views')->error(
+        'The view %id failed to load an entity of type %entity_type at row %index for field %field',
+        [
+          '%id' => $this->view->id(),
+          '%entity_type' => $this->configuration['entity_type'],
+          '%index' => $values->index,
+          '%field' => $this->label() ?: $this->realField,
+        ]
+      );
+      return NULL;
+    }
+    return $entity;
   }
 
   /**
@@ -620,7 +658,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     ];
     $form['element_label_type'] = [
       '#title' => $this->t('Label HTML element'),
-      '#options' => $this->getElements(FALSE),
+      '#options' => $this->getElements(),
       '#type' => 'select',
       '#default_value' => $this->options['element_label_type'],
       '#description' => $this->t('Choose the HTML element to wrap around this label, e.g. H1, H2, etc.'),
@@ -664,7 +702,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     ];
     $form['element_wrapper_type'] = [
       '#title' => $this->t('Wrapper HTML element'),
-      '#options' => $this->getElements(FALSE),
+      '#options' => $this->getElements(),
       '#type' => 'select',
       '#default_value' => $this->options['element_wrapper_type'],
       '#description' => $this->t('Choose the HTML element to wrap around this field and label, e.g. H1, H2, etc. This may not be used if the field and label are not rendered together, such as with a table.'),
@@ -1298,7 +1336,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
         // well.
         $base_path = base_path();
         // Checks whether the path starts with the base_path.
-        if (strpos($more_link_path, $base_path) === 0) {
+        if (str_starts_with($more_link_path, $base_path)) {
           $more_link_path = mb_substr($more_link_path, mb_strlen($base_path));
         }
 
@@ -1417,7 +1455,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       // Tokens might have resolved URL's, as is the case for tokens provided by
       // Link fields, so all internal paths will be prefixed by base_path(). For
       // proper further handling reset this to internal:/.
-      if (strpos($path, base_path()) === 0) {
+      if (str_starts_with($path, base_path())) {
         $path = 'internal:/' . substr($path, strlen(base_path()));
       }
 
@@ -1432,7 +1470,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       // 'http://www.example.com'.
       // Only do this when flag for external has been set, $path doesn't contain
       // a scheme and $path doesn't have a leading /.
-      if ($alter['external'] && !parse_url($path, PHP_URL_SCHEME) && strpos($path, '/') !== 0) {
+      if ($alter['external'] && !parse_url($path, PHP_URL_SCHEME) && !str_starts_with($path, '/')) {
         // There is no scheme, add the default 'http://' to the $path.
         $path = "http://" . $path;
       }
@@ -1662,21 +1700,23 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    *     'foo' => array(
    *       'a' => 'value',
    *       'b' => 'value',
+   *       'c.d' => 'invalid value',
+   *       '&invalid' => 'invalid value',
    *     ),
    *     'bar' => array(
    *       'a' => 'value',
    *       'b' => array(
-   *         'c' => value,
+   *         'c' => 'value',
    *       ),
    *     ),
    *   );
    *
    * Would yield the following array of tokens:
    *   array(
-   *     '%foo_a' => 'value'
-   *     '%foo_b' => 'value'
-   *     '%bar_a' => 'value'
-   *     '%bar_b_c' => 'value'
+   *     '{{ arguments.foo.a }}' => 'value',
+   *     '{{ arguments.foo.b }}' => 'value',
+   *     '{{ arguments.bar.a }}' => 'value',
+   *     '{{ arguments.bar.b.c }}' => 'value',
    *   );
    *
    * @param $array
@@ -1691,6 +1731,10 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     $tokens = [];
 
     foreach ($array as $param => $val) {
+      if (!is_numeric($param) && preg_match('/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/', $param) === 0) {
+        // Skip as the parameter is not a valid Twig variable name.
+        continue;
+      }
       if (is_array($val)) {
         // Copy parent_keys array, so we don't affect other elements of this
         // iteration.

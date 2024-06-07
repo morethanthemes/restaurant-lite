@@ -308,7 +308,7 @@ function locale_translate_batch_refresh(&$context) {
       foreach ($context['results']['stats'] as $report) {
         $strings[] = $report['strings'];
       }
-      $strings = array_merge([], ...$strings);
+      $strings = array_merge(...$strings);
     }
     if ($strings) {
       // Initialize multi-step string refresh.
@@ -638,14 +638,14 @@ function locale_config_batch_set_config_langcodes(&$context) {
  * @see locale_config_batch_build()
  */
 function locale_config_batch_refresh_name(array $names, array $langcodes, &$context) {
-  if (!isset($context['result']['stats']['config'])) {
-    $context['result']['stats']['config'] = 0;
+  if (!isset($context['results']['stats']['config'])) {
+    $context['results']['stats']['config'] = 0;
   }
-  $context['result']['stats']['config'] += Locale::config()->updateConfigTranslations($names, $langcodes);
+  $context['results']['stats']['config'] += Locale::config()->updateConfigTranslations($names, $langcodes);
   foreach ($names as $name) {
-    $context['result']['names'][] = $name;
+    $context['results']['names'][] = $name;
   }
-  $context['result']['langcodes'] = $langcodes;
+  $context['results']['langcodes'] = $langcodes;
   $context['finished'] = 1;
 }
 

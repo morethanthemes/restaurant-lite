@@ -27,8 +27,6 @@ class SystemListingCrossProfileCompatibleTest extends KernelTestBase {
    * This test needs to use a different installation profile than the test which
    * asserts that this test is found.
    *
-   * @see \Drupal\simpletest\Tests\InstallationProfileModuleTestsTest
-   *
    * @var string
    */
   protected $profile = 'minimal';

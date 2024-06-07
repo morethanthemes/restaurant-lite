@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\layout_builder\FunctionalJavascript;
 
 use Drupal\field\Entity\FieldConfig;
@@ -75,6 +77,9 @@ class FieldBlockTest extends WebDriverTestBase {
     $this->clickLink('Place block');
     $assert_session->assertWaitOnAjaxRequest();
 
+    // Ensure that focus is on the first focusable element on modal.
+    $this->assertJsCondition('document.activeElement === document.getElementsByClassName("block-filter-text")[0]');
+
     // Ensure that fields without any formatters are not available.
     $assert_session->pageTextNotContains('Password');
     // Ensure that non-display-configurable fields are not available.
@@ -124,7 +129,7 @@ class FieldBlockTest extends WebDriverTestBase {
       ],
       'third_party_settings' => [],
     ];
-    $config = $this->container->get('config.factory')->get('block.block.datefield');
+    $config = $this->container->get('config.factory')->get('block.block.starterkit_theme_datefield');
     $this->assertEquals($expected, $config->get('settings.formatter'));
     $this->assertEquals(['field.field.user.user.field_date'], $config->get('dependencies.config'));
 

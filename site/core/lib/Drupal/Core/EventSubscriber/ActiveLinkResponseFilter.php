@@ -12,6 +12,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
+// cspell:ignore noemptytag
 /**
  * Subscribes to filter HTML responses, to set the 'is-active' class on links.
  *
@@ -245,7 +246,7 @@ class ActiveLinkResponseFilter implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     // Should run after any other response subscriber that modifies the markup.
     $events[KernelEvents::RESPONSE][] = ['onResponse', -512];
 

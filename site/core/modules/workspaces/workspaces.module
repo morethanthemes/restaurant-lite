@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -29,7 +30,7 @@ function workspaces_help($route_name, RouteMatchInterface $route_match) {
     // Main module help for the Workspaces module.
     case 'help.page.workspaces':
       $output = '';
-      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<h2>' . t('About') . '</h2>';
       $output .= '<p>' . t('The Workspaces module allows workspaces to be defined and switched between. Content is then assigned to the active workspace when created. For more information, see the <a href=":workspaces">online documentation for the Workspaces module</a>.', [':workspaces' => 'https://www.drupal.org/docs/8/core/modules/workspace/overview']) . '</p>';
       return $output;
   }
@@ -144,6 +145,26 @@ function workspaces_entity_predelete(EntityInterface $entity) {
 }
 
 /**
+ * Implements hook_entity_delete().
+ */
+function workspaces_entity_delete(EntityInterface $entity) {
+  if (\Drupal::service('workspaces.manager')->isEntityTypeSupported($entity->getEntityType())) {
+    \Drupal::service('workspaces.association')
+      ->deleteAssociations(NULL, $entity->getEntityTypeId(), [$entity->id()]);
+  }
+}
+
+/**
+ * Implements hook_entity_revision_delete().
+ */
+function workspaces_entity_revision_delete(EntityInterface $entity) {
+  if (\Drupal::service('workspaces.manager')->isEntityTypeSupported($entity->getEntityType())) {
+    \Drupal::service('workspaces.association')
+      ->deleteAssociations(NULL, $entity->getEntityTypeId(), [$entity->id()], [$entity->getRevisionId()]);
+  }
+}
+
+/**
  * Implements hook_entity_access().
  *
  * @see \Drupal\workspaces\EntityAccess
@@ -163,6 +184,22 @@ function workspaces_entity_create_access(AccountInterface $account, array $conte
   return \Drupal::service('class_resolver')
     ->getInstanceFromDefinition(EntityAccess::class)
     ->entityCreateAccess($account, $context, $entity_bundle);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update() for the 'menu_link_content' entity type.
+ */
+function workspaces_menu_link_content_update(EntityInterface $entity) {
+  /** @var \Drupal\menu_link_content\MenuLinkContentInterface $entity */
+  if ($entity->getLoadedRevisionId() != $entity->getRevisionId()) {
+    // We are not updating the menu tree definitions when a custom menu link
+    // entity is saved as a pending revision (because the parent can not be
+    // changed), so we need to clear the system menu cache manually. However,
+    // inserting or deleting a custom menu link updates the menu tree
+    // definitions, so we don't have to do anything in those cases.
+    $cache_tags = Cache::buildTags('config:system.menu', [$entity->getMenuName()], '.');
+    \Drupal::service('cache_tags.invalidator')->invalidateTags($cache_tags);
+  }
 }
 
 /**

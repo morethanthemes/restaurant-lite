@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\system\Unit\Event;
 
 use Drupal\Core\File\Event\FileUploadSanitizeNameEvent;
@@ -117,7 +119,7 @@ class SecurityFileUploadEventSubscriberTest extends UnitTestCase {
 
     // Check the results of the configured sanitization.
     $this->assertSame($filename, $event->getFilename());
-    $this->assertSame(FALSE, $event->isSecurityRename());
+    $this->assertFalse($event->isSecurityRename());
 
     $config_factory = $this->getConfigFactoryStub([
       'system.file' => [
@@ -131,7 +133,7 @@ class SecurityFileUploadEventSubscriberTest extends UnitTestCase {
 
     // Check the results of the configured sanitization.
     $this->assertSame($filename, $event->getFilename());
-    $this->assertSame(FALSE, $event->isSecurityRename());
+    $this->assertFalse($event->isSecurityRename());
   }
 
   /**
@@ -142,7 +144,7 @@ class SecurityFileUploadEventSubscriberTest extends UnitTestCase {
    */
   public function provideFilenamesNoMunge() {
     return [
-      // The following filename would be rejected by file_validate_extension()
+      // The following filename would be rejected by 'FileExtension' constraint
       // and therefore remains unchanged.
       '.php is not munged when it would be rejected' => ['foo.php.php', 'jpg'],
       '.php is not munged when it would be rejected and filename contains null byte character' => ['foo.' . chr(0) . 'php.php', 'jpg'],

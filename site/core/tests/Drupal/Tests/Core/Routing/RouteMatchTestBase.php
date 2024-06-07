@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Routing;
 
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -8,6 +10,8 @@ use Symfony\Component\Routing\Route;
 
 /**
  * Base test class for testing classes implementing the route match interface.
+ *
+ * @coversDefaultClass \Drupal\Core\Routing\RouteMatch
  */
 abstract class RouteMatchTestBase extends UnitTestCase {
 

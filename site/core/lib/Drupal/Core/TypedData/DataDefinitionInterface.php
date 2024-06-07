@@ -143,7 +143,7 @@ interface DataDefinitionInterface {
    *   The setting name.
    *
    * @return mixed
-   *   The setting value.
+   *   The setting value or NULL if the setting name doesn't exist.
    */
   public function getSetting($setting_name);
 
@@ -229,8 +229,8 @@ interface DataDefinitionInterface {
    *
    * The implications of this method are left to the discretion of the caller.
    * For example, a module providing an HTTP API may not expose entities of
-   * this type, or a custom entity reference field settings form may
-   * deprioritize entities of this type in a select list.
+   * this type or a custom entity reference field settings form may reduce the
+   * priority for entities of this type in a select list.
    *
    * @return bool
    *   Whether the data value is internal.

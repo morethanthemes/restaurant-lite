@@ -2,6 +2,7 @@
 
 namespace Drupal\Core\Entity;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -246,10 +247,17 @@ class EntityForm extends FormBase implements EntityFormInterface {
         '#title' => $this->t('Delete'),
         '#access' => $this->entity->access('delete'),
         '#attributes' => [
-          'class' => ['button', 'button--danger'],
+          'class' => ['button', 'button--danger', 'use-ajax'],
+          'data-dialog-type' => 'modal',
+          'data-dialog-options' => Json::encode([
+            'width' => 880,
+          ]),
+        ],
+        '#url' => $route_info,
+        '#attached' => [
+          'library' => ['core/drupal.dialog.ajax'],
         ],
       ];
-      $actions['delete']['#url'] = $route_info;
     }
 
     return $actions;
@@ -315,6 +323,8 @@ class EntityForm extends FormBase implements EntityFormInterface {
    *   A nested array of form elements comprising the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
+   *
+   * @see \Drupal\Core\Form\ConfigFormBase::copyFormValuesToConfig()
    */
   protected function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     $values = $form_state->getValues();

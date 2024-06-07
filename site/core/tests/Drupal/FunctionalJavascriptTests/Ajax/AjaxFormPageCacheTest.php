@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\FunctionalJavascriptTests\Ajax;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
@@ -19,7 +21,7 @@ class AjaxFormPageCacheTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $defaultTheme = 'starterkit_theme';
+  protected $defaultTheme = 'stark';
 
   /**
    * {@inheritdoc}
@@ -93,7 +95,7 @@ class AjaxFormPageCacheTest extends WebDriverTestBase {
     $this->assertNotNull($green_span2, 'DOM update: After reload - the selected color SPAN is green.');
 
     $build_id_from_cache_first_ajax = $this->getFormBuildId();
-    $this->assertNotEquals($build_id_from_cache_initial, $build_id_from_cache_first_ajax, 'Build id is changed in the simpletest-DOM on first AJAX submission');
+    $this->assertNotEquals($build_id_from_cache_initial, $build_id_from_cache_first_ajax, 'Build id is changed in the DOM on first AJAX submission');
     $this->assertNotEquals($build_id_first_ajax, $build_id_from_cache_first_ajax, 'Build id from first user is not reused');
 
     // Changing the value of a select input element, triggers an AJAX
@@ -118,14 +120,14 @@ class AjaxFormPageCacheTest extends WebDriverTestBase {
     $this->drupalGet('ajax_validation_test');
     // Changing the value of the textfield will trigger an AJAX
     // request/response.
-    $field = $this->getSession()->getPage()->findField('drivertext');
+    $field = $this->getSession()->getPage()->findField('driver_text');
     $field->setValue('some dumb text');
     $field->blur();
 
     // When the AJAX command updates the DOM a <ul> unsorted list
     // "message__list" structure will appear on the page echoing back the
     // "some dumb text" message.
-    $placeholder = $this->assertSession()->waitForElement('css', "ul.messages__list li.messages__item em:contains('some dumb text')");
+    $placeholder = $this->assertSession()->waitForElement('css', "[aria-label='Status message'] > ul > li > em:contains('some dumb text')");
     $this->assertNotNull($placeholder, 'Message structure containing input data located.');
   }
 

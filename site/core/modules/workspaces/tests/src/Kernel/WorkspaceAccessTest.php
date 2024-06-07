@@ -6,12 +6,12 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\workspaces\Entity\Workspace;
-use Drupal\workspaces\WorkspaceAccessException;
 
 /**
  * Tests access on workspaces.
  *
  * @group workspaces
+ * @group #slow
  */
 class WorkspaceAccessTest extends KernelTestBase {
 
@@ -34,7 +34,6 @@ class WorkspaceAccessTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
 
-    $this->installSchema('system', ['sequences']);
     $this->installSchema('workspaces', ['workspace_association']);
 
     $this->installEntitySchema('workspace');
@@ -104,19 +103,17 @@ class WorkspaceAccessTest extends KernelTestBase {
     $workspace->save();
 
     // Check that, by default, an admin user is allowed to publish a workspace.
-    $workspace->publish();
+    $this->assertTrue($workspace->access('publish'));
 
     // Simulate an external factor which decides that a workspace can not be
     // published.
     \Drupal::state()->set('workspace_access_test.result.publish', AccessResult::forbidden());
     \Drupal::entityTypeManager()->getAccessControlHandler('workspace')->resetCache();
-
-    $this->expectException(WorkspaceAccessException::class);
-    $workspace->publish();
+    $this->assertFalse($workspace->access('publish'));
   }
 
   /**
-   * @coversDefaultClass \Drupal\workspaces\Plugin\EntityReferenceSelection\WorkspaceSelection
+   * @covers \Drupal\workspaces\Plugin\EntityReferenceSelection\WorkspaceSelection::getReferenceableEntities
    */
   public function testWorkspaceSelection() {
     $own_permission_user = $this->createUser(['view own workspace']);

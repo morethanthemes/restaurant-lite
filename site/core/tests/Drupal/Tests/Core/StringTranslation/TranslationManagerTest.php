@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\StringTranslation\TranslationManagerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\StringTranslation;
 
@@ -28,6 +25,8 @@ class TranslationManagerTest extends UnitTestCase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+    parent::setUp();
+
     $this->translationManager = new TestTranslationManager();
   }
 

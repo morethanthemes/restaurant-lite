@@ -33,9 +33,9 @@ class MimeTypeTest extends FileTestBase {
       'pcf.z' => 'application/octet-stream',
       'jar' => 'application/octet-stream',
       'some.junk' => 'application/octet-stream',
-      'foo.file_test_1' => 'madeup/file_test_1',
-      'foo.file_test_2' => 'madeup/file_test_2',
-      'foo.doc' => 'madeup/doc',
+      'foo.file_test_1' => 'made_up/file_test_1',
+      'foo.file_test_2' => 'made_up/file_test_2',
+      'foo.doc' => 'made_up/doc',
       'test.ogg' => 'audio/ogg',
     ];
 
@@ -87,21 +87,6 @@ class MimeTypeTest extends FileTestBase {
       $output = $extension_guesser->guessMimeType($input);
       $this->assertSame($expected, $output);
     }
-  }
-
-  /**
-   * Test deprecations.
-   *
-   * @group legacy
-   */
-  public function testFileMimeTypeDetectionDeprecation() {
-    $this->expectDeprecation('The "Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser" class is deprecated since Symfony 4.3, use "Symfony\Component\Mime\MimeTypes" instead.');
-    $this->expectDeprecation('The "Symfony\Component\HttpFoundation\File\MimeType\FileBinaryMimeTypeGuesser" class is deprecated since Symfony 4.3, use "Symfony\Component\Mime\FileBinaryMimeTypeGuesser" instead.');
-    $this->expectDeprecation('The "Symfony\Component\HttpFoundation\File\MimeType\FileinfoMimeTypeGuesser" class is deprecated since Symfony 4.3, use "Symfony\Component\Mime\FileinfoMimeTypeGuesser" instead.');
-    $this->expectDeprecation('Drupal\Core\File\MimeType\MimeTypeGuesser::guess() is deprecated in drupal:9.1.0 and is removed from drupal:10.0.0. Use ::guessMimeType() instead. See https://www.drupal.org/node/3133341');
-    $guesser = $this->container->get('file.mime_type.guesser');
-    $output = $guesser->guess('public://test.jar');
-    $this->assertSame('application/java-archive', $output);
   }
 
 }

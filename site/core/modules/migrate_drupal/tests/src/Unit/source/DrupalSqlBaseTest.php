@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\migrate_drupal\Unit\source;
 
 use Drupal\Core\Database\Connection;
@@ -64,7 +66,7 @@ class DrupalSqlBaseTest extends MigrateTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp(): void {
+  protected function setUp(): void {
     parent::setUp();
     $this->pluginDefinition['requirements_met'] = TRUE;
     $this->pluginDefinition['source_module'] = 'module1';

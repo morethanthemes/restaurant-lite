@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Drupal\Tests\ckeditor5\FunctionalJavascript;
 
@@ -80,7 +80,7 @@ JS;
   /**
    * Data provider for ensuring CKEditor 5 UI translations are loaded.
    *
-   * @return \string[][]
+   * @return string[][]
    */
   public function provider(): array {
     return [

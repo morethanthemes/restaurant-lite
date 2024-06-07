@@ -13,6 +13,7 @@ use Drupal\node\Entity\NodeType;
  * JSON:API integration test for the "FieldConfig" config entity type.
  *
  * @group jsonapi
+ * @group #slow
  */
 class FieldConfigTest extends ConfigEntityResourceTestBase {
 
@@ -119,7 +120,7 @@ class FieldConfigTest extends ConfigEntityResourceTestBase {
           'label' => 'field_llama',
           'langcode' => 'en',
           'required' => FALSE,
-          'settings' => [],
+          'settings' => ['allowed_formats' => []],
           'status' => TRUE,
           'translatable' => TRUE,
           'drupal_internal__id' => 'node.camelids.field_llama',

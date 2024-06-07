@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\rest\Unit\Plugin\views\style;
 
 use Drupal\rest\Plugin\views\display\RestExport;
@@ -65,7 +67,7 @@ class SerializerTest extends UnitTestCase {
     $mock_serializer->serialize([], 'json', Argument::that(function ($argument) {
       return isset($argument['views_style_plugin']) && $argument['views_style_plugin'] instanceof Serializer;
     }))
-      ->willReturn()
+      ->willReturn('')
       ->shouldBeCalled();
 
     $view_serializer_style = new Serializer([], 'dummy_serializer', [], $mock_serializer->reveal(), ['json', 'xml'], ['json' => 'serialization', 'xml' => 'serialization']);

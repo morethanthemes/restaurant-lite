@@ -235,7 +235,7 @@ class SelectTest extends DatabaseTestBase {
       ->execute()->fetchCol();
 
     $this->assertCount(1, $names, 'Correct number of records found with NULL age.');
-    $this->assertEquals('Fozzie', $names[0], 'Correct record returned for NULL age.');
+    $this->assertEquals('Ernie', $names[0], 'Correct record returned for NULL age.');
   }
 
   /**
@@ -551,21 +551,6 @@ class SelectTest extends DatabaseTestBase {
   }
 
   /**
-   * Tests deprecation of the 'throw_exception' option.
-   *
-   * @group legacy
-   */
-  public function testLegacyThrowExceptionOption(): void {
-    $this->expectDeprecation("Passing a 'throw_exception' option to %AExceptionHandler::handleExecutionException is deprecated in drupal:9.2.0 and is removed in drupal:10.0.0. Always catch exceptions. See https://www.drupal.org/node/3201187");
-    // This query will fail because the table does not exist.
-    $this->assertNull($this->connection->select('some_table_that_does_not_exist', 't', ['throw_exception' => FALSE])
-      ->fields('t')
-      ->countQuery()
-      ->execute()
-    );
-  }
-
-  /**
    * Tests that an invalid count query throws an exception.
    */
   public function testInvalidSelectCount() {
@@ -604,6 +589,56 @@ class SelectTest extends DatabaseTestBase {
     catch (InvalidQueryException $e) {
       $this->assertEquals("Query condition 'age NOT IN ()' cannot be empty.", $e->getMessage());
     }
+  }
+
+  /**
+   * Data provider for testNonArrayOperatorWithArrayValueCondition().
+   *
+   * @return array[]
+   *   Array of non array compatible operators and its value in the expected
+   *   exception message.
+   */
+  public function providerNonArrayOperatorWithArrayValueCondition() {
+    return [
+      '=' => ['=', '='],
+      '>' => ['>', '>'],
+      '<' => ['<', '<'],
+      '>=' => ['>=', '>='],
+      '<=' => ['<=', '<='],
+      'IS NULL' => ['IS NULL', 'IS NULL'],
+      'IS NOT NULL' => ['IS NOT NULL', 'IS NOT NULL'],
+      'Empty string' => ['', '='],
+      'Not set' => [NULL, '='],
+    ];
+  }
+
+  /**
+   * Tests thrown exception for non array operator conditions with array value.
+   *
+   * @dataProvider providerNonArrayOperatorWithArrayValueCondition
+   */
+  public function testNonArrayOperatorWithArrayValueCondition($operator, $operator_in_exception_message) {
+    $this->expectException(InvalidQueryException::class);
+    $this->expectExceptionMessage("Query condition 'age " . $operator_in_exception_message . " 26, 27' must have an array compatible operator.");
+
+    $this->connection->select('test', 't')
+      ->fields('t')
+      ->condition('age', [26, 27], $operator)
+      ->execute();
+  }
+
+  /**
+   * Tests thrown exception for non array operator conditions with array value.
+   *
+   * @dataProvider providerNonArrayOperatorWithArrayValueCondition
+   * @group legacy
+   */
+  public function testNonArrayOperatorWithArrayValueConditionDeprecated($operator, $operator_in_exception_message) {
+    $this->expectDeprecation('Calling Drupal\Core\Database\Query\Condition::condition() without an array compatible operator is deprecated in drupal:10.1.0 and will be required in drupal:11.0.0. See https://www.drupal.org/node/3350985');
+    $this->connection->select('test', 't')
+      ->fields('t')
+      ->condition('age', [26], $operator)
+      ->execute();
   }
 
 }

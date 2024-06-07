@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Extension;
 
 use Drupal\Component\Version\Constraint;
@@ -53,13 +55,11 @@ class DependencyTest extends UnitTestCase {
     $dependency = new Dependency('paragraphs_demo', 'paragraphs', '>8.x-1.1');
     $this->assertTrue($dependency->isCompatible('1.2'));
     $reflected_constraint = (new \ReflectionObject($dependency))->getProperty('constraint');
-    $reflected_constraint->setAccessible(TRUE);
     $constraint = $reflected_constraint->getValue($dependency);
     $this->assertInstanceOf(Constraint::class, $constraint);
 
     $dependency = unserialize(serialize($dependency));
     $reflected_constraint = (new \ReflectionObject($dependency))->getProperty('constraint');
-    $reflected_constraint->setAccessible(TRUE);
     $constraint = $reflected_constraint->getValue($dependency);
     $this->assertNull($constraint);
     $this->assertTrue($dependency->isCompatible('1.2'));

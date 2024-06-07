@@ -198,6 +198,7 @@ class ConfigFileContentTest extends KernelTestBase {
         // HTML/XML in values.
         'HTML' => '<strong> <bold> <em> <blockquote>',
         // UTF-8 in values.
+        // cspell:disable-next-line
         'UTF-8' => 'FrançAIS is ÜBER-åwesome',
         // Unicode in keys and values.
         // cSpell:disable-next-line
@@ -207,9 +208,9 @@ class ConfigFileContentTest extends KernelTestBase {
     ];
 
     // Encode and write, and reload and decode the configuration data.
-    $filestorage = new FileStorage(Settings::get('config_sync_directory'));
-    $filestorage->write($name, $config_data);
-    $config_parsed = $filestorage->read($name);
+    $file_storage = new FileStorage(Settings::get('config_sync_directory'));
+    $file_storage->write($name, $config_data);
+    $config_parsed = $file_storage->read($name);
 
     $key = 'numeric keys';
     $this->assertSame($config_data[$key], $config_parsed[$key]);

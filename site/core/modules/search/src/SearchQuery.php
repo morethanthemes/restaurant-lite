@@ -314,14 +314,14 @@ class SearchQuery extends SelectExtender {
         }
         $has_or = TRUE;
         $has_new_scores = FALSE;
-        $queryor = $this->connection->condition('OR');
+        $query_or = $this->connection->condition('OR');
         foreach ($key as $or) {
           [$num_new_scores] = $this->parseWord($or);
           $has_new_scores |= $num_new_scores;
-          $queryor->condition('d.data', "% $or %", 'LIKE');
+          $query_or->condition('d.data', "% $or %", 'LIKE');
         }
-        if (count($queryor)) {
-          $this->conditions->condition($queryor);
+        if (count($query_or)) {
+          $this->conditions->condition($query_or);
           // A group of OR keywords only needs to match once.
           $this->matches += ($has_new_scores > 0);
         }
@@ -521,7 +521,7 @@ class SearchQuery extends SelectExtender {
     // search expression. So, use string replacement to change this to a
     // calculated query expression, counting the number of occurrences so
     // in the execute() method we can add arguments.
-    while (strpos($score, 'i.relevance') !== FALSE) {
+    while (str_contains($score, 'i.relevance')) {
       $pieces = explode('i.relevance', $score, 2);
       $score = implode('((ROUND(:normalization_' . $this->relevance_count . ', 4)) * i.score * t.count)', $pieces);
       $this->relevance_count++;

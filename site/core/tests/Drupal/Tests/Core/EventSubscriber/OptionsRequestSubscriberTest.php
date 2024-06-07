@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\EventSubscriber;
 
 use Drupal\Core\EventSubscriber\OptionsRequestSubscriber;
@@ -28,7 +30,7 @@ class OptionsRequestSubscriberTest extends UnitTestCase {
     $route_provider->getRouteCollectionForRequest($request)->shouldNotBeCalled();
 
     $subscriber = new OptionsRequestSubscriber($route_provider->reveal());
-    $event = new RequestEvent($kernel->reveal(), $request, HttpKernelInterface::MASTER_REQUEST);
+    $event = new RequestEvent($kernel->reveal(), $request, HttpKernelInterface::MAIN_REQUEST);
     $subscriber->onRequest($event);
 
     $this->assertFalse($event->hasResponse());
@@ -45,7 +47,7 @@ class OptionsRequestSubscriberTest extends UnitTestCase {
     $route_provider->getRouteCollectionForRequest($request)->willReturn(new RouteCollection())->shouldBeCalled();
 
     $subscriber = new OptionsRequestSubscriber($route_provider->reveal());
-    $event = new RequestEvent($kernel->reveal(), $request, HttpKernelInterface::MASTER_REQUEST);
+    $event = new RequestEvent($kernel->reveal(), $request, HttpKernelInterface::MAIN_REQUEST);
     $subscriber->onRequest($event);
 
     $this->assertFalse($event->hasResponse());
@@ -63,7 +65,7 @@ class OptionsRequestSubscriberTest extends UnitTestCase {
     $route_provider->getRouteCollectionForRequest($request)->willReturn($collection)->shouldBeCalled();
 
     $subscriber = new OptionsRequestSubscriber($route_provider->reveal());
-    $event = new RequestEvent($kernel->reveal(), $request, HttpKernelInterface::MASTER_REQUEST);
+    $event = new RequestEvent($kernel->reveal(), $request, HttpKernelInterface::MAIN_REQUEST);
     $subscriber->onRequest($event);
 
     $this->assertTrue($event->hasResponse());

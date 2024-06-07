@@ -258,6 +258,12 @@ class HandlerTest extends ViewTestBase {
     $expected_options = ['none', 'nid'];
     $this->assertEquals($expected_options, $options);
 
+    // Change the Row plugin to display "Content".
+    $this->drupalGet('admin/structure/views/nojs/display/test_handler_relationships/default/row');
+    $this->submitForm(['row[type]' => 'entity:node'], 'Apply');
+    $this->assertSession()->fieldExists('row_options[relationship]');
+    $this->submitForm(['row_options[view_mode]' => 'default'], 'Apply');
+
     // Remove the relationship and make sure no relationship option appears.
     $this->drupalGet('admin/structure/views/nojs/handler/test_handler_relationships/default/relationship/nid');
     $this->submitForm([], 'Remove');
@@ -265,7 +271,11 @@ class HandlerTest extends ViewTestBase {
     $this->assertSession()->fieldNotExists($relationship_name);
 
     // Create a view of comments with node relationship.
-    View::create(['base_table' => 'comment_field_data', 'id' => 'test_get_entity_type'])->save();
+    View::create([
+      'base_table' => 'comment_field_data',
+      'id' => 'test_get_entity_type',
+      'label' => 'Test',
+    ])->save();
     $this->drupalGet('admin/structure/views/nojs/add-handler/test_get_entity_type/default/relationship');
     $this->submitForm(['name[comment_field_data.node]' => 'comment_field_data.node'], 'Add and configure relationships');
     $this->submitForm([], 'Apply');
