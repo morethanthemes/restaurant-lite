@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\taxonomy\Unit\Menu;
 
 use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
@@ -11,7 +13,10 @@ use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
  */
 class TaxonomyLocalTasksTest extends LocalTaskIntegrationTestBase {
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     $this->directoryList = ['taxonomy' => 'core/modules/taxonomy'];
     parent::setUp();
   }
@@ -23,7 +28,7 @@ class TaxonomyLocalTasksTest extends LocalTaskIntegrationTestBase {
    */
   public function testTaxonomyPageLocalTasks($route, $subtask = []) {
     $tasks = [
-      0 => ['entity.taxonomy_term.canonical', 'entity.taxonomy_term.edit_form'],
+      0 => ['entity.taxonomy_term.canonical', 'entity.taxonomy_term.edit_form', 'entity.taxonomy_term.delete_form'],
     ];
     if ($subtask) {
       $tasks[] = $subtask;

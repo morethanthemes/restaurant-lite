@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\system\Unit\Routing;
 
 use Drupal\Core\Routing\RouteBuildEvent;
@@ -37,6 +39,27 @@ class AdminRouteSubscriberTest extends UnitTestCase {
     $data['admin prefix'] = [
       new Route('/admin/foo'),
       TRUE,
+    ];
+    $data['admin only'] = [
+      new Route('/admin'),
+      TRUE,
+    ];
+    $data['admin in part of a word'] = [
+      new Route('/administration/foo'),
+      NULL,
+    ];
+    $data['admin in part of a word with admin_route option'] = [
+      (new Route('/administration/foo'))
+        ->setOption('_admin_route', TRUE),
+      TRUE,
+    ];
+    $data['admin not at the start of the path'] = [
+      new Route('/foo/admin/bar'),
+      NULL,
+    ];
+    $data['admin in part of a word not at the start of the path'] = [
+      new Route('/foo/administration/bar'),
+      NULL,
     ];
     $data['admin option'] = [
       (new Route('/foo'))

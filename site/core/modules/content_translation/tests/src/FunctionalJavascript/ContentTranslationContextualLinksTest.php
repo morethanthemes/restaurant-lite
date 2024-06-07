@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\content_translation\FunctionalJavascript;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
@@ -22,12 +24,17 @@ class ContentTranslationContextualLinksTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['content_translation', 'contextual', 'node'];
+  protected static $modules = ['content_translation', 'contextual', 'node'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Set up an additional language.
@@ -37,14 +44,9 @@ class ContentTranslationContextualLinksTest extends WebDriverTestBase {
     $this->drupalCreateContentType(['type' => 'page']);
 
     // Enable content translation.
-    $this->drupalLogin($this->rootUser);
-    $this->drupalGet('admin/config/regional/content-language');
-    $edit = [
-      'entity_types[node]' => TRUE,
-      'settings[node][page][translatable]' => TRUE,
-    ];
-    $this->drupalPostForm(NULL, $edit, t('Save configuration'));
-    $this->drupalLogout();
+    $content_translation_manager = $this->container->get('content_translation.manager');
+    $content_translation_manager->setEnabled('node', 'page', TRUE);
+    $this->rebuildContainer();
 
     // Create a translator user.
     $permissions = [
@@ -66,7 +68,7 @@ class ContentTranslationContextualLinksTest extends WebDriverTestBase {
     $this->drupalLogin($this->translator);
     $this->drupalGet('node/' . $node->id());
     $link = $this->assertSession()->waitForElement('css', '[data-contextual-id^="node:node=1"] .contextual-links a:contains("Translate")');
-    $this->assertContains('node/1/translations', $link->getAttribute('href'));
+    $this->assertStringContainsString('node/1/translations', $link->getAttribute('href'));
   }
 
 }

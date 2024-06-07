@@ -1,0 +1,10 @@
+name: 'Module info type comment test'
+type: module # Test that extension discovery works with a trailing comment for the type element.
+description: 'Support module for module system testing.'
+package: Testing
+# version: VERSION
+
+# Information added by Drupal.org packaging script on 2024-06-06
+version: '10.2.7'
+project: 'drupal'
+datestamp: 1717660126

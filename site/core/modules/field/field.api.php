@@ -17,8 +17,8 @@
  *
  * In the Field API, each field has a type, which determines what kind of data
  * (integer, string, date, etc.) the field can hold, which settings it provides,
- * and so on. The data type(s) accepted by a field are defined in
- * hook_field_schema().
+ * and so on. The data type(s) accepted by a field are defined in the class
+ * implementing \Drupal\Core\Field\FieldItemInterface::schema() method.
  *
  * Field types are plugins annotated with class
  * \Drupal\Core\Field\Annotation\FieldType, and implement plugin interface
@@ -53,7 +53,25 @@
 function hook_field_info_alter(&$info) {
   // Change the default widget for fields of type 'foo'.
   if (isset($info['foo'])) {
-    $info['foo']['default widget'] = 'mymodule_widget';
+    $info['foo']['default_widget'] = 'mymodule_widget';
+  }
+}
+
+/**
+ * Alters the UI field definitions.
+ *
+ * This hook can be used for altering field definitions available in the UI
+ * dynamically per entity type. For example, it can be used to hide field types
+ * that are incompatible with an entity type.
+ *
+ * @param array $ui_definitions
+ *   Definition of all field types that can be added via UI.
+ * @param string $entity_type_id
+ *   The entity type id.
+ */
+function hook_field_info_entity_type_ui_definitions_alter(array &$ui_definitions, string $entity_type_id) {
+  if ($entity_type_id === 'node') {
+    unset($ui_definitions['field_type_not_compatible_with_node']);
   }
 }
 
@@ -105,13 +123,13 @@ function hook_field_ui_preconfigured_options_alter(array &$options, $field_type)
  * @see entity_crud
  */
 function hook_field_storage_config_update_forbid(\Drupal\field\FieldStorageConfigInterface $field_storage, \Drupal\field\FieldStorageConfigInterface $prior_field_storage) {
-  if ($field_storage->module == 'options' && $field_storage->hasData()) {
+  if ($field_storage->getTypeProvider() == 'options' && $field_storage->hasData()) {
     // Forbid any update that removes allowed values with actual data.
     $allowed_values = $field_storage->getSetting('allowed_values');
     $prior_allowed_values = $prior_field_storage->getSetting('allowed_values');
     $lost_keys = array_keys(array_diff_key($prior_allowed_values, $allowed_values));
     if (_options_values_in_use($field_storage->getTargetEntityTypeId(), $field_storage->getName(), $lost_keys)) {
-      throw new \Drupal\Core\Entity\Exception\FieldStorageDefinitionUpdateForbiddenException(t('A list field (@field_name) with existing data cannot have its keys changed.', ['@field_name' => $field_storage->getName()]));
+      throw new \Drupal\Core\Entity\Exception\FieldStorageDefinitionUpdateForbiddenException("A list field '{$field_storage->getName()}' with existing data cannot have its keys changed.");
     }
   }
 }
@@ -165,10 +183,79 @@ function hook_field_widget_info_alter(array &$info) {
  *
  * This hook can only modify individual elements within a field widget and
  * cannot alter the top level (parent element) for multi-value fields. In most
- * cases, you should use hook_field_widget_multivalue_form_alter() instead and
+ * cases, you should use hook_field_widget_complete_form_alter() instead and
  * loop over the elements.
  *
- * @param $element
+ * @param array $element
+ *   The field widget form element as constructed by
+ *   \Drupal\Core\Field\WidgetBaseInterface::form().
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   The current state of the form.
+ * @param array $context
+ *   An associative array containing the following key-value pairs:
+ *   - form: The form structure to which widgets are being attached. This may be
+ *     a full form structure, or a sub-element of a larger form.
+ *   - widget: The widget plugin instance.
+ *   - items: The field values, as a
+ *     \Drupal\Core\Field\FieldItemListInterface object.
+ *   - delta: The order of this item in the array of subelements (0, 1, 2, etc).
+ *   - default: A boolean indicating whether the form is being shown as a dummy
+ *     form to set default values.
+ *
+ * @see \Drupal\Core\Field\WidgetBaseInterface::form()
+ * @see \Drupal\Core\Field\WidgetBase::formSingleElement()
+ * @see hook_field_widget_single_element_WIDGET_TYPE_form_alter()
+ * @see hook_field_widget_complete_form_alter()
+ * @see https://www.drupal.org/node/3180429
+ */
+function hook_field_widget_single_element_form_alter(array &$element, \Drupal\Core\Form\FormStateInterface $form_state, array $context) {
+  // Add a css class to widget form elements for all fields of type my_type.
+  $field_definition = $context['items']->getFieldDefinition();
+  if ($field_definition->getType() == 'my_type') {
+    // Be sure not to overwrite existing attributes.
+    $element['#attributes']['class'][] = 'my-class';
+  }
+}
+
+/**
+ * Alter widget forms for a specific widget provided by another module.
+ *
+ * Modules can implement
+ * hook_field_widget_single_element_WIDGET_TYPE_form_alter() to modify a
+ * specific widget form, rather than using
+ * hook_field_widget_single_element_form_alter() and checking the widget type.
+ *
+ * This hook can only modify individual elements within a field widget and
+ * cannot alter the top level (parent element) for multi-value fields. In most
+ * cases, you should use hook_field_widget_complete_WIDGET_TYPE_form_alter()
+ * instead and loop over the elements.
+ *
+ * @param array $element
+ *   The field widget form element as constructed by
+ *   \Drupal\Core\Field\WidgetBaseInterface::form().
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   The current state of the form.
+ * @param array $context
+ *   An associative array. See hook_field_widget_single_element_form_alter()
+ *   for the structure and content of the array.
+ *
+ * @see https://www.drupal.org/node/3180429
+ * @see \Drupal\Core\Field\WidgetBaseInterface::form()
+ * @see \Drupal\Core\Field\WidgetBase::formSingleElement()
+ * @see hook_field_widget_single_element_form_alter()
+ * @see hook_field_widget_complete_WIDGET_TYPE_form_alter()
+ */
+function hook_field_widget_single_element_WIDGET_TYPE_form_alter(array &$element, \Drupal\Core\Form\FormStateInterface $form_state, array $context) {
+  // Code here will only act on widgets of type WIDGET_TYPE.  For example,
+  // hook_field_widget_single_element_mymodule_autocomplete_form_alter() will
+  // only act on widgets of type 'mymodule_autocomplete'.
+  $element['#autocomplete_route_name'] = 'mymodule.autocomplete_route';
+}
+
+/**
+ * Alter the complete form for field widgets provided by other modules.
+ *
+ * @param $field_widget_complete_form
  *   The field widget form element as constructed by
  *   \Drupal\Core\Field\WidgetBaseInterface::form().
  * @param $form_state
@@ -185,118 +272,44 @@ function hook_field_widget_info_alter(array &$info) {
  *     form to set default values.
  *
  * @see \Drupal\Core\Field\WidgetBaseInterface::form()
- * @see \Drupal\Core\Field\WidgetBase::formSingleElement()
- * @see hook_field_widget_WIDGET_TYPE_form_alter()
- * @see hook_field_widget_multivalue_form_alter()
+ * @see \Drupal\Core\Field\WidgetBase::form()
+ * @see hook_field_widget_complete_WIDGET_TYPE_form_alter()
+ * @see https://www.drupal.org/node/3180429
  */
-function hook_field_widget_form_alter(&$element, \Drupal\Core\Form\FormStateInterface $form_state, $context) {
-  // Add a css class to widget form elements for all fields of type mytype.
-  $field_definition = $context['items']->getFieldDefinition();
-  if ($field_definition->getType() == 'mytype') {
-    // Be sure not to overwrite existing attributes.
-    $element['#attributes']['class'][] = 'myclass';
-  }
+function hook_field_widget_complete_form_alter(&$field_widget_complete_form, \Drupal\Core\Form\FormStateInterface $form_state, $context) {
+  $field_widget_complete_form['#attributes']['class'][] = 'my-class';
 }
 
 /**
- * Alter widget forms for a specific widget provided by another module.
+ * Alter the complete form for a specific widget provided by other modules.
  *
- * Modules can implement hook_field_widget_WIDGET_TYPE_form_alter() to modify a
- * specific widget form, rather than using hook_field_widget_form_alter() and
- * checking the widget type.
+ * Modules can implement hook_field_widget_complete_WIDGET_TYPE_form_alter()
+ * to modify a specific widget form, rather than using
+ * hook_field_widget_complete_form_alter() and checking the widget type.
  *
- * This hook can only modify individual elements within a field widget and
- * cannot alter the top level (parent element) for multi-value fields. In most
- * cases, you should use hook_field_widget_multivalue_WIDGET_TYPE_form_alter()
- * instead and loop over the elements.
- *
- * @param $element
+ * @param $field_widget_complete_form
  *   The field widget form element as constructed by
  *   \Drupal\Core\Field\WidgetBaseInterface::form().
  * @param $form_state
  *   The current state of the form.
  * @param $context
- *   An associative array. See hook_field_widget_form_alter() for the structure
- *   and content of the array.
- *
- * @see \Drupal\Core\Field\WidgetBaseInterface::form()
- * @see \Drupal\Core\Field\WidgetBase::formSingleElement()
- * @see hook_field_widget_form_alter()
- * @see hook_field_widget_multivalue_WIDGET_TYPE_form_alter()
- */
-function hook_field_widget_WIDGET_TYPE_form_alter(&$element, \Drupal\Core\Form\FormStateInterface $form_state, $context) {
-  // Code here will only act on widgets of type WIDGET_TYPE.  For example,
-  // hook_field_widget_mymodule_autocomplete_form_alter() will only act on
-  // widgets of type 'mymodule_autocomplete'.
-  $element['#autocomplete_route_name'] = 'mymodule.autocomplete_route';
-}
-
-/**
- * Alter forms for multi-value field widgets provided by other modules.
- *
- * To alter the individual elements within the widget, loop over
- * \Drupal\Core\Render\Element::children($elements).
- *
- * @param array $elements
- *   The field widget form elements as constructed by
- *   \Drupal\Core\Field\WidgetBase::formMultipleElements().
- * @param \Drupal\Core\Form\FormStateInterface $form_state
- *   The current state of the form.
- * @param array $context
  *   An associative array containing the following key-value pairs:
  *   - form: The form structure to which widgets are being attached. This may be
  *     a full form structure, or a sub-element of a larger form.
  *   - widget: The widget plugin instance.
  *   - items: The field values, as a
  *     \Drupal\Core\Field\FieldItemListInterface object.
+ *   - delta: The order of this item in the array of subelements (0, 1, 2, etc).
  *   - default: A boolean indicating whether the form is being shown as a dummy
  *     form to set default values.
  *
  * @see \Drupal\Core\Field\WidgetBaseInterface::form()
- * @see \Drupal\Core\Field\WidgetBase::formMultipleElements()
- * @see hook_field_widget_multivalue_WIDGET_TYPE_form_alter()
+ * @see \Drupal\Core\Field\WidgetBase::form()
+ * @see hook_field_widget_complete_form_alter()
+ * @see https://www.drupal.org/node/3180429
  */
-function hook_field_widget_multivalue_form_alter(array &$elements, \Drupal\Core\Form\FormStateInterface $form_state, array $context) {
-  // Add a css class to widget form elements for all fields of type mytype.
-  $field_definition = $context['items']->getFieldDefinition();
-  if ($field_definition->getType() == 'mytype') {
-    // Be sure not to overwrite existing attributes.
-    $elements['#attributes']['class'][] = 'myclass';
-  }
-}
-
-/**
- * Alter multi-value widget forms for a widget provided by another module.
- *
- * Modules can implement hook_field_widget_multivalue_WIDGET_TYPE_form_alter() to
- * modify a specific widget form, rather than using
- * hook_field_widget_form_alter() and checking the widget type.
- *
- * To alter the individual elements within the widget, loop over
- * \Drupal\Core\Render\Element::children($elements).
- *
- * @param array $elements
- *   The field widget form elements as constructed by
- *   \Drupal\Core\Field\WidgetBase::formMultipleElements().
- * @param \Drupal\Core\Form\FormStateInterface $form_state
- *   The current state of the form.
- * @param array $context
- *   An associative array. See hook_field_widget_multivalue_form_alter() for
- *   the structure and content of the array.
- *
- * @see \Drupal\Core\Field\WidgetBaseInterface::form()
- * @see \Drupal\Core\Field\WidgetBase::formMultipleElements()
- * @see hook_field_widget_multivalue_form_alter()
- */
-function hook_field_widget_multivalue_WIDGET_TYPE_form_alter(array &$elements, \Drupal\Core\Form\FormStateInterface $form_state, array $context) {
-  // Code here will only act on widgets of type WIDGET_TYPE. For example,
-  // hook_field_widget_multivalue_mymodule_autocomplete_form_alter() will only
-  // act on widgets of type 'mymodule_autocomplete'.
-  // Change the autocomplete route for each autocomplete element within the
-  // multivalue widget.
-  foreach (Element::children($elements) as $delta => $element) {
-    $elements[$delta]['#autocomplete_route_name'] = 'mymodule.autocomplete_route';
-  }
+function hook_field_widget_complete_WIDGET_TYPE_form_alter(&$field_widget_complete_form, \Drupal\Core\Form\FormStateInterface $form_state, $context) {
+  $field_widget_complete_form['#attributes']['class'][] = 'my-class';
 }
 
 /**
@@ -393,7 +406,7 @@ function hook_field_info_max_weight($entity_type, $bundle, $context, $context_mo
  *   The field storage being purged.
  */
 function hook_field_purge_field_storage(\Drupal\field\Entity\FieldStorageConfig $field_storage) {
-  db_delete('my_module_field_storage_info')
+  \Drupal::database()->delete('my_module_field_storage_info')
     ->condition('uuid', $field_storage->uuid())
     ->execute();
 }
@@ -410,9 +423,34 @@ function hook_field_purge_field_storage(\Drupal\field\Entity\FieldStorageConfig 
  *   The field being purged.
  */
 function hook_field_purge_field(\Drupal\field\Entity\FieldConfig $field) {
-  db_delete('my_module_field_info')
+  \Drupal::database()->delete('my_module_field_info')
     ->condition('id', $field->id())
     ->execute();
+}
+
+/**
+ * Allows modules to alter the field type category information.
+ *
+ * This hook provides a way for modules to modify or add to the existing
+ * category information. Modules can use this hook to modify the properties of
+ * existing categories. It can also be used to define custom field type
+ * categories although the use of YAML-based plugins should be preferred over
+ * the hook.
+ *
+ * @param array &$categories
+ *   An associative array of field type categories, keyed by category machine
+ *    name.
+ *
+ * @see \Drupal\Core\Field\FieldTypeCategoryManager
+ */
+function hook_field_type_category_info_alter(array &$categories) {
+  // Modify or add field type categories.
+  $categories['my_custom_category'] = [
+    'label' => 'My Custom Category',
+    'description' => 'This is a custom category for my field types.',
+  ];
+  // Modify the properties of an existing category.
+  $categories['text']['description'] = 'Modified Text';
 }
 
 /**

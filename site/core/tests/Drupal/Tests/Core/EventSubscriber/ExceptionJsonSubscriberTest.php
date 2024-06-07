@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\EventSubscriber;
 
 use Drupal\Core\Cache\CacheableJsonResponse;
@@ -9,7 +11,7 @@ use Drupal\Core\Http\Exception\CacheableMethodNotAllowedHttpException;
 use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
@@ -27,7 +29,7 @@ class ExceptionJsonSubscriberTest extends UnitTestCase {
   public function testOn4xx(HttpExceptionInterface $exception, $expected_response_class) {
     $kernel = $this->prophesize(HttpKernelInterface::class);
     $request = Request::create('/test');
-    $event = new GetResponseForExceptionEvent($kernel->reveal(), $request, 'GET', $exception);
+    $event = new ExceptionEvent($kernel->reveal(), $request, HttpKernelInterface::MAIN_REQUEST, $exception);
     $subscriber = new ExceptionJsonSubscriber();
     $subscriber->on4xx($event);
     $response = $event->getResponse();

@@ -18,18 +18,11 @@ use Drupal\Core\TypedData\TypedDataInternalPropertiesHelper;
 class ComplexDataNormalizer extends NormalizerBase {
 
   /**
-   * The interface or class that this Normalizer supports.
-   *
-   * @var string
-   */
-  protected $supportedInterfaceOrClass = 'Drupal\Core\TypedData\ComplexDataInterface';
-
-  /**
    * {@inheritdoc}
    */
-  public function normalize($object, $format = NULL, array $context = []) {
+  public function normalize($object, $format = NULL, array $context = []): array|string|int|float|bool|\ArrayObject|NULL {
     $attributes = [];
-    // $object will not always match $supportedInterfaceOrClass.
+    // $object will not always match getSupportedTypes().
     // @see \Drupal\serialization\Normalizer\EntityNormalizer
     // Other normalizers that extend this class may only provide $object that
     // implements \Traversable.
@@ -44,6 +37,24 @@ class ComplexDataNormalizer extends NormalizerBase {
       $attributes[$name] = $this->serializer->normalize($property, $format, $context);
     }
     return $attributes;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasCacheableSupportsMethod(): bool {
+    @trigger_error(__METHOD__ . '() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. Use getSupportedTypes() instead. See https://www.drupal.org/node/3359695', E_USER_DEPRECATED);
+
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSupportedTypes(?string $format): array {
+    return [
+      ComplexDataInterface::class => TRUE,
+    ];
   }
 
 }

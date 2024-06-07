@@ -3,6 +3,8 @@
 namespace Drupal\Core\Asset;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\DependencyInjection\DeprecatedServicePropertyTrait;
+use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\State\StateInterface;
 
 /**
@@ -10,21 +12,42 @@ use Drupal\Core\State\StateInterface;
  */
 class JsCollectionRenderer implements AssetCollectionRendererInterface {
 
+  use DeprecatedServicePropertyTrait;
+
   /**
-   * The state key/value store.
-   *
-   * @var \Drupal\Core\State\StateInterface
+   * {@inheritdoc}
    */
-  protected $state;
+  protected array $deprecatedProperties = ['state' => 'state'];
+
+  /**
+   * The asset query string.
+   *
+   * @var \Drupal\Core\Asset\AssetQueryStringInterface
+   */
+  protected AssetQueryStringInterface $assetQueryString;
+
+  /**
+   * The file URL generator.
+   *
+   * @var \Drupal\Core\File\FileUrlGeneratorInterface
+   */
+  protected $fileUrlGenerator;
 
   /**
    * Constructs a JsCollectionRenderer.
    *
-   * @param \Drupal\Core\State\StateInterface $state
-   *   The state key/value store.
+   * @param \Drupal\Core\State\StateInterface|\Drupal\Core\Asset\AssetQueryStringInterface $asset_query_string
+   *   The asset query string.
+   * @param \Drupal\Core\File\FileUrlGeneratorInterface $file_url_generator
+   *   The file URL generator.
    */
-  public function __construct(StateInterface $state) {
-    $this->state = $state;
+  public function __construct(AssetQueryStringInterface|StateInterface $asset_query_string, FileUrlGeneratorInterface $file_url_generator) {
+    if ($asset_query_string instanceof StateInterface) {
+      @trigger_error('Calling ' . __METHOD__ . '() with the $asset_query_string argument as \Drupal\Core\State\StateInterface instead of \Drupal\Core\Asset\AssetQueryStringInterface is deprecated in drupal:10.2.0 and will be required in drupal:11.0.0. See https://www.drupal.org/node/3358337', E_USER_DEPRECATED);
+      $asset_query_string = \Drupal::service('asset.query_string');
+    }
+    $this->assetQueryString = $asset_query_string;
+    $this->fileUrlGenerator = $file_url_generator;
   }
 
   /**
@@ -44,7 +67,7 @@ class JsCollectionRenderer implements AssetCollectionRendererInterface {
     // flush, forcing browsers to load a new copy of the files, as the
     // URL changed. Files that should not be cached get REQUEST_TIME as
     // query-string instead, to enforce reload on every page request.
-    $default_query_string = $this->state->get('system.css_js_query_string') ?: '0';
+    $default_query_string = $this->assetQueryString->get();
 
     // Defaults for each SCRIPT element.
     $element_defaults = [
@@ -55,9 +78,7 @@ class JsCollectionRenderer implements AssetCollectionRendererInterface {
 
     // Loop through all JS assets.
     foreach ($js_assets as $js_asset) {
-      // Element properties that do not depend on JS asset type.
       $element = $element_defaults;
-      $element['#browsers'] = $js_asset['browsers'];
 
       // Element properties that depend on item type.
       switch ($js_asset['type']) {
@@ -73,8 +94,8 @@ class JsCollectionRenderer implements AssetCollectionRendererInterface {
 
         case 'file':
           $query_string = $js_asset['version'] == -1 ? $default_query_string : 'v=' . $js_asset['version'];
-          $query_string_separator = (strpos($js_asset['data'], '?') !== FALSE) ? '&' : '?';
-          $element['#attributes']['src'] = file_url_transform_relative(file_create_url($js_asset['data']));
+          $query_string_separator = str_contains($js_asset['data'], '?') ? '&' : '?';
+          $element['#attributes']['src'] = $this->fileUrlGenerator->generateString($js_asset['data']);
           // Only add the cache-busting query string if this isn't an aggregate
           // file.
           if (!isset($js_asset['preprocessed'])) {

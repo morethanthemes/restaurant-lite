@@ -1,17 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Plugin;
 
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\Mapper\MapperInterface;
 use Drupal\Component\Plugin\PluginManagerBase;
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 
 /**
  * @coversDefaultClass \Drupal\Component\Plugin\PluginManagerBase
  * @group Plugin
  */
 class PluginManagerBaseTest extends TestCase {
+
+  use ProphecyTrait;
 
   /**
    * A callback method for mocking FactoryInterface objects.
@@ -33,9 +38,7 @@ class PluginManagerBaseTest extends TestCase {
    * Generates a mocked FactoryInterface object with known properties.
    */
   public function getMockFactoryInterface($expects_count) {
-    $mock_factory = $this->getMockBuilder('Drupal\Component\Plugin\Factory\FactoryInterface')
-      ->setMethods(['createInstance'])
-      ->getMockForAbstractClass();
+    $mock_factory = $this->createMock('Drupal\Component\Plugin\Factory\FactoryInterface');
     $mock_factory->expects($this->exactly($expects_count))
       ->method('createInstance')
       ->willReturnCallback([$this, 'createInstanceCallback']);
@@ -53,7 +56,6 @@ class PluginManagerBaseTest extends TestCase {
     // PluginManagerBase::createInstance() looks for a factory object and then
     // calls createInstance() on it. So we have to mock a factory object.
     $factory_ref = new \ReflectionProperty($manager, 'factory');
-    $factory_ref->setAccessible(TRUE);
     $factory_ref->setValue($manager, $this->getMockFactoryInterface(1));
 
     // Finally the test.
@@ -74,7 +76,6 @@ class PluginManagerBaseTest extends TestCase {
     $manager = new StubFallbackPluginManager();
     // Put our stubbed factory on the base object.
     $factory_ref = new \ReflectionProperty($manager, 'factory');
-    $factory_ref->setAccessible(TRUE);
 
     // Set up the configuration array.
     $configuration_array = ['config' => 'something'];
@@ -121,13 +122,8 @@ class PluginManagerBaseTest extends TestCase {
     $manager = $this->getMockBuilder(PluginManagerBase::class)
       ->getMockForAbstractClass();
     // Set the expected exception thrown by ::getInstance.
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(\BadMethodCallException::class);
-      $this->expectExceptionMessage(sprintf('%s does not support this method unless %s::$mapper is set.', get_class($manager), get_class($manager)));
-    }
-    else {
-      $this->setExpectedException(\BadMethodCallException::class, sprintf('%s does not support this method unless %s::$mapper is set.', get_class($manager), get_class($manager)));
-    }
+    $this->expectException(\BadMethodCallException::class);
+    $this->expectExceptionMessage(sprintf('%s does not support this method unless %s::$mapper is set.', get_class($manager), get_class($manager)));
     $manager->getInstance($options);
   }
 

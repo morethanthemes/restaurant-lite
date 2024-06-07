@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\field\Kernel;
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\field\Entity\FieldConfig;
@@ -18,7 +19,14 @@ abstract class FieldKernelTestBase extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['user', 'system', 'field', 'text', 'entity_test', 'field_test'];
+  protected static $modules = [
+    'user',
+    'system',
+    'field',
+    'text',
+    'entity_test',
+    'field_test',
+  ];
 
   /**
    * Bag of created field storages and fields.
@@ -37,22 +45,26 @@ abstract class FieldKernelTestBase extends KernelTestBase {
   protected $fieldTestData;
 
   /**
+   * @var string
+   */
+  protected string $entityId;
+
+  /**
    * Set the default field storage backend for fields created during tests.
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->fieldTestData = new \ArrayObject([], \ArrayObject::ARRAY_AS_PROPS);
 
     $this->installEntitySchema('entity_test');
     $this->installEntitySchema('user');
-    $this->installSchema('system', ['sequences', 'key_value']);
 
     // Set default storage backend and configure the theme system.
-    $this->installConfig(['field', 'system']);
+    $this->installConfig(['field', 'system', 'user']);
 
     // Create user 1.
-    $storage = \Drupal::entityManager()->getStorage('user');
+    $storage = \Drupal::entityTypeManager()->getStorage('user');
     $storage
       ->create([
         'uid' => 1,
@@ -86,7 +98,7 @@ abstract class FieldKernelTestBase extends KernelTestBase {
     $field = 'field' . $suffix;
     $field_definition = 'field_definition' . $suffix;
 
-    $this->fieldTestData->$field_name = mb_strtolower($this->randomMachineName() . '_field_name' . $suffix);
+    $this->fieldTestData->$field_name = $this->randomMachineName() . '_field_name' . $suffix;
     $this->fieldTestData->$field_storage = FieldStorageConfig::create([
       'field_name' => $this->fieldTestData->$field_name,
       'entity_type' => $entity_type,
@@ -107,7 +119,8 @@ abstract class FieldKernelTestBase extends KernelTestBase {
     $this->fieldTestData->$field = FieldConfig::create($this->fieldTestData->$field_definition);
     $this->fieldTestData->$field->save();
 
-    entity_get_form_display($entity_type, $bundle, 'default')
+    \Drupal::service('entity_display.repository')
+      ->getFormDisplay($entity_type, $bundle)
       ->setComponent($this->fieldTestData->$field_name, [
         'type' => 'test_field_widget',
         'settings' => [
@@ -128,7 +141,7 @@ abstract class FieldKernelTestBase extends KernelTestBase {
    */
   protected function entitySaveReload(EntityInterface $entity) {
     $entity->save();
-    $controller = $this->container->get('entity.manager')->getStorage($entity->getEntityTypeId());
+    $controller = $this->container->get('entity_type.manager')->getStorage($entity->getEntityTypeId());
     $controller->resetCache();
     return $controller->load($entity->id());
   }
@@ -142,7 +155,7 @@ abstract class FieldKernelTestBase extends KernelTestBase {
   protected function entityValidateAndSave(EntityInterface $entity) {
     $violations = $entity->validate();
     if ($violations->count()) {
-      $this->fail($violations);
+      $this->fail((string) $violations);
     }
     else {
       $entity->save();
@@ -154,7 +167,8 @@ abstract class FieldKernelTestBase extends KernelTestBase {
    *
    * @param $cardinality
    *   Number of values to generate.
-   * @return
+   *
+   * @return array
    *   An array of random values, in the format expected for field values.
    */
   protected function _generateTestFieldValues($cardinality) {
@@ -184,6 +198,8 @@ abstract class FieldKernelTestBase extends KernelTestBase {
    *   (Optional) The name of the column to check. Defaults to 'value'.
    */
   protected function assertFieldValues(EntityInterface $entity, $field_name, $expected_values, $langcode = LanguageInterface::LANGCODE_NOT_SPECIFIED, $column = 'value') {
+    $expected_values_count = count($expected_values);
+
     // Re-load the entity to make sure we have the latest changes.
     $storage = $this->container->get('entity_type.manager')
       ->getStorage($entity->getEntityTypeId());
@@ -194,9 +210,9 @@ abstract class FieldKernelTestBase extends KernelTestBase {
     // Filter out empty values so that they don't mess with the assertions.
     $field->filterEmptyItems();
     $values = $field->getValue();
-    $this->assertEqual(count($values), count($expected_values), 'Expected number of values were saved.');
+    $this->assertCount($expected_values_count, $values, 'Expected number of values were saved.');
     foreach ($expected_values as $key => $value) {
-      $this->assertEqual($values[$key][$column], $value, format_string('Value @value was saved correctly.', ['@value' => $value]));
+      $this->assertEquals($value, $values[$key][$column], new FormattableMarkup('Value @value was saved correctly.', ['@value' => $value]));
     }
   }
 

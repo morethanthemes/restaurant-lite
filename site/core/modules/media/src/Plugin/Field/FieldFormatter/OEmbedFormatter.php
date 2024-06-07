@@ -10,7 +10,6 @@ use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Url;
 use Drupal\media\Entity\MediaType;
 use Drupal\media\IFrameUrlHelper;
@@ -21,6 +20,7 @@ use Drupal\media\OEmbed\UrlResolverInterface;
 use Drupal\media\Plugin\media\Source\OEmbedInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+// cspell:ignore allowtransparency
 /**
  * Plugin implementation of the 'oembed' formatter.
  *
@@ -38,7 +38,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   },
  * )
  */
-class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInterface {
+class OEmbedFormatter extends FormatterBase {
 
   /**
    * The messenger service.
@@ -150,6 +150,9 @@ class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInt
     return [
       'max_width' => 0,
       'max_height' => 0,
+      'loading' => [
+        'attribute' => 'lazy',
+      ],
     ] + parent::defaultSettings();
   }
 
@@ -191,10 +194,14 @@ class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInt
           '#uri' => $resource->getUrl()->toString(),
           '#width' => $max_width ?: $resource->getWidth(),
           '#height' => $max_height ?: $resource->getHeight(),
+          '#attributes' => [
+            'loading' => $this->getSetting('loading')['attribute'],
+          ],
         ];
       }
       else {
         $url = Url::fromRoute('media.oembed_iframe', [], [
+          'absolute' => TRUE,
           'query' => [
             'url' => $value,
             'max_width' => $max_width,
@@ -220,8 +227,22 @@ class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInt
             'allowtransparency' => TRUE,
             'width' => $max_width ?: $resource->getWidth(),
             'height' => $max_height ?: $resource->getHeight(),
+            'class' => ['media-oembed-content'],
+            'loading' => $this->getSetting('loading')['attribute'],
+          ],
+          '#attached' => [
+            'library' => [
+              'media/oembed.formatter',
+            ],
           ],
         ];
+
+        // An empty title attribute will disable title inheritance, so only
+        // add it if the resource has a title.
+        $title = $resource->getTitle();
+        if ($title) {
+          $element[$delta]['#attributes']['title'] = $title;
+        }
 
         CacheableMetadata::createFromObject($resource)
           ->addCacheTags($this->config->getCacheTags())
@@ -235,7 +256,7 @@ class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInt
    * {@inheritdoc}
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
-    return parent::settingsForm($form, $form_state) + [
+    $form = parent::settingsForm($form, $form_state) + [
       'max_width' => [
         '#type' => 'number',
         '#title' => $this->t('Maximum width'),
@@ -254,7 +275,28 @@ class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInt
         '#field_suffix' => $this->t('pixels'),
         '#min' => 0,
       ],
+      'loading' => [
+        '#type' => 'details',
+        '#title' => $this->t('oEmbed loading'),
+        '#description' => $this->t('Lazy render oEmbed with native loading attribute (<em>loading="lazy"</em>). This improves performance by allowing browsers to lazily load assets.'),
+        'attribute' => [
+          '#title' => $this->t('oEmbed loading attribute'),
+          '#type' => 'radios',
+          '#default_value' => $this->getSetting('loading')['attribute'],
+          '#options' => [
+            'lazy' => $this->t('Lazy (<em>loading="lazy"</em>)'),
+            'eager' => $this->t('Eager (<em>loading="eager"</em>)'),
+          ],
+          '#description' => $this->t('Select the loading attribute for oEmbed. <a href=":link">Learn more about the loading attribute for oEmbed.</a>', [
+            ':link' => 'https://html.spec.whatwg.org/multipage/urls-and-fetching.html#lazy-loading-attributes',
+          ]),
+        ],
+      ],
     ];
+    $form['loading']['attribute']['lazy']['#description'] = $this->t('Delays loading the resource until that section of the page is visible in the browser. When in doubt, lazy loading is recommended.');
+    $form['loading']['attribute']['eager']['#description'] = $this->t('Force browsers to download a resource as soon as possible. This is the browser default for legacy reasons. Only use this option when the resource is always expected to render.');
+
+    return $form;
   }
 
   /**
@@ -278,6 +320,10 @@ class OEmbedFormatter extends FormatterBase implements ContainerFactoryPluginInt
         '%max_height' => $this->getSetting('max_height'),
       ]);
     }
+    $summary[] = $this->t('Loading attribute: @attribute', [
+      '@attribute' => $this->getSetting('loading')['attribute'],
+    ]);
+
     return $summary;
   }
 

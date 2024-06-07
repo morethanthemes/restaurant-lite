@@ -50,7 +50,7 @@ class PathProcessorImageStyles implements InboundPathProcessorInterface {
     }
     // Check if the string '/system/files/styles/' exists inside the path,
     // that means we have a case of private file's image style.
-    elseif (strpos($path, '/system/files/styles/') !== FALSE) {
+    elseif (str_contains($path, '/system/files/styles/')) {
       $path_prefix = '/system/files/styles/';
       $path = substr($path, strpos($path, $path_prefix), strlen($path));
     }
@@ -63,7 +63,7 @@ class PathProcessorImageStyles implements InboundPathProcessorInterface {
 
     // Get the image style, scheme and path.
     if (substr_count($rest, '/') >= 2) {
-      list($image_style, $scheme, $file) = explode('/', $rest, 3);
+      [$image_style, $scheme, $file] = explode('/', $rest, 3);
 
       // Set the file as query parameter.
       $request->query->set('file', $file);

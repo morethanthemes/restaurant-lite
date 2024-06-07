@@ -25,12 +25,17 @@ class SessionAuthenticationTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['basic_auth', 'session_test'];
+  protected static $modules = ['basic_auth', 'session_test'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a test administrator user.
@@ -53,26 +58,26 @@ class SessionAuthenticationTest extends BrowserTestBase {
     // Test that the route is not accessible as an anonymous user.
     $this->drupalGet($protected_url);
     $session = $this->getSession();
-    $this->assertResponse(401, 'An anonymous user cannot access a route protected with basic authentication.');
+    $this->assertSession()->statusCodeEquals(401);
 
     // We should be able to access the route with basic authentication.
     $this->basicAuthGet($protected_url, $this->user->getAccountName(), $this->user->passRaw);
-    $this->assertResponse(200, 'A route protected with basic authentication can be accessed by an authenticated user.');
+    $this->assertSession()->statusCodeEquals(200);
 
     // Check that the correct user is logged in.
-    $this->assertEqual($this->user->id(), json_decode($session->getPage()->getContent())->user, 'The correct user is authenticated on a route with basic authentication.');
+    $this->assertEquals($this->user->id(), json_decode($session->getPage()->getContent())->user, 'The correct user is authenticated on a route with basic authentication.');
     $session->restart();
 
     // If we now try to access a page without basic authentication then we
     // should no longer be logged in.
     $this->drupalGet($unprotected_url);
-    $this->assertResponse(200, 'An unprotected route can be accessed without basic authentication.');
-    $this->assertFalse(json_decode($session->getPage()->getContent())->user, 'The user is no longer authenticated after visiting a page without basic authentication.');
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertEquals(0, json_decode($session->getPage()->getContent())->user, 'The user is no longer authenticated after visiting a page without basic authentication.');
 
     // If we access the protected page again without basic authentication we
     // should get 401 Unauthorized.
     $this->drupalGet($protected_url);
-    $this->assertResponse(401, 'A subsequent request to the same route without basic authentication is not authorized.');
+    $this->assertSession()->statusCodeEquals(401);
   }
 
   /**
@@ -81,14 +86,14 @@ class SessionAuthenticationTest extends BrowserTestBase {
   public function testBasicAuthSession() {
     // Set a session value on a request through basic auth.
     $test_value = 'alpaca';
-    $response = $this->basicAuthGet('session-test/set-session/' . $test_value, $this->user->getUsername(), $this->user->pass_raw);
+    $response = $this->basicAuthGet('session-test/set-session/' . $test_value, $this->user->getAccountName(), $this->user->pass_raw);
     $this->assertSessionData($response, $test_value);
-    $this->assertResponse(200, 'The request to set a session value was successful.');
+    $this->assertSession()->statusCodeEquals(200);
 
     // Test that on a subsequent request the session value is still present.
-    $response = $this->basicAuthGet('session-test/get-session', $this->user->getUsername(), $this->user->pass_raw);
+    $response = $this->basicAuthGet('session-test/get-session', $this->user->getAccountName(), $this->user->pass_raw);
     $this->assertSessionData($response, $test_value);
-    $this->assertResponse(200, 'The request to get a session value was successful.');
+    $this->assertSession()->statusCodeEquals(200);
   }
 
   /**
@@ -98,13 +103,15 @@ class SessionAuthenticationTest extends BrowserTestBase {
    *   A response object containing the session values and the user ID.
    * @param string $expected
    *   The expected session value.
+   *
+   * @internal
    */
-  protected function assertSessionData($response, $expected) {
+  protected function assertSessionData(string $response, string $expected): void {
     $response = json_decode($response, TRUE);
-    $this->assertEqual(['test_value' => $expected], $response['session'], 'The session data matches the expected value.');
+    $this->assertEquals(['test_value' => $expected], $response['session'], 'The session data matches the expected value.');
 
     // Check that we are logged in as the correct user.
-    $this->assertEqual($this->user->id(), $response['user'], 'The correct user is logged in.');
+    $this->assertEquals($this->user->id(), $response['user'], 'The correct user is logged in.');
   }
 
   /**
@@ -121,7 +128,7 @@ class SessionAuthenticationTest extends BrowserTestBase {
     // session cookie should be set, the third party system is responsible for
     // sustaining the session.
     $this->basicAuthGet($no_cookie_url, $this->user->getAccountName(), $this->user->passRaw);
-    $this->assertResponse(200, 'The user is successfully authenticated using basic authentication.');
+    $this->assertSession()->statusCodeEquals(200);
     $this->assertEmpty($this->getSessionCookies());
     // Mink stores some information in the session that breaks the next check if
     // not reset.
@@ -131,7 +138,8 @@ class SessionAuthenticationTest extends BrowserTestBase {
     $this->drupalGet($cookie_url);
     $this->assertEmpty($this->getSessionCookies());
     $edit = ['name' => $this->user->getAccountName(), 'pass' => $this->user->passRaw];
-    $this->drupalPostForm($cookie_url, $edit, t('Log in'));
+    $this->drupalGet($cookie_url);
+    $this->submitForm($edit, 'Log in');
     $this->assertNotEmpty($this->getSessionCookies());
   }
 

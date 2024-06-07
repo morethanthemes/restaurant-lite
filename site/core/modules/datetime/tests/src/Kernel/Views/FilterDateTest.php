@@ -46,11 +46,11 @@ class FilterDateTest extends DateTimeHandlerTestBase {
    *
    * Create nodes with relative dates of yesterday, today, and tomorrow.
    */
-  protected function setUp($import_test_views = TRUE) {
+  protected function setUp($import_test_views = TRUE): void {
     parent::setUp($import_test_views);
 
     // Change field storage to date-only.
-    $storage = FieldStorageConfig::load('node.' . static::$field_name);
+    $storage = FieldStorageConfig::load('node.' . static::$fieldName);
     $storage->setSetting('datetime_type', DateTimeItem::DATETIME_TYPE_DATE);
     $storage->save();
 
@@ -71,14 +71,23 @@ class FilterDateTest extends DateTimeHandlerTestBase {
       $node->save();
       $this->nodes[] = $node;
     }
+
+    // Add a node where the date field is empty.
+    $node = Node::create([
+      'title' => $this->randomMachineName(8),
+      'type' => 'page',
+      'field_date' => [],
+    ]);
+    $node->save();
+    $this->nodes[] = $node;
   }
 
   /**
-   * Test offsets with date-only fields.
+   * Tests offsets with date-only fields.
    */
   public function testDateOffsets() {
     $view = Views::getView('test_filter_datetime');
-    $field = static::$field_name . '_value';
+    $field = static::$fieldName . '_value';
 
     foreach (static::$timezones as $timezone) {
 
@@ -130,15 +139,39 @@ class FilterDateTest extends DateTimeHandlerTestBase {
       ];
       $this->assertIdenticalResultset($view, $expected_result, $this->map);
       $view->destroy();
+
+      // Test the empty operator.
+      $view->initHandlers();
+      $view->filter[$field]->operator = 'empty';
+      $view->setDisplay('default');
+      $this->executeView($view);
+      $expected_result = [
+        ['nid' => $this->nodes[3]->id()],
+      ];
+      $this->assertIdenticalResultset($view, $expected_result, $this->map);
+      $view->destroy();
+
+      // Test the not empty operator.
+      $view->initHandlers();
+      $view->filter[$field]->operator = 'not empty';
+      $view->setDisplay('default');
+      $this->executeView($view);
+      $expected_result = [
+        ['nid' => $this->nodes[0]->id()],
+        ['nid' => $this->nodes[1]->id()],
+        ['nid' => $this->nodes[2]->id()],
+      ];
+      $this->assertIdenticalResultset($view, $expected_result, $this->map);
+      $view->destroy();
     }
   }
 
   /**
-   * Test date filter with date-only fields.
+   * Tests date filter with date-only fields.
    */
   public function testDateIs() {
     $view = Views::getView('test_filter_datetime');
-    $field = static::$field_name . '_value';
+    $field = static::$fieldName . '_value';
 
     foreach (static::$timezones as $timezone) {
 
@@ -189,7 +222,7 @@ class FilterDateTest extends DateTimeHandlerTestBase {
    */
   protected function updateNodesDateFieldsValues(array $dates) {
     foreach ($dates as $index => $date) {
-      $this->nodes[$index]->{static::$field_name}->value = $date;
+      $this->nodes[$index]->{static::$fieldName}->value = $date;
       $this->nodes[$index]->save();
     }
   }

@@ -34,16 +34,6 @@ USAGE;
   exit('CLDR data file not found. (' . $uri . ")\n\n" . $usage . "\n");
 }
 
-// Fake the t() function used in CountryManager.php instead of attempting a full
-// Drupal bootstrap of core/includes/bootstrap.inc (where t() is declared).
-if (!function_exists('t')) {
-
-  function t($string) {
-    return $string;
-  }
-
-}
-
 // Read in existing codes.
 // @todo Allow to remove previously existing country codes.
 // @see https://www.drupal.org/node/1436754
@@ -69,6 +59,14 @@ foreach ($data->main->en->localeDisplayNames->territories as $code => $name) {
   $exclude_codes = [
     // The European Union is not a country.
     'EU',
+    // The Eurozone is not a country.
+    'EZ',
+    // The United Nations is not a country.
+    'UN',
+    // "Pseudo-Accents" is not a country.
+    'XA',
+    // "Pseudo-Bidi" is not a country.
+    'XB',
     // Don't allow "Unknown Region".
     'ZZ',
   ];
@@ -94,7 +92,7 @@ $out = '';
 foreach ($countries as $code => $name) {
   // For .po translation file's sake, use double-quotes instead of escaped
   // single-quotes.
-  $name = (strpos($name, '\'') !== FALSE ? '"' . $name . '"' : "'" . $name . "'");
+  $name = str_contains($name, '\'' ? '"' . $name . '"' : "'" . $name . "'");
   $out .= '      ' . var_export($code, TRUE) . ' => t(' . $name . '),' . "\n";
 }
 

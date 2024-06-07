@@ -4,27 +4,31 @@ namespace Drupal\node\Plugin\Action;
 
 use Drupal\Component\Utility\Tags;
 use Drupal\Core\Action\ConfigurableActionBase;
+use Drupal\Core\Action\Attribute\Action;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Unpublishes a node containing certain keywords.
- *
- * @Action(
- *   id = "node_unpublish_by_keyword_action",
- *   label = @Translation("Unpublish content containing keyword(s)"),
- *   type = "node"
- * )
  */
+#[Action(
+  id: 'node_unpublish_by_keyword_action',
+  label: new TranslatableMarkup('Unpublish content containing keyword(s)'),
+  type: 'node'
+)]
 class UnpublishByKeywordNode extends ConfigurableActionBase {
 
   /**
    * {@inheritdoc}
    */
   public function execute($node = NULL) {
+    $elements = \Drupal::entityTypeManager()
+      ->getViewBuilder('node')
+      ->view(clone $node);
+    $render = \Drupal::service('renderer')->render($elements);
     foreach ($this->configuration['keywords'] as $keyword) {
-      $elements = node_view(clone $node);
-      if (strpos(\Drupal::service('renderer')->render($elements), $keyword) !== FALSE || strpos($node->label(), $keyword) !== FALSE) {
+      if (str_contains($render, $keyword) || str_contains($node->label(), $keyword)) {
         $node->setUnpublished();
         $node->save();
         break;
@@ -46,9 +50,9 @@ class UnpublishByKeywordNode extends ConfigurableActionBase {
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form['keywords'] = [
-      '#title' => t('Keywords'),
+      '#title' => $this->t('Keywords'),
       '#type' => 'textarea',
-      '#description' => t('The content will be unpublished if it contains any of the phrases above. Use a case-sensitive, comma-separated list of phrases. Example: funny, bungee jumping, "Company, Inc."'),
+      '#description' => $this->t('The content will be unpublished if it contains any of the phrases above. Use a case-sensitive, comma-separated list of phrases. Example: funny, bungee jumping, "Company, Inc."'),
       '#default_value' => Tags::implode($this->configuration['keywords']),
     ];
     return $form;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\big_pipe\Unit\Render\Placeholder;
 
 use Drupal\big_pipe\Render\Placeholder\BigPipeStrategy;
@@ -54,7 +56,7 @@ class BigPipeStrategyTest extends UnitTestCase {
       }
     }
     else {
-      $this->assertSame(0, count($processed_placeholders));
+      $this->assertCount(0, $processed_placeholders);
     }
   }
 

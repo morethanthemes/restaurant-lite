@@ -44,6 +44,13 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
   protected $searchManager;
 
   /**
+   * The search index.
+   *
+   * @var \Drupal\search\SearchIndexInterface
+   */
+  protected $searchIndex;
+
+  /**
    * The messenger.
    *
    * @var \Drupal\Core\Messenger\MessengerInterface
@@ -63,12 +70,15 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
    *   The factory for configuration objects.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger.
+   * @param \Drupal\search\SearchIndexInterface $search_index
+   *   The search index.
    */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, SearchPluginManager $search_manager, ConfigFactoryInterface $config_factory, MessengerInterface $messenger) {
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, SearchPluginManager $search_manager, ConfigFactoryInterface $config_factory, MessengerInterface $messenger, SearchIndexInterface $search_index) {
     parent::__construct($entity_type, $storage);
     $this->configFactory = $config_factory;
     $this->searchManager = $search_manager;
     $this->messenger = $messenger;
+    $this->searchIndex = $search_index;
   }
 
   /**
@@ -77,10 +87,11 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
     return new static(
       $entity_type,
-      $container->get('entity.manager')->getStorage($entity_type->id()),
+      $container->get('entity_type.manager')->getStorage($entity_type->id()),
       $container->get('plugin.manager.search'),
       $container->get('config.factory'),
-      $container->get('messenger')
+      $container->get('messenger'),
+      $container->get('search.index')
     );
   }
 
@@ -127,7 +138,7 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
-    /** @var $entity \Drupal\search\SearchPageInterface */
+    /** @var \Drupal\search\SearchPageInterface $entity */
     $row['label'] = $entity->label();
     $row['url']['#markup'] = 'search/' . $entity->getPath();
     // If the search page is active, link to it.
@@ -195,7 +206,7 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
       '#type' => 'details',
       '#title' => $this->t('Indexing progress'),
       '#open' => TRUE,
-      '#description' => $this->t('Only items in the index will appear in search results. To build and maintain the index, a correctly configured <a href=":cron">cron maintenance task</a> is required.', [':cron' => \Drupal::url('system.cron_settings')]),
+      '#description' => $this->t('Only items in the index will appear in search results. To build and maintain the index, a correctly configured <a href=":cron">cron maintenance task</a> is required.', [':cron' => Url::fromRoute('system.cron_settings')->toString()]),
     ];
     $form['status']['status'] = ['#markup' => $status];
     $form['status']['wipe'] = [
@@ -215,19 +226,17 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
     ];
     $form['indexing_throttle']['cron_limit'] = [
       '#type' => 'select',
-      '#title' => $this->t('Number of items to index per cron run'),
+      '#title' => $this->t('Number of items to index per run'),
       '#default_value' => $search_settings->get('index.cron_limit'),
       '#options' => $items,
-      '#description' => $this->t('The maximum number of items indexed in each run of the <a href=":cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing. Some search page types may have their own setting for this.', [':cron' => \Drupal::url('system.cron_settings')]),
+      '#description' => $this->t('The maximum number of items processed per indexing run. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing. Some search page types may have their own setting for this.'),
     ];
     // Indexing settings:
     $form['indexing_settings'] = [
       '#type' => 'details',
       '#title' => $this->t('Default indexing settings'),
       '#open' => TRUE,
-    ];
-    $form['indexing_settings']['info'] = [
-      '#markup' => $this->t("<p>Search pages that use an index may use the default index provided by the Search module, or they may use a different indexing mechanism. These settings are for the default index. <em>Changing these settings will cause the default search index to be rebuilt to reflect the new settings. Searching will continue to work, based on the existing index, but new content won't be indexed until all existing content has been re-indexed.</em></p><p><em>The default settings should be appropriate for the majority of sites.</em></p>"),
+      '#description' => $this->t('Changing these settings will cause the default search index to be rebuilt to reflect the new settings. Searching will continue to work, based on the existing index, but new content will not be indexed until all existing content has been re-indexed.'),
     ];
     $form['indexing_settings']['minimum_word_size'] = [
       '#type' => 'number',
@@ -306,7 +315,7 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
    * {@inheritdoc}
    */
   public function getDefaultOperations(EntityInterface $entity) {
-    /** @var $entity \Drupal\search\SearchPageInterface */
+    /** @var \Drupal\search\SearchPageInterface $entity */
     $operations = parent::getDefaultOperations($entity);
 
     // Prevent the default search from being disabled or deleted.
@@ -344,9 +353,9 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
       $search_settings->set('index.minimum_word_size', $form_state->getValue('minimum_word_size'));
       $search_settings->set('index.overlap_cjk', $form_state->getValue('overlap_cjk'));
       // Specifically mark items in the default index for reindexing, since
-      // these settings are used in the search_index() function.
+      // these settings are used in the SearchIndex::index() function.
       $this->messenger->addStatus($this->t('The default search index will be rebuilt.'));
-      search_mark_for_reindex();
+      $this->searchIndex->markForReindex();
     }
 
     $search_settings
@@ -358,8 +367,7 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
   }
 
   /**
-   * Form submission handler for the reindex button on the search admin settings
-   * form.
+   * Form submission handler for reindex button on search admin settings form.
    */
   public function searchAdminReindexSubmit(array &$form, FormStateInterface $form_state) {
     // Send the user to the confirmation page.

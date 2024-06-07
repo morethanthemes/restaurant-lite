@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Breadcrumb;
 
 use Drupal\Core\Breadcrumb\Breadcrumb;
@@ -19,7 +21,8 @@ class BreadcrumbTest extends UnitTestCase {
   public function testSetLinks() {
     $breadcrumb = new Breadcrumb();
     $breadcrumb->setLinks([new Link('Home', Url::fromRoute('<front>'))]);
-    $this->setExpectedException(\LogicException::class, 'Once breadcrumb links are set, only additional breadcrumb links can be added.');
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('Once breadcrumb links are set, only additional breadcrumb links can be added.');
     $breadcrumb->setLinks([new Link('None', Url::fromRoute('<none>'))]);
   }
 

@@ -29,7 +29,7 @@ class NodeAccessTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'content_moderation',
     'filter',
     'node',
@@ -42,21 +42,19 @@ class NodeAccessTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installEntitySchema('content_moderation_state');
     $this->installEntitySchema('node');
     $this->installEntitySchema('user');
-    $this->installEntitySchema('workflow');
     $this->installConfig(['content_moderation', 'filter']);
-    $this->installSchema('system', ['sequences']);
     $this->installSchema('node', ['node_access']);
 
     // Add a moderated node type.
     $node_type = NodeType::create([
       'type' => 'page',
-      'label' => 'Page',
+      'name' => 'Page',
     ]);
     $node_type->save();
     $workflow = $this->createEditorialWorkflow();
@@ -67,9 +65,9 @@ class NodeAccessTest extends KernelTestBase {
   }
 
   /**
-   * Tests for moderation information methods with node access.
+   * @covers \Drupal\content_moderation\ModerationInformation::getDefaultRevisionId
    */
-  public function testModerationInformation() {
+  public function testGetDefaultRevisionId() {
     // Create an admin user.
     $user = $this->createUser([], NULL, TRUE);
     \Drupal::currentUser()->setAccount($user);
@@ -77,13 +75,11 @@ class NodeAccessTest extends KernelTestBase {
     // Create a node.
     $node = $this->createNode(['type' => 'page']);
     $this->assertEquals($node->getRevisionId(), $this->moderationInformation->getDefaultRevisionId('node', $node->id()));
-    $this->assertEquals($node->getRevisionId(), $this->moderationInformation->getLatestRevisionId('node', $node->id()));
 
     // Create a non-admin user.
     $user = $this->createUser();
     \Drupal::currentUser()->setAccount($user);
     $this->assertEquals($node->getRevisionId(), $this->moderationInformation->getDefaultRevisionId('node', $node->id()));
-    $this->assertEquals($node->getRevisionId(), $this->moderationInformation->getLatestRevisionId('node', $node->id()));
   }
 
 }

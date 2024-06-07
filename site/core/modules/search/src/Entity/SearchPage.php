@@ -208,15 +208,15 @@ class SearchPage extends ConfigEntityBase implements SearchPageInterface, Entity
   }
 
   /**
-   * {@inheritdoc}
+   * Helper callback for uasort() to sort search page entities by status, weight and label.
    */
   public static function sort(ConfigEntityInterface $a, ConfigEntityInterface $b) {
-    /** @var $a \Drupal\search\SearchPageInterface */
-    /** @var $b \Drupal\search\SearchPageInterface */
+    /** @var \Drupal\search\SearchPageInterface $a */
+    /** @var \Drupal\search\SearchPageInterface $b */
     $a_status = (int) $a->status();
     $b_status = (int) $b->status();
     if ($a_status != $b_status) {
-      return ($a_status > $b_status) ? -1 : 1;
+      return $b_status <=> $a_status;
     }
     return parent::sort($a, $b);
   }

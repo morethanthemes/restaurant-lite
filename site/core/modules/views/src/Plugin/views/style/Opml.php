@@ -55,10 +55,6 @@ class Opml extends StylePluginBase {
    * {@inheritdoc}
    */
   public function render() {
-    if (empty($this->view->rowPlugin)) {
-      trigger_error('Drupal\views\Plugin\views\style\Opml: Missing row plugin', E_WARNING);
-      return [];
-    }
     $rows = [];
 
     foreach ($this->view->result as $row_index => $row) {
@@ -71,6 +67,11 @@ class Opml extends StylePluginBase {
       '#view' => $this->view,
       '#options' => $this->options,
       '#rows' => $rows,
+      '#attached' => [
+        'http_header' => [
+          ['Content-Type', 'text/xml; charset=utf-8'],
+        ],
+      ],
     ];
     unset($this->view->row_index);
     return $build;

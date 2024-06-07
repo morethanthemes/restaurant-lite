@@ -5,6 +5,8 @@ namespace Drupal\KernelTests\Core\Entity;
 use Drupal\entity_test\Entity\EntityTestMulRev;
 use Drupal\language\Entity\ConfigurableLanguage;
 
+// cspell:ignore hola
+
 /**
  * Tests translating a non-revisionable field.
  *
@@ -15,13 +17,19 @@ class EntityNonRevisionableTranslatableFieldTest extends EntityKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['entity_test', 'language', 'content_translation'];
+  protected static $modules = [
+    'entity_test',
+    'language',
+    'content_translation',
+  ];
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installEntitySchema('entity_test_mulrev');
-    $this->installEntitySchema('configurable_language');
 
     ConfigurableLanguage::createFromLangcode('es')->save();
   }

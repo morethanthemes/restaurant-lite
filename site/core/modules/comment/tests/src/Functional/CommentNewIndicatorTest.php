@@ -22,7 +22,12 @@ class CommentNewIndicatorTest extends CommentTestBase {
    *
    * @todo Remove this dependency.
    */
-  public static $modules = ['views'];
+  protected static $modules = ['views'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Get node "x new comments" metadata from the server for the current user.
@@ -55,13 +60,13 @@ class CommentNewIndicatorTest extends CommentTestBase {
     // node.
     $this->drupalLogin($this->adminUser);
     $this->drupalGet('node');
-    $this->assertNoLink(t('@count comments', ['@count' => 0]));
-    $this->assertLink(t('Read more'));
+    $this->assertSession()->linkNotExists('0 comments');
+    $this->assertSession()->linkExists('Read more');
     // Verify the data-history-node-last-comment-timestamp attribute, which is
     // used by the drupal.node-new-comments-link library to determine whether
     // a "x new comments" link might be necessary or not. We do this in
     // JavaScript to prevent breaking the render cache.
-    $this->assertIdentical(0, count($this->xpath('//*[@data-history-node-last-comment-timestamp]')), 'data-history-node-last-comment-timestamp attribute is not set.');
+    $this->assertSession()->elementNotExists('xpath', '//*[@data-history-node-last-comment-timestamp]');
 
     // Create a new comment. This helper function may be run with different
     // comment settings so use $comment->save() to avoid complex setup.
@@ -89,13 +94,13 @@ class CommentNewIndicatorTest extends CommentTestBase {
     // value, the drupal.node-new-comments-link library would determine that the
     // node received a comment after the user last viewed it, and hence it would
     // perform an HTTP request to render the "new comments" node link.
-    $this->assertIdentical(1, count($this->xpath('//*[@data-history-node-last-comment-timestamp="' . $comment->getChangedTime() . '"]')), 'data-history-node-last-comment-timestamp attribute is set to the correct value.');
-    $this->assertIdentical(1, count($this->xpath('//*[@data-history-node-field-name="comment"]')), 'data-history-node-field-name attribute is set to the correct value.');
+    $this->assertSession()->elementsCount('xpath', '//*[@data-history-node-last-comment-timestamp="' . $comment->getChangedTime() . '"]', 1);
+    $this->assertSession()->elementsCount('xpath', '//*[@data-history-node-field-name="comment"]', 1);
     // The data will be pre-seeded on this particular page in drupalSettings, to
     // avoid the need for the client to make a separate request to the server.
     $settings = $this->getDrupalSettings();
-    $this->assertEqual($settings['history'], ['lastReadTimestamps' => [1 => 0]]);
-    $this->assertEqual($settings['comment'], [
+    $this->assertEquals(['lastReadTimestamps' => [1 => 0]], $settings['history']);
+    $this->assertEquals([
       'newCommentsLinks' => [
         'node' => [
           'comment' => [
@@ -108,7 +113,7 @@ class CommentNewIndicatorTest extends CommentTestBase {
           ],
         ],
       ],
-    ]);
+    ], $settings['comment']);
     // Pretend the data was not present in drupalSettings, i.e. test the
     // separate request to the server.
     $response = $this->renderNewCommentsNodeLinks([$this->node->id()]);
@@ -117,10 +122,10 @@ class CommentNewIndicatorTest extends CommentTestBase {
     $expected = [
       $this->node->id() => [
         'new_comment_count' => 1,
-        'first_new_comment_link' => $this->node->url('canonical', ['fragment' => 'new']),
+        'first_new_comment_link' => $this->node->toUrl('canonical', ['fragment' => 'new'])->toString(),
       ],
     ];
-    $this->assertIdentical($expected, $json);
+    $this->assertSame($expected, $json);
 
     // Failing to specify node IDs for the endpoint should return a 404.
     $response = $this->renderNewCommentsNodeLinks([]);

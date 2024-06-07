@@ -1,22 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\image\FunctionalJavascript;
 
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
 
 /**
- * Tests validation functions such as min/max resolution.
+ * Tests validation functions such as min/max dimensions.
  *
  * @group image
  */
 class ImageFieldValidateTest extends ImageFieldTestBase {
 
   /**
-   * Test the validation message is displayed only once for ajax uploads.
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * Tests the validation message is displayed only once for ajax uploads.
    */
   public function testAJAXValidationMessage() {
-    $field_name = strtolower($this->randomMachineName());
+    $field_name = $this->randomMachineName();
     $this->createImageField($field_name, 'article', ['cardinality' => -1]);
 
     $this->drupalGet('node/add/article');
@@ -28,10 +35,8 @@ class ImageFieldValidateTest extends ImageFieldTestBase {
     $field->attachFile($this->container->get('file_system')->realpath($text_file->uri));
     $this->assertSession()->waitForElement('css', '.messages--error');
 
-    $elements = $this->xpath('//div[contains(@class, :class)]', [
-      ':class' => 'messages--error',
-    ]);
-    $this->assertEqual(count($elements), 1, 'Ajax validation messages are displayed once.');
+    // Verify that Ajax validation messages are displayed only once.
+    $this->assertSession()->elementsCount('xpath', '//div[contains(@class, "messages--error")]', 1);
   }
 
   /**
@@ -53,7 +58,7 @@ class ImageFieldValidateTest extends ImageFieldTestBase {
       'entity_type' => 'node',
       'bundle' => 'article',
       'field_name' => 'field_dummy_select',
-      'label' => t('Dummy select'),
+      'label' => 'Dummy select',
     ])->save();
 
     \Drupal::entityTypeManager()

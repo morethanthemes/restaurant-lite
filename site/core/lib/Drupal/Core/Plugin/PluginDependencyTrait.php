@@ -33,18 +33,38 @@ trait PluginDependencyTrait {
   protected function getPluginDependencies(PluginInspectionInterface $instance) {
     $dependencies = [];
     $definition = $instance->getPluginDefinition();
+
+    $provider = NULL;
+    $config_dependencies = [];
     if ($definition instanceof PluginDefinitionInterface) {
-      $dependencies['module'][] = $definition->getProvider();
-      if ($definition instanceof DependentPluginDefinitionInterface && $config_dependencies = $definition->getConfigDependencies()) {
-        $dependencies = NestedArray::mergeDeep($dependencies, $config_dependencies);
+      $provider = $definition->getProvider();
+
+      if ($definition instanceof DependentPluginDefinitionInterface) {
+        $config_dependencies = $definition->getConfigDependencies();
       }
     }
     elseif (is_array($definition)) {
-      $dependencies['module'][] = $definition['provider'];
-      // Plugins can declare additional dependencies in their definition.
+      $provider = $definition['provider'];
+
       if (isset($definition['config_dependencies'])) {
-        $dependencies = NestedArray::mergeDeep($dependencies, $definition['config_dependencies']);
+        $config_dependencies = $definition['config_dependencies'];
       }
+    }
+
+    // Add the provider as a dependency, taking into account if it's a module or
+    // a theme.
+    if ($provider) {
+      if ($provider === 'core' || $this->moduleHandler()->moduleExists($provider)) {
+        $dependencies['module'][] = $provider;
+      }
+      elseif ($this->themeHandler()->themeExists($provider)) {
+        $dependencies['theme'][] = $provider;
+      }
+    }
+
+    // Add the config dependencies.
+    if ($config_dependencies) {
+      $dependencies = NestedArray::mergeDeep($dependencies, $config_dependencies);
     }
 
     // If a plugin is dependent, calculate its dependencies.
@@ -67,6 +87,26 @@ trait PluginDependencyTrait {
    */
   protected function calculatePluginDependencies(PluginInspectionInterface $instance) {
     $this->addDependencies($this->getPluginDependencies($instance));
+  }
+
+  /**
+   * Wraps the module handler.
+   *
+   * @return \Drupal\Core\Extension\ModuleHandlerInterface
+   *   The module handler.
+   */
+  protected function moduleHandler() {
+    return \Drupal::moduleHandler();
+  }
+
+  /**
+   * Wraps the theme handler.
+   *
+   * @return \Drupal\Core\Extension\ThemeHandlerInterface
+   *   The theme handler.
+   */
+  protected function themeHandler() {
+    return \Drupal::service('theme_handler');
   }
 
 }

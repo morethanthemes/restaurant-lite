@@ -15,12 +15,12 @@ class UserAdminSettingsFormTest extends ConfigFormTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['user', 'system'];
+  protected static $modules = ['user', 'system'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->form = AccountSettingsForm::create($this->container);
@@ -49,6 +49,41 @@ class UserAdminSettingsFormTest extends ConfigFormTestBase {
         '#value' => $this->randomString(20),
         '#config_name' => 'user.mail',
         '#config_key' => 'register_pending_approval_admin.subject',
+      ],
+      'user_mail_password_reset_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'password_reset.subject',
+      ],
+      'user_mail_register_admin_created_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'register_admin_created.subject',
+      ],
+      'user_mail_register_no_approval_required_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'register_no_approval_required.subject',
+      ],
+      'user_mail_register_pending_approval_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'register_pending_approval.subject',
+      ],
+      'user_mail_status_activated_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'status_activated.subject',
+      ],
+      'user_mail_status_blocked_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'status_blocked.subject',
+      ],
+      'user_mail_status_canceled_subject' => [
+        '#value' => $this->randomString(),
+        '#config_name' => 'user.mail',
+        '#config_key' => 'status_canceled.subject',
       ],
     ];
   }

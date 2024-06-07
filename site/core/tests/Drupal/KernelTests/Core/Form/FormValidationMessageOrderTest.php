@@ -75,7 +75,7 @@ class FormValidationMessageOrderTest extends KernelTestBase implements FormInter
   /**
    * Tests that fields validation messages are sorted in the fields order.
    */
-  public function testLimitValidationErrors() {
+  public function testValidationErrorMessagesSortedWithWeight() {
     $form_state = new FormState();
     $form_builder = $this->container->get('form_builder');
     $form_builder->submitForm($this, $form_state);
@@ -84,10 +84,10 @@ class FormValidationMessageOrderTest extends KernelTestBase implements FormInter
     \Drupal::messenger()->deleteAll();
     $this->assertTrue(isset($messages['error']));
     $error_messages = $messages['error'];
-    $this->assertEqual($error_messages[0], 'Three field is required.');
-    $this->assertEqual($error_messages[1], 'Four field is required.');
-    $this->assertEqual($error_messages[2], 'Two field is required.');
-    $this->assertEqual($error_messages[3], 'One field is required.');
+    $this->assertEquals('Three field is required.', $error_messages[0]);
+    $this->assertEquals('Four field is required.', $error_messages[1]);
+    $this->assertEquals('Two field is required.', $error_messages[2]);
+    $this->assertEquals('One field is required.', $error_messages[3]);
   }
 
 }

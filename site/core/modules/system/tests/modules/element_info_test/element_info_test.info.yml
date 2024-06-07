@@ -1,0 +1,9 @@
+name: 'Element info test'
+type: module
+package: Testing
+# version: VERSION
+
+# Information added by Drupal.org packaging script on 2024-06-06
+version: '10.2.7'
+project: 'drupal'
+datestamp: 1717660126

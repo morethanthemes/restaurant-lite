@@ -36,6 +36,7 @@ class SystemConfigSubscriber implements EventSubscriberInterface {
    * Rebuilds the router when the default or admin theme is changed.
    *
    * @param \Drupal\Core\Config\ConfigCrudEvent $event
+   *   The configuration event.
    */
   public function onConfigSave(ConfigCrudEvent $event) {
     $saved_config = $event->getConfig();
@@ -83,7 +84,7 @@ class SystemConfigSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[ConfigEvents::SAVE][] = ['onConfigSave', 0];
     // The empty check has a high priority so that it can stop propagation if
     // there is no configuration to import.

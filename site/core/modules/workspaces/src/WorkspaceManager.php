@@ -22,16 +22,12 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   use StringTranslationTrait;
 
   /**
-   * An array of entity type IDs that can not belong to a workspace.
-   *
-   * By default, only entity types which are revisionable and publishable can
-   * belong to a workspace.
+   * An array of which entity types are supported.
    *
    * @var string[]
    */
-  protected $blacklist = [
-    'workspace_association',
-    'workspace',
+  protected $supported = [
+    'workspace' => FALSE,
   ];
 
   /**
@@ -84,6 +80,13 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   protected $classResolver;
 
   /**
+   * The workspace association service.
+   *
+   * @var \Drupal\workspaces\WorkspaceAssociationInterface
+   */
+  protected $workspaceAssociation;
+
+  /**
    * The workspace negotiator service IDs.
    *
    * @var array
@@ -91,9 +94,9 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   protected $negotiatorIds;
 
   /**
-   * The current active workspace.
+   * The current active workspace or FALSE if there is no active workspace.
    *
-   * @var \Drupal\workspaces\WorkspaceInterface
+   * @var \Drupal\workspaces\WorkspaceInterface|false
    */
   protected $activeWorkspace;
 
@@ -114,10 +117,12 @@ class WorkspaceManager implements WorkspaceManagerInterface {
    *   A logger instance.
    * @param \Drupal\Core\DependencyInjection\ClassResolverInterface $class_resolver
    *   The class resolver.
+   * @param \Drupal\workspaces\WorkspaceAssociationInterface $workspace_association
+   *   The workspace association service.
    * @param array $negotiator_ids
    *   The workspace negotiator service IDs.
    */
-  public function __construct(RequestStack $request_stack, EntityTypeManagerInterface $entity_type_manager, MemoryCacheInterface $entity_memory_cache, AccountProxyInterface $current_user, StateInterface $state, LoggerInterface $logger, ClassResolverInterface $class_resolver, array $negotiator_ids) {
+  public function __construct(RequestStack $request_stack, EntityTypeManagerInterface $entity_type_manager, MemoryCacheInterface $entity_memory_cache, AccountProxyInterface $current_user, StateInterface $state, LoggerInterface $logger, ClassResolverInterface $class_resolver, WorkspaceAssociationInterface $workspace_association, array $negotiator_ids) {
     $this->requestStack = $request_stack;
     $this->entityTypeManager = $entity_type_manager;
     $this->entityMemoryCache = $entity_memory_cache;
@@ -125,6 +130,7 @@ class WorkspaceManager implements WorkspaceManagerInterface {
     $this->state = $state;
     $this->logger = $logger;
     $this->classResolver = $class_resolver;
+    $this->workspaceAssociation = $workspace_association;
     $this->negotiatorIds = $negotiator_ids;
   }
 
@@ -132,13 +138,13 @@ class WorkspaceManager implements WorkspaceManagerInterface {
    * {@inheritdoc}
    */
   public function isEntityTypeSupported(EntityTypeInterface $entity_type) {
-    if (!isset($this->blacklist[$entity_type->id()])
-      && $entity_type->entityClassImplements(EntityPublishedInterface::class)
-      && $entity_type->isRevisionable()) {
-      return TRUE;
+    $entity_type_id = $entity_type->id();
+    if (!isset($this->supported[$entity_type_id])) {
+      // Only entity types which are revisionable and publishable can belong
+      // to a workspace.
+      $this->supported[$entity_type_id] = $entity_type->entityClassImplements(EntityPublishedInterface::class) && $entity_type->isRevisionable();
     }
-    $this->blacklist[$entity_type->id()] = $entity_type->id();
-    return FALSE;
+    return $this->supported[$entity_type_id];
   }
 
   /**
@@ -157,20 +163,34 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   /**
    * {@inheritdoc}
    */
+  public function hasActiveWorkspace() {
+    return $this->getActiveWorkspace() !== FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getActiveWorkspace() {
     if (!isset($this->activeWorkspace)) {
       $request = $this->requestStack->getCurrentRequest();
       foreach ($this->negotiatorIds as $negotiator_id) {
         $negotiator = $this->classResolver->getInstanceFromDefinition($negotiator_id);
         if ($negotiator->applies($request)) {
-          if ($this->activeWorkspace = $negotiator->getActiveWorkspace($request)) {
+          // By default, 'view' access is checked when a workspace is activated,
+          // but it should also be checked when retrieving the currently active
+          // workspace.
+          if (($negotiated_workspace = $negotiator->getActiveWorkspace($request)) && $negotiated_workspace->access('view')) {
+            $active_workspace = $negotiated_workspace;
             break;
           }
         }
       }
+
+      // If no negotiator was able to determine the active workspace, default to
+      // the live version of the site.
+      $this->activeWorkspace = $active_workspace ?? FALSE;
     }
 
-    // The default workspace negotiator always returns a valid workspace.
     return $this->activeWorkspace;
   }
 
@@ -194,18 +214,34 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function switchToLive() {
+    $this->doSwitchWorkspace(NULL);
+
+    // Unset the active workspace on all negotiators.
+    foreach ($this->negotiatorIds as $negotiator_id) {
+      $negotiator = $this->classResolver->getInstanceFromDefinition($negotiator_id);
+      $negotiator->unsetActiveWorkspace();
+    }
+
+    return $this;
+  }
+
+  /**
    * Switches the current workspace.
    *
-   * @param \Drupal\workspaces\WorkspaceInterface $workspace
-   *   The workspace to set as active.
+   * @param \Drupal\workspaces\WorkspaceInterface|null $workspace
+   *   The workspace to set as active or NULL to switch out of the currently
+   *   active workspace.
    *
    * @throws \Drupal\workspaces\WorkspaceAccessException
    *   Thrown when the current user doesn't have access to view the workspace.
    */
-  protected function doSwitchWorkspace(WorkspaceInterface $workspace) {
+  protected function doSwitchWorkspace($workspace) {
     // If the current user doesn't have access to view the workspace, they
-    // shouldn't be allowed to switch to it.
-    if (!$workspace->access('view') && !$workspace->isDefaultWorkspace()) {
+    // shouldn't be allowed to switch to it, except in CLI processes.
+    if ($workspace && PHP_SAPI !== 'cli' && !$workspace->access('view')) {
       $this->logger->error('Denied access to view workspace %workspace_label for user %uid', [
         '%workspace_label' => $workspace->label(),
         '%uid' => $this->currentUser->id(),
@@ -213,13 +249,17 @@ class WorkspaceManager implements WorkspaceManagerInterface {
       throw new WorkspaceAccessException('The user does not have permission to view that workspace.');
     }
 
-    $this->activeWorkspace = $workspace;
+    $this->activeWorkspace = $workspace ?: FALSE;
 
     // Clear the static entity cache for the supported entity types.
     $cache_tags_to_invalidate = array_map(function ($entity_type_id) {
       return 'entity.memory_cache:' . $entity_type_id;
     }, array_keys($this->getSupportedEntityTypes()));
     $this->entityMemoryCache->invalidateTags($cache_tags_to_invalidate);
+
+    // Clear the static cache for path aliases. We can't inject the path alias
+    // manager service because it would create a circular dependency.
+    \Drupal::service('path_alias.manager')->cacheClear();
   }
 
   /**
@@ -244,8 +284,20 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   /**
    * {@inheritdoc}
    */
+  public function executeOutsideWorkspace(callable $function) {
+    $previous_active_workspace = $this->getActiveWorkspace();
+    $this->doSwitchWorkspace(NULL);
+    $result = $function();
+    $this->doSwitchWorkspace($previous_active_workspace);
+
+    return $result;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function shouldAlterOperations(EntityTypeInterface $entity_type) {
-    return $this->isEntityTypeSupported($entity_type) && !$this->getActiveWorkspace()->isDefaultWorkspace();
+    return $this->isEntityTypeSupported($entity_type) && $this->hasActiveWorkspace();
   }
 
   /**
@@ -261,67 +313,65 @@ class WorkspaceManager implements WorkspaceManagerInterface {
 
     $batch_size = Settings::get('entity_update_batch_size', 50);
 
-    /** @var \Drupal\workspaces\WorkspaceAssociationStorageInterface $workspace_association_storage */
-    $workspace_association_storage = $this->entityTypeManager->getStorage('workspace_association');
-
     // Get the first deleted workspace from the list and delete the revisions
-    // associated with it, along with the workspace_association entries.
+    // associated with it, along with the workspace association records.
     $workspace_id = reset($deleted_workspace_ids);
-    $workspace_association_ids = $this->getWorkspaceAssociationRevisionsToPurge($workspace_id, $batch_size);
 
-    if ($workspace_association_ids) {
-      $workspace_associations = $workspace_association_storage->loadMultipleRevisions(array_keys($workspace_association_ids));
-      foreach ($workspace_associations as $workspace_association) {
-        $associated_entity_storage = $this->entityTypeManager->getStorage($workspace_association->target_entity_type_id->value);
-        // Delete the associated entity revision.
-        if ($entity = $associated_entity_storage->loadRevision($workspace_association->target_entity_revision_id->value)) {
-          if ($entity->isDefaultRevision()) {
-            $entity->delete();
-          }
-          else {
-            $associated_entity_storage->deleteRevision($workspace_association->target_entity_revision_id->value);
-          }
+    $all_associated_revisions = [];
+    foreach (array_keys($this->getSupportedEntityTypes()) as $entity_type_id) {
+      $all_associated_revisions[$entity_type_id] = $this->workspaceAssociation->getAssociatedRevisions($workspace_id, $entity_type_id);
+    }
+    $all_associated_revisions = array_filter($all_associated_revisions);
+
+    $count = 1;
+    foreach ($all_associated_revisions as $entity_type_id => $associated_revisions) {
+      /** @var \Drupal\Core\Entity\RevisionableStorageInterface $associated_entity_storage */
+      $associated_entity_storage = $this->entityTypeManager->getStorage($entity_type_id);
+
+      // Sort the associated revisions in reverse ID order, so we can delete the
+      // most recent revisions first.
+      krsort($associated_revisions);
+
+      // Get a list of default revisions tracked by the given workspace, because
+      // they need to be handled differently than pending revisions.
+      $initial_revision_ids = $this->workspaceAssociation->getAssociatedInitialRevisions($workspace_id, $entity_type_id);
+
+      foreach (array_keys($associated_revisions) as $revision_id) {
+        if ($count > $batch_size) {
+          continue 2;
         }
 
-        // Delete the workspace_association revision.
-        if ($workspace_association->isDefaultRevision()) {
-          $workspace_association->delete();
+        // If the workspace is tracking the entity's default revision (i.e. the
+        // entity was created inside that workspace), we need to delete the
+        // whole entity after all of its pending revisions are gone.
+        if (isset($initial_revision_ids[$revision_id])) {
+          $associated_entity_storage->delete([$associated_entity_storage->load($initial_revision_ids[$revision_id])]);
         }
         else {
-          $workspace_association_storage->deleteRevision($workspace_association->getRevisionId());
+          // Delete the associated entity revision.
+          $associated_entity_storage->deleteRevision($revision_id);
         }
+        $count++;
       }
     }
 
     // The purging operation above might have taken a long time, so we need to
-    // request a fresh list of workspace association IDs. If it is empty, we can
-    // go ahead and remove the deleted workspace ID entry from state.
-    if (!$this->getWorkspaceAssociationRevisionsToPurge($workspace_id, $batch_size)) {
+    // request a fresh list of tracked entities. If it is empty, we can go ahead
+    // and remove the deleted workspace ID entry from state.
+    $has_associated_revisions = FALSE;
+    foreach (array_keys($this->getSupportedEntityTypes()) as $entity_type_id) {
+      if (!empty($this->workspaceAssociation->getAssociatedRevisions($workspace_id, $entity_type_id))) {
+        $has_associated_revisions = TRUE;
+        break;
+      }
+    }
+    if (!$has_associated_revisions) {
       unset($deleted_workspace_ids[$workspace_id]);
       $this->state->set('workspace.deleted', $deleted_workspace_ids);
-    }
-  }
 
-  /**
-   * Gets a list of workspace association IDs to purge.
-   *
-   * @param string $workspace_id
-   *   The ID of the workspace.
-   * @param int $batch_size
-   *   The maximum number of records that will be purged.
-   *
-   * @return array
-   *   An array of workspace association IDs, keyed by their revision IDs.
-   */
-  protected function getWorkspaceAssociationRevisionsToPurge($workspace_id, $batch_size) {
-    return $this->entityTypeManager->getStorage('workspace_association')
-      ->getQuery()
-      ->allRevisions()
-      ->accessCheck(FALSE)
-      ->condition('workspace', $workspace_id)
-      ->sort('revision_id', 'ASC')
-      ->range(0, $batch_size)
-      ->execute();
+      // Delete any possible leftover association entries.
+      $this->workspaceAssociation->deleteAssociations($workspace_id);
+    }
   }
 
 }

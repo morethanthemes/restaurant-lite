@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\content_moderation\Traits;
 
 use Drupal\workflows\Entity\Workflow;
+use Drupal\workflows\WorkflowInterface;
 
 /**
- * Trait ContentModerationTestTraint.
+ * Provides functionality for testing content moderation.
  */
 trait ContentModerationTestTrait {
 
@@ -83,6 +86,21 @@ trait ContentModerationTestTrait {
     ]);
     $workflow->save();
     return $workflow;
+  }
+
+  /**
+   * Adds an entity type ID / bundle ID to the given workflow.
+   *
+   * @param \Drupal\workflows\WorkflowInterface $workflow
+   *   A workflow object.
+   * @param string $entity_type_id
+   *   The entity type ID to add.
+   * @param string $bundle
+   *   The bundle ID to add.
+   */
+  protected function addEntityTypeAndBundleToWorkflow(WorkflowInterface $workflow, $entity_type_id, $bundle) {
+    $workflow->getTypePlugin()->addEntityTypeAndBundle($entity_type_id, $bundle);
+    $workflow->save();
   }
 
 }

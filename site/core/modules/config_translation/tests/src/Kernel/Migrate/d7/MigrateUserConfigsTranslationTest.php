@@ -17,18 +17,16 @@ class MigrateUserConfigsTranslationTest extends MigrateDrupal7TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'language',
     'locale',
     'config_translation',
-    // Required for translation migrations.
-    'migrate_drupal_multilingual',
   ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installSchema('locale', [
       'locales_source',
@@ -36,6 +34,9 @@ class MigrateUserConfigsTranslationTest extends MigrateDrupal7TestBase {
       'locales_location',
     ]);
     $this->executeMigrations([
+      'language',
+      'd7_user_mail',
+      'd7_user_settings',
       'd7_user_mail_translation',
       'd7_user_settings_translation',
     ]);
@@ -53,7 +54,7 @@ class MigrateUserConfigsTranslationTest extends MigrateDrupal7TestBase {
     $this->assertSame('is - Fix your password', $config->get('password_reset.subject'));
     $this->assertSame("is - Nope! You're locked out forever.", $config->get('password_reset.body'));
     $this->assertSame('is - Gawd made you an account', $config->get('register_admin_created.subject'));
-    $this->assertSame("is - ...and she could take it away.\r\n[site:name], [site:url]", $config->get('register_admin_created.body'));
+    $this->assertSame("is - ...and it could be taken away.\r\n[site:name], [site:url]", $config->get('register_admin_created.body'));
     $this->assertSame('is - Welcome!', $config->get('register_no_approval_required.subject'));
     $this->assertSame('is - You can now log in if you can figure out how to use Drupal!', $config->get('register_no_approval_required.body'));
     $this->assertSame('is - Soon...', $config->get('register_pending_approval.subject'));

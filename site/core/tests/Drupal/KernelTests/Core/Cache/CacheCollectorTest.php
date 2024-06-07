@@ -5,6 +5,7 @@ namespace Drupal\KernelTests\Core\Cache;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\Core\Cache\CacheCollectorHelper;
+use Drupal\TestTools\Random;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
@@ -32,7 +33,7 @@ class CacheCollectorTest extends KernelTestBase {
   }
 
   /**
-   * Tests setting and invalidating
+   * Tests setting and invalidating.
    *
    * @dataProvider providerTestInvalidCharacters
    */
@@ -49,14 +50,15 @@ class CacheCollectorTest extends KernelTestBase {
   /**
    * Data provider for ::testCacheCollector().
    */
-  public function providerTestInvalidCharacters() {
+  public static function providerTestInvalidCharacters() {
     return [
       // Nothing special.
       ['foo', 'bar', 'baz'],
       // Invalid characters in CID.
+      // cSpell:disable-next-line
       ['éøïвβ中國書۞', 'foo', 'bar'],
       // Really long CID.
-      [$this->randomString(1024), 'foo', 'bar'],
+      [Random::string(1024), 'foo', 'bar'],
     ];
   }
 

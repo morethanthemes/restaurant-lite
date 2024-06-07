@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "blocked_ip"
  * )
  */
-class BlockedIP extends DestinationBase implements ContainerFactoryPluginInterface {
+class BlockedIp extends DestinationBase implements ContainerFactoryPluginInterface {
 
   /**
    * The IP ban manager.
@@ -26,7 +26,7 @@ class BlockedIP extends DestinationBase implements ContainerFactoryPluginInterfa
   protected $banManager;
 
   /**
-   * Constructs a BlockedIP object.
+   * Constructs a BlockedIp object.
    *
    * @param array $configuration
    *   Plugin configuration.
@@ -67,7 +67,7 @@ class BlockedIP extends DestinationBase implements ContainerFactoryPluginInterfa
   /**
    * {@inheritdoc}
    */
-  public function fields(MigrationInterface $migration = NULL) {
+  public function fields() {
     return [
       'ip' => $this->t('The blocked IP address.'),
     ];
@@ -78,6 +78,8 @@ class BlockedIP extends DestinationBase implements ContainerFactoryPluginInterfa
    */
   public function import(Row $row, array $old_destination_id_values = []) {
     $this->banManager->banIp($row->getDestinationProperty('ip'));
+
+    return ['ip' => $row->getDestinationProperty('ip')];
   }
 
 }

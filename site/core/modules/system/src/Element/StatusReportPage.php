@@ -17,7 +17,7 @@ class StatusReportPage extends RenderElement {
    * {@inheritdoc}
    */
   public function getInfo() {
-    $class = get_class($this);
+    $class = static::class;
     return [
       '#theme' => 'status_report_page',
       '#pre_render' => [
@@ -59,7 +59,9 @@ class StatusReportPage extends RenderElement {
         case 'php_memory_limit':
           $element['#general_info']['#' . $key] = $requirement;
           if (isset($requirement['severity']) && $requirement['severity'] < REQUIREMENT_WARNING) {
-            unset($element['#requirements'][$key]);
+            if (empty($requirement['severity']) || $requirement['severity'] == REQUIREMENT_OK) {
+              unset($element['#requirements'][$key]);
+            }
           }
           break;
       }
@@ -86,8 +88,8 @@ class StatusReportPage extends RenderElement {
       ],
       'checked' => [
         'amount' => 0,
-        'text' => t('Checked'),
-        'text_plural' => t('Checked'),
+        'text' => t('Checked', [], ['context' => 'Examined']),
+        'text_plural' => t('Checked', [], ['context' => 'Examined']),
       ],
     ];
 

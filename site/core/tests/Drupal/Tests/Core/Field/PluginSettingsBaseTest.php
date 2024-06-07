@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Field\PluginSettingsBaseTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\Field;
 

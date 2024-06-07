@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\serialization\Unit\Normalizer;
 
 use Drupal\serialization\Normalizer\NullNormalizer;
@@ -28,7 +30,9 @@ class NullNormalizerTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->normalizer = new NullNormalizer($this->interface);
   }
 
@@ -37,7 +41,7 @@ class NullNormalizerTest extends UnitTestCase {
    * @covers ::supportsNormalization
    */
   public function testSupportsNormalization() {
-    $mock = $this->getMock('Drupal\Core\TypedData\TypedDataInterface');
+    $mock = $this->createMock('Drupal\Core\TypedData\TypedDataInterface');
     $this->assertTrue($this->normalizer->supportsNormalization($mock));
     // Also test that an object not implementing TypedDataInterface fails.
     $this->assertFalse($this->normalizer->supportsNormalization(new \stdClass()));
@@ -47,7 +51,7 @@ class NullNormalizerTest extends UnitTestCase {
    * @covers ::normalize
    */
   public function testNormalize() {
-    $mock = $this->getMock('Drupal\Core\TypedData\TypedDataInterface');
+    $mock = $this->createMock('Drupal\Core\TypedData\TypedDataInterface');
     $this->assertNull($this->normalizer->normalize($mock));
   }
 

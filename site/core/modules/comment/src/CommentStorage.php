@@ -5,9 +5,12 @@ namespace Drupal\comment;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\MemoryCache\MemoryCacheInterface;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Database\Query\PagerSelectExtender;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Entity\Sql\SqlContentEntityStorage;
 use Drupal\Core\Session\AccountInterface;
@@ -36,8 +39,8 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
    *   An array of entity info for the entity type.
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection to be used.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
+   *   The entity field manager.
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   The current user.
    * @param \Drupal\Core\Cache\CacheBackendInterface $cache
@@ -46,9 +49,13 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
    *   The language manager.
    * @param \Drupal\Core\Cache\MemoryCache\MemoryCacheInterface $memory_cache
    *   The memory cache.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
+   *   The entity type bundle info.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    */
-  public function __construct(EntityTypeInterface $entity_info, Connection $database, EntityManagerInterface $entity_manager, AccountInterface $current_user, CacheBackendInterface $cache, LanguageManagerInterface $language_manager, MemoryCacheInterface $memory_cache) {
-    parent::__construct($entity_info, $database, $entity_manager, $cache, $language_manager, $memory_cache);
+  public function __construct(EntityTypeInterface $entity_info, Connection $database, EntityFieldManagerInterface $entity_field_manager, AccountInterface $current_user, CacheBackendInterface $cache, LanguageManagerInterface $language_manager, MemoryCacheInterface $memory_cache, EntityTypeBundleInfoInterface $entity_type_bundle_info, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($entity_info, $database, $entity_field_manager, $cache, $language_manager, $memory_cache, $entity_type_bundle_info, $entity_type_manager);
     $this->currentUser = $current_user;
   }
 
@@ -59,11 +66,13 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
     return new static(
       $entity_info,
       $container->get('database'),
-      $container->get('entity.manager'),
+      $container->get('entity_field.manager'),
       $container->get('current_user'),
       $container->get('cache.entity'),
       $container->get('language_manager'),
-      $container->get('entity.memory_cache')
+      $container->get('entity.memory_cache'),
+      $container->get('entity_type.bundle.info'),
+      $container->get('entity_type.manager')
     );
   }
 
@@ -76,7 +85,7 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
       ->condition('field_name', $comment->getFieldName())
       ->condition('entity_type', $comment->getCommentedEntityTypeId())
       ->condition('default_langcode', 1);
-    $query->addExpression('MAX(thread)', 'thread');
+    $query->addExpression('MAX([thread])', 'thread');
     return $query->execute()
       ->fetchField();
   }
@@ -91,7 +100,7 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
       ->condition('entity_type', $comment->getCommentedEntityTypeId())
       ->condition('thread', $comment->getParentComment()->getThread() . '.%', 'LIKE')
       ->condition('default_langcode', 1);
-    $query->addExpression('MAX(thread)', 'thread');
+    $query->addExpression('MAX([thread])', 'thread');
     return $query->execute()
       ->fetchField();
   }
@@ -104,7 +113,7 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
     // This is the 0-based display ordinal.
     $data_table = $this->getDataTable();
     $query = $this->database->select($data_table, 'c1');
-    $query->innerJoin($data_table, 'c2', 'c2.entity_id = c1.entity_id AND c2.entity_type = c1.entity_type AND c2.field_name = c1.field_name');
+    $query->innerJoin($data_table, 'c2', '[c2].[entity_id] = [c1].[entity_id] AND [c2].[entity_type] = [c1].[entity_type] AND [c2].[field_name] = [c1].[field_name]');
     $query->addExpression('COUNT(*)', 'count');
     $query->condition('c2.cid', $comment->id());
     if (!$this->currentUser->hasPermission('administer comments')) {
@@ -121,7 +130,7 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
       // For threaded comments, the c.thread column is used for ordering. We can
       // use the sorting code for comparison, but must remove the trailing
       // slash.
-      $query->where('SUBSTRING(c1.thread, 1, (LENGTH(c1.thread) - 1)) < SUBSTRING(c2.thread, 1, (LENGTH(c2.thread) - 1))');
+      $query->where('SUBSTRING([c1].[thread], 1, (LENGTH([c1].[thread]) - 1)) < SUBSTRING([c2].[thread], 1, (LENGTH([c2].[thread]) - 1))');
     }
 
     $query->condition('c1.default_langcode', 1);
@@ -165,7 +174,7 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
 
       // 2. Find the first thread.
       $first_thread_query = $this->database->select($unread_threads_query, 'thread');
-      $first_thread_query->addExpression('SUBSTRING(thread, 1, (LENGTH(thread) - 1))', 'torder');
+      $first_thread_query->addExpression('SUBSTRING([thread], 1, (LENGTH([thread]) - 1))', 'torder');
       $first_thread = $first_thread_query
         ->fields('thread', ['thread'])
         ->orderBy('torder')
@@ -177,18 +186,19 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
       $first_thread = substr($first_thread, 0, -1);
 
       // Find the number of the first comment of the first unread thread.
-      $count = $this->database->query('SELECT COUNT(*) FROM {' . $data_table . '} WHERE entity_id = :entity_id
-                        AND entity_type = :entity_type
-                        AND field_name = :field_name
-                        AND status = :status
-                        AND SUBSTRING(thread, 1, (LENGTH(thread) - 1)) < :thread
-                        AND default_langcode = 1', [
-        ':status' => CommentInterface::PUBLISHED,
-        ':entity_id' => $entity->id(),
-        ':field_name' => $field_name,
-        ':entity_type' => $entity->getEntityTypeId(),
-        ':thread' => $first_thread,
-      ])->fetchField();
+      $count = $this->database->query('SELECT COUNT(*) FROM {' . $data_table . '} WHERE [entity_id] = :entity_id
+        AND [entity_type] = :entity_type
+        AND [field_name] = :field_name
+        AND [status] = :status
+        AND SUBSTRING([thread], 1, (LENGTH([thread]) - 1)) < :thread
+        AND [default_langcode] = 1', [
+          ':status' => CommentInterface::PUBLISHED,
+          ':entity_id' => $entity->id(),
+          ':field_name' => $field_name,
+          ':entity_type' => $entity->getEntityTypeId(),
+          ':thread' => $first_thread,
+        ]
+      )->fetchField();
     }
 
     return $comments_per_page > 0 ? (int) ($count / $comments_per_page) : 0;
@@ -279,7 +289,7 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
       ->addMetaData('field_name', $field_name);
 
     if ($comments_per_page) {
-      $query = $query->extend('Drupal\Core\Database\Query\PagerSelectExtender')
+      $query = $query->extend(PagerSelectExtender::class)
         ->limit($comments_per_page);
       if ($pager_id) {
         $query->element($pager_id);
@@ -310,10 +320,9 @@ class CommentStorage extends SqlContentEntityStorage implements CommentStorageIn
       $query->orderBy('c.cid', 'ASC');
     }
     else {
-      // See comment above. Analysis reveals that this doesn't cost too
-      // much. It scales much much better than having the whole comment
-      // structure.
-      $query->addExpression('SUBSTRING(c.thread, 1, (LENGTH(c.thread) - 1))', 'torder');
+      // See comment above. Analysis reveals that this doesn't cost too much. It
+      // scales much better than having the whole comment structure.
+      $query->addExpression('SUBSTRING([c].[thread], 1, (LENGTH([c].[thread]) - 1))', 'torder');
       $query->orderBy('torder', 'ASC');
     }
 

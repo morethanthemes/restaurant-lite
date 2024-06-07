@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Config\Entity;
 
 use Drupal\Core\Config\TypedConfigManagerInterface;
@@ -17,15 +19,17 @@ class ConfigEntityTypeTest extends UnitTestCase {
   /**
    * The mocked typed config manager.
    *
-   * @var \Drupal\Core\Config\TypedConfigManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Config\TypedConfigManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $typedConfigManager;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
-    $this->typedConfigManager = $this->getMock(TypedConfigManagerInterface::class);
+  protected function setUp(): void {
+    parent::setUp();
+
+    $this->typedConfigManager = $this->createMock(TypedConfigManagerInterface::class);
     $container = new ContainerBuilder();
     $container->set('config.typed', $this->typedConfigManager);
     \Drupal::setContainer($container);
@@ -49,6 +53,8 @@ class ConfigEntityTypeTest extends UnitTestCase {
   }
 
   /**
+   * Tests when the prefix length exceeds the maximum defined prefix length.
+   *
    * Tests that we get an exception when the length of the config prefix that is
    * returned by getConfigPrefix() exceeds the maximum defined prefix length.
    *
@@ -62,14 +68,14 @@ class ConfigEntityTypeTest extends UnitTestCase {
       'config_prefix' => $this->randomMachineName(59),
     ];
     $config_entity = $this->setUpConfigEntityType($definition);
-    $this->setExpectedException(
-      '\Drupal\Core\Config\ConfigPrefixLengthException',
-      "The configuration file name prefix {$definition['provider']}.{$definition['config_prefix']} exceeds the maximum character limit of " . ConfigEntityType::PREFIX_LENGTH
-    );
+    $this->expectException('\Drupal\Core\Config\ConfigPrefixLengthException');
+    $this->expectExceptionMessage("The configuration file name prefix {$definition['provider']}.{$definition['config_prefix']} exceeds the maximum character limit of " . ConfigEntityType::PREFIX_LENGTH);
     $this->assertEmpty($config_entity->getConfigPrefix());
   }
 
   /**
+   * Tests when the prefix length is valid.
+   *
    * Tests that a valid config prefix returned by getConfigPrefix()
    * does not throw an exception and is formatted as expected.
    *
@@ -101,7 +107,8 @@ class ConfigEntityTypeTest extends UnitTestCase {
    * @covers ::__construct
    */
   public function testConstructBadStorage() {
-    $this->setExpectedException(ConfigEntityStorageClassException::class, '\Drupal\Core\Entity\KeyValueStore\KeyValueEntityStorage is not \Drupal\Core\Config\Entity\ConfigEntityStorage or it does not extend it');
+    $this->expectException(ConfigEntityStorageClassException::class);
+    $this->expectExceptionMessage('\Drupal\Core\Entity\KeyValueStore\KeyValueEntityStorage is not \Drupal\Core\Config\Entity\ConfigEntityStorage or it does not extend it');
     new ConfigEntityType([
       'id' => 'example_config_entity_type',
       'handlers' => ['storage' => '\Drupal\Core\Entity\KeyValueStore\KeyValueEntityStorage'],
@@ -113,7 +120,8 @@ class ConfigEntityTypeTest extends UnitTestCase {
    */
   public function testSetStorageClass() {
     $config_entity = $this->setUpConfigEntityType([]);
-    $this->setExpectedException(ConfigEntityStorageClassException::class, '\Drupal\Core\Entity\KeyValueStore\KeyValueEntityStorage is not \Drupal\Core\Config\Entity\ConfigEntityStorage or it does not extend it');
+    $this->expectException(ConfigEntityStorageClassException::class);
+    $this->expectExceptionMessage('\Drupal\Core\Entity\KeyValueStore\KeyValueEntityStorage is not \Drupal\Core\Config\Entity\ConfigEntityStorage or it does not extend it');
     $config_entity->setStorageClass('\Drupal\Core\Entity\KeyValueStore\KeyValueEntityStorage');
   }
 
@@ -189,19 +197,6 @@ class ConfigEntityTypeTest extends UnitTestCase {
       ],
     ];
     return $data;
-  }
-
-  /**
-   * @covers ::getPropertiesToExport
-   */
-  public function testGetPropertiesToExportSchemaFallback() {
-    $this->typedConfigManager->expects($this->once())
-      ->method('getDefinition')
-      ->will($this->returnValue(['mapping' => ['id' => '', 'dependencies' => '']]));
-    $config_entity_type = new ConfigEntityType([
-      'id' => 'example_config_entity_type',
-    ]);
-    $this->assertEquals(['id' => 'id', 'dependencies' => 'dependencies'], $config_entity_type->getPropertiesToExport('test'));
   }
 
   /**

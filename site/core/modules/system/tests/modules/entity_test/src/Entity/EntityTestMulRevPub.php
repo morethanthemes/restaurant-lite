@@ -20,7 +20,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
  *       "delete" = "Drupal\entity_test\EntityTestDeleteForm",
  *       "delete-multiple-confirm" = "Drupal\Core\Entity\Form\DeleteMultipleForm"
  *     },
- *     "translation" = "Drupal\content_translation\ContentTranslationHandler",
  *     "views_data" = "Drupal\views\EntityViewsData",
  *     "route_provider" = {
  *       "html" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
@@ -60,7 +59,7 @@ class EntityTestMulRevPub extends EntityTestMulRev implements EntityPublishedInt
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    return parent::baseFieldDefinitions($entity_type) + EntityPublishedTrait::publishedBaseFieldDefinitions($entity_type);
+    return parent::baseFieldDefinitions($entity_type) + static::publishedBaseFieldDefinitions($entity_type);
   }
 
 }

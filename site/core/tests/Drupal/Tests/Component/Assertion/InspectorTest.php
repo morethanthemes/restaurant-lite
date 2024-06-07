@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\Assertion\InspectorTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\Assertion;
 
@@ -237,14 +234,14 @@ class InspectorTest extends TestCase {
   }
 
   /**
-   * Test method referenced by ::testAllCallable().
+   * Defines a test method referenced by ::testAllCallable().
    */
   public function callMe() {
     return TRUE;
   }
 
   /**
-   * Test method referenced by ::testAllCallable().
+   * Defines a test method referenced by ::testAllCallable().
    */
   public static function callMeStatic() {
     return TRUE;

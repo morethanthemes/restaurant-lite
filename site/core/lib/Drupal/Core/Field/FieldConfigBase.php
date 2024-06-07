@@ -125,13 +125,14 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
    *
    * The default value is expressed as a numerically indexed array of items,
    * each item being an array of key/value pairs matching the set of 'columns'
-   * defined by the "field schema" for the field type, as exposed in
-   * hook_field_schema(). If the number of items exceeds the cardinality of the
-   * field, extraneous items will be ignored.
+   * defined by the "field schema" for the field type, as exposed in the class
+   * implementing \Drupal\Core\Field\FieldItemInterface::schema() method. If the
+   * number of items exceeds the cardinality of the field, extraneous items will
+   * be ignored.
    *
    * This property is overlooked if the $default_value_callback is non-empty.
    *
-   * Example for a integer field:
+   * Example for an integer field:
    * @code
    * array(
    *   array('value' => 1),
@@ -183,8 +184,10 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
   protected $constraints = [];
 
   /**
-   * Array of property constraint options keyed by property ID. The values are
-   * associative array of constraint options keyed by constraint plugin ID.
+   * Array of property constraint options keyed by property ID.
+   *
+   * The values are associative array of constraint options keyed by constraint
+   * plugin ID.
    *
    * @var array[]
    */
@@ -233,7 +236,7 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
     // Add dependencies from the field type plugin. We can not use
     // self::calculatePluginDependencies() because instantiation of a field item
     // plugin requires a parent entity.
-    /** @var $field_type_manager \Drupal\Core\Field\FieldTypePluginManagerInterface */
+    /** @var \Drupal\Core\Field\FieldTypePluginManagerInterface $field_type_manager */
     $field_type_manager = \Drupal::service('plugin.manager.field.field_type');
     $definition = $field_type_manager->getDefinition($this->getType());
     $this->addDependency('module', $definition['provider']);
@@ -246,7 +249,7 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
     $this->addDependencies($definition['class']::calculateDependencies($this));
 
     // Create dependency on the bundle.
-    $bundle_config_dependency = $this->entityManager()->getDefinition($this->entity_type)->getBundleConfigDependency($this->bundle);
+    $bundle_config_dependency = $this->entityTypeManager()->getDefinition($this->entity_type)->getBundleConfigDependency($this->bundle);
     $this->addDependency($bundle_config_dependency['type'], $bundle_config_dependency['name']);
 
     return $this;
@@ -276,6 +279,28 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
     if (empty($this->field_type)) {
       $this->field_type = $this->getFieldStorageDefinition()->getType();
     }
+
+    // Make sure all expected runtime settings are present.
+    $default_settings = \Drupal::service('plugin.manager.field.field_type')
+      ->getDefaultFieldSettings($this->getType());
+    // Filter out any unknown (unsupported) settings.
+    $supported_settings = array_intersect_key($this->getSettings(), $default_settings);
+    $this->set('settings', $supported_settings + $default_settings);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function postDelete(EntityStorageInterface $storage, array $fields) {
+    // Clear the cache upfront, to refresh the results of getBundles().
+    \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
+
+    // Notify the entity storage.
+    foreach ($fields as $field) {
+      if (!$field->deleted) {
+        \Drupal::service('field_definition.listener')->onFieldDefinitionDelete($field);
+      }
+    }
   }
 
   /**
@@ -283,12 +308,12 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
    */
   public function postSave(EntityStorageInterface $storage, $update = TRUE) {
     // Clear the cache.
-    $this->entityManager()->clearCachedFieldDefinitions();
+    \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
 
     // Invalidate the render cache for all affected entities.
     $entity_type = $this->getFieldStorageDefinition()->getTargetEntityTypeId();
-    if ($this->entityManager()->hasHandler($entity_type, 'view_builder')) {
-      $this->entityManager()->getViewBuilder($entity_type)->resetCache();
+    if ($this->entityTypeManager()->hasHandler($entity_type, 'view_builder')) {
+      $this->entityTypeManager()->getViewBuilder($entity_type)->resetCache();
     }
   }
 
@@ -381,7 +406,7 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
   }
 
   /**
-   * [@inheritdoc}
+   * {@inheritdoc}
    */
   public function setRequired($required) {
     $this->required = $required;
@@ -440,13 +465,15 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
    *
    * Using the Serialize interface and serialize() / unserialize() methods
    * breaks entity forms in PHP 5.4.
-   * @todo Investigate in https://www.drupal.org/node/2074253.
+   * @todo Investigate in https://www.drupal.org/node/1977206.
    */
   public function __sleep() {
+    $properties = get_object_vars($this);
+
     // Only serialize necessary properties, excluding those that can be
     // recalculated.
-    $properties = get_object_vars($this);
-    unset($properties['fieldStorage'], $properties['itemDefinition'], $properties['original']);
+    unset($properties['itemDefinition'], $properties['original']);
+
     return array_keys($properties);
   }
 
@@ -472,6 +499,12 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
    * {@inheritdoc}
    */
   public function getDataType() {
+    // This object serves as data definition for field item lists, thus
+    // the correct data type is 'list'. This is not to be confused with
+    // the config schema type, 'field_config_base', which is used to
+    // describe the schema of the configuration backing this objects.
+    // @see \Drupal\Core\Field\FieldItemList
+    // @see \Drupal\Core\TypedData\DataDefinitionInterface
     return 'list';
   }
 
@@ -504,7 +537,7 @@ abstract class FieldConfigBase extends ConfigEntityBase implements FieldConfigIn
    */
   public function getConstraint($constraint_name) {
     $constraints = $this->getConstraints();
-    return isset($constraints[$constraint_name]) ? $constraints[$constraint_name] : NULL;
+    return $constraints[$constraint_name] ?? NULL;
   }
 
   /**

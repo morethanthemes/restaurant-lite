@@ -12,7 +12,12 @@ use Drupal\field\Entity\FieldConfig;
 class MediaSourceFileTest extends MediaFunctionalTestBase {
 
   /**
-   * Test that it's possible to change the allowed file extensions.
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * Tests that it's possible to change the allowed file extensions.
    */
   public function testSourceFieldSettingsEditing() {
     $session = $this->getSession();

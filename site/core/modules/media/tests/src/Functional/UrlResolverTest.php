@@ -10,6 +10,7 @@ use Drupal\Tests\media\Traits\OEmbedTestTrait;
  * @coversDefaultClass \Drupal\media\OEmbed\UrlResolver
  *
  * @group media
+ * @group #slow
  */
 class UrlResolverTest extends MediaFunctionalTestBase {
 
@@ -18,7 +19,12 @@ class UrlResolverTest extends MediaFunctionalTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->lockHttpClientToFixtures();
     $this->useFixtureProviders();
@@ -41,16 +47,19 @@ class UrlResolverTest extends MediaFunctionalTestBase {
         'https://vimeo.com/14782834',
         'https://vimeo.com/api/oembed.json?url=https%3A//vimeo.com/14782834',
       ],
-      'match by endpoint: CollegeHumor' => [
-        'http://www.collegehumor.com/video/40002870/lets-not-get-a-drink-sometime',
-        'http://www.collegehumor.com/oembed.json?url=http%3A//www.collegehumor.com/video/40002870/lets-not-get-a-drink-sometime',
+      'match by endpoint: Dailymotion' => [
+        'https://www.dailymotion.com/video/x2vzluh',
+        'https://www.dailymotion.com/services/oembed?url=https%3A//www.dailymotion.com/video/x2vzluh',
+      ],
+      'match by endpoint: Facebook' => [
+        'https://www.facebook.com/facebook/videos/10153231379946729/',
+        'https://www.facebook.com/plugins/video/oembed.json?url=https%3A//www.facebook.com/facebook/videos/10153231379946729/',
       ],
     ];
   }
 
   /**
-   * Tests resource URL resolution when the asset URL can be matched to a
-   * provider endpoint.
+   * Tests resource URL resolution with a matched provider endpoint.
    *
    * @covers ::getProviderByUrl
    * @covers ::getResourceUrl
@@ -80,7 +89,7 @@ class UrlResolverTest extends MediaFunctionalTestBase {
     $resource_url = $this->container->get('media.oembed.url_resolver')
       ->getResourceUrl('https://vimeo.com/14782834');
 
-    $this->assertContains('altered=1', parse_url($resource_url, PHP_URL_QUERY));
+    $this->assertStringContainsString('altered=1', parse_url($resource_url, PHP_URL_QUERY));
   }
 
   /**
@@ -97,20 +106,14 @@ class UrlResolverTest extends MediaFunctionalTestBase {
         'https://vimeo.com/api/oembed.json?url=video_vimeo.html',
       ],
       'XML resource' => [
-        'video_collegehumor.html',
-        // The endpoint does not explicitly declare that it supports XML, so
-        // only JSON support is assumed, which is why the discovered URL
-        // contains '.json'. However, the fetched HTML file contains a
-        // relationship to an XML representation of the resource, with the
-        // application/xml+oembed MIME type.
-        'http://www.collegehumor.com/oembed.json?url=video_collegehumor.html',
+        'video_dailymotion.html',
+        'https://www.dailymotion.com/services/oembed?url=video_dailymotion.html',
       ],
     ];
   }
 
   /**
-   * Tests URL resolution when the resource URL must be actively discovered by
-   * scanning the asset.
+   * Tests URL resolution when the URL is discovered by scanning the asset.
    *
    * @param string $url
    *   The asset URL to resolve.

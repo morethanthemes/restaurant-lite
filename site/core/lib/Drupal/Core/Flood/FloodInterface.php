@@ -21,7 +21,10 @@ interface FloodInterface {
    *   table from growing indefinitely.
    * @param string $identifier
    *   (optional) Unique identifier of the current user. Defaults to the current
-   *   user's IP address).
+   *   user's IP address. The identifier can be given an additional prefix
+   *   separated by "-". Flood backends may then optionally implement the
+   *   PrefixFloodInterface which allows all flood events that share the same
+   *   prefix to be cleared simultaneously.
    */
   public function register($name, $window = 3600, $identifier = NULL);
 
@@ -54,15 +57,16 @@ interface FloodInterface {
    *   (optional) Unique identifier of the current user. Defaults to the current
    *   user's IP address).
    *
-   * @return
+   * @return bool
    *   TRUE if the user is allowed to proceed. FALSE if they have exceeded the
    *   threshold and should not be allowed to proceed.
    */
   public function isAllowed($name, $threshold, $window = 3600, $identifier = NULL);
 
   /**
-   * Cleans up expired flood events. This method is called automatically on
-   * cron run.
+   * Cleans up expired flood events.
+   *
+   * This method is called automatically on cron run.
    *
    * @see system_cron()
    */

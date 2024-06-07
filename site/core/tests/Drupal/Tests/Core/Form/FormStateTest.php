@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Form\FormStateTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\Form;
 
@@ -120,7 +117,7 @@ class FormStateTest extends UnitTestCase {
     return [
       // Only validate the 'options' element.
       [[['options']], ['options' => '']],
-      // Do not limit an validation, and, ensuring the first error is returned
+      // Do not limit a validation, ensure the first error is returned
       // for the 'test' element.
       [NULL, ['test' => 'Fail 1', 'options' => '']],
       // Limit all validation.
@@ -136,7 +133,8 @@ class FormStateTest extends UnitTestCase {
   public function testFormErrorsDuringSubmission() {
     $form_state = new FormState();
     $form_state->setValidationComplete();
-    $this->setExpectedException(\LogicException::class, 'Form errors cannot be set after form validation has finished.');
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('Form errors cannot be set after form validation has finished.');
     $form_state->setErrorByName('test', 'message');
   }
 
@@ -180,7 +178,7 @@ class FormStateTest extends UnitTestCase {
     $module = 'some_module';
     $name = 'some_name';
     $form_state = $this->getMockBuilder('Drupal\Core\Form\FormState')
-      ->setMethods(['moduleLoadInclude'])
+      ->onlyMethods(['moduleLoadInclude'])
       ->getMock();
     $form_state->expects($this->once())
       ->method('moduleLoadInclude')
@@ -196,7 +194,7 @@ class FormStateTest extends UnitTestCase {
     $type = 'some_type';
     $module = 'some_module';
     $form_state = $this->getMockBuilder('Drupal\Core\Form\FormState')
-      ->setMethods(['moduleLoadInclude'])
+      ->onlyMethods(['moduleLoadInclude'])
       ->getMock();
     $form_state->expects($this->once())
       ->method('moduleLoadInclude')
@@ -212,7 +210,7 @@ class FormStateTest extends UnitTestCase {
     $type = 'some_type';
     $module = 'some_module';
     $form_state = $this->getMockBuilder('Drupal\Core\Form\FormState')
-      ->setMethods(['moduleLoadInclude'])
+      ->onlyMethods(['moduleLoadInclude'])
       ->getMock();
     $form_state->expects($this->once())
       ->method('moduleLoadInclude')
@@ -229,7 +227,7 @@ class FormStateTest extends UnitTestCase {
     $module = 'some_module';
     $name = 'some_name';
     $form_state = $this->getMockBuilder('Drupal\Core\Form\FormState')
-      ->setMethods(['moduleLoadInclude'])
+      ->onlyMethods(['moduleLoadInclude'])
       ->getMock();
 
     $form_state->addBuildInfo('files', [
@@ -317,7 +315,8 @@ class FormStateTest extends UnitTestCase {
   public function testSetCachedGet() {
     $form_state = new FormState();
     $form_state->setRequestMethod('GET');
-    $this->setExpectedException(\LogicException::class, 'Form state caching on GET requests is not allowed.');
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('Form state caching on GET requests is not allowed.');
     $form_state->setCached();
   }
 
@@ -369,12 +368,12 @@ class FormStateTest extends UnitTestCase {
   public function testTemporaryValue() {
     $form_state = new FormState();
     $this->assertFalse($form_state->hasTemporaryValue('rainbow_sparkles'));
-    $form_state->setTemporaryValue('rainbow_sparkles', 'yes please');
-    $this->assertSame($form_state->getTemporaryValue('rainbow_sparkles'), 'yes please');
-    $this->assertTrue($form_state->hasTemporaryValue('rainbow_sparkles'), TRUE);
-    $form_state->setTemporaryValue(['rainbow_sparkles', 'magic_ponies'], 'yes please');
-    $this->assertSame($form_state->getTemporaryValue(['rainbow_sparkles', 'magic_ponies']), 'yes please');
-    $this->assertTrue($form_state->hasTemporaryValue(['rainbow_sparkles', 'magic_ponies']), TRUE);
+    $form_state->setTemporaryValue('rainbow_sparkles', 'yes');
+    $this->assertSame($form_state->getTemporaryValue('rainbow_sparkles'), 'yes');
+    $this->assertTrue($form_state->hasTemporaryValue('rainbow_sparkles'));
+    $form_state->setTemporaryValue(['rainbow_sparkles', 'magic_ponies'], 'yes');
+    $this->assertSame($form_state->getTemporaryValue(['rainbow_sparkles', 'magic_ponies']), 'yes');
+    $this->assertTrue($form_state->hasTemporaryValue(['rainbow_sparkles', 'magic_ponies']));
   }
 
   /**
@@ -439,7 +438,9 @@ class PrepareCallbackTestForm implements FormInterface {
     return 'test_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state) {}
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    return [];
+  }
 
   public function validateForm(array &$form, FormStateInterface $form_state) {}
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Plugin\field;
 
 use Drupal\Tests\UnitTestCase;
@@ -7,6 +9,7 @@ use Drupal\views\Entity\View;
 use Drupal\views\Plugin\views\field\Counter;
 use Drupal\views\ResultRow;
 use Drupal\views\Tests\ViewTestData;
+use Drupal\views\ViewExecutable;
 
 /**
  * @coversDefaultClass \Drupal\views\Plugin\views\field\Counter
@@ -26,7 +29,7 @@ class CounterTest extends UnitTestCase {
    *
    * @var \Drupal\views\ViewExecutable
    */
-  protected  $view;
+  protected $view;
 
   /**
    * The display plugin instance.
@@ -53,7 +56,7 @@ class CounterTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Setup basic stuff like the view and the display.
@@ -65,12 +68,12 @@ class CounterTest extends UnitTestCase {
     ];
 
     $storage = new View($config, 'view');
-    $user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $user = $this->createMock('Drupal\Core\Session\AccountInterface');
     $views_data = $this->getMockBuilder('Drupal\views\ViewsData')
       ->disableOriginalConstructor()
       ->getMock();
-    $route_provider = $this->getMock('Drupal\Core\Routing\RouteProviderInterface');
-    $this->view = $this->getMock('Drupal\views\ViewExecutable', NULL, [$storage, $user, $views_data, $route_provider]);
+    $route_provider = $this->createMock('Drupal\Core\Routing\RouteProviderInterface');
+    $this->view = new ViewExecutable($storage, $user, $views_data, $route_provider);
 
     $this->display = $this->getMockBuilder('Drupal\views\Plugin\views\display\DisplayPluginBase')
       ->disableOriginalConstructor()
@@ -78,7 +81,7 @@ class CounterTest extends UnitTestCase {
 
     $this->pager = $this->getMockBuilder('Drupal\views\Plugin\views\pager\Full')
       ->disableOriginalConstructor()
-      ->setMethods(NULL)
+      ->onlyMethods([])
       ->getMock();
 
     $this->view->display_handler = $this->display;

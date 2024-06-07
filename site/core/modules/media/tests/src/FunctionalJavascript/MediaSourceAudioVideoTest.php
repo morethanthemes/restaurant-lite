@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\media\FunctionalJavascript;
 
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
@@ -13,6 +15,11 @@ use Drupal\file\Entity\File;
  * @group media
  */
 class MediaSourceAudioVideoTest extends MediaSourceTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Check the Audio source functionality.

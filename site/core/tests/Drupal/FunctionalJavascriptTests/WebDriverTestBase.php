@@ -1,23 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\FunctionalJavascriptTests;
 
 use Behat\Mink\Exception\DriverException;
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Tests\BrowserTestBase;
-use Zumba\GastonJS\Exception\DeadClient;
-use Zumba\Mink\Driver\PhantomJSDriver;
+use PHPUnit\Runner\BaseTestRunner;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Runs a browser test using a driver that supports Javascript.
+ * Runs a browser test using a driver that supports JavaScript.
  *
  * Base class for testing browser interaction implemented in JavaScript.
+ *
+ * @ingroup testing
  */
 abstract class WebDriverTestBase extends BrowserTestBase {
 
   /**
-   * {@inheritdoc}
+   * Determines if a test should fail on JavaScript console errors.
    *
-   * To use a legacy phantomjs based approach, please use PhantomJSDriver::class.
+   * @var bool
+   */
+  protected $failOnJavascriptConsoleErrors = TRUE;
+
+  /**
+   * Disables CSS animations in tests for more reliable testing.
+   *
+   * CSS animations are disabled by installing the css_disable_transitions_test
+   * module. Set to FALSE to test CSS animations.
+   *
+   * @var bool
+   */
+  protected $disableCssAnimations = TRUE;
+
+  /**
+   * {@inheritdoc}
    */
   protected $minkDefaultDriverClass = DrupalSelenium2Driver::class;
 
@@ -25,26 +45,13 @@ abstract class WebDriverTestBase extends BrowserTestBase {
    * {@inheritdoc}
    */
   protected function initMink() {
-    if ($this->minkDefaultDriverClass === DrupalSelenium2Driver::class) {
-      $this->minkDefaultDriverArgs = ['chrome', NULL, 'http://localhost:4444'];
+    if (!is_a($this->minkDefaultDriverClass, DrupalSelenium2Driver::class, TRUE)) {
+      throw new \UnexpectedValueException(sprintf("%s has to be an instance of %s", $this->minkDefaultDriverClass, DrupalSelenium2Driver::class));
     }
-    elseif ($this->minkDefaultDriverClass === PhantomJSDriver::class) {
-      // Set up the template cache used by the PhantomJS mink driver.
-      $path = $this->tempFilesDirectory . DIRECTORY_SEPARATOR . 'browsertestbase-templatecache';
-      $this->minkDefaultDriverArgs = [
-        'http://127.0.0.1:8510',
-        $path,
-      ];
-      if (!file_exists($path)) {
-        mkdir($path);
-      }
-    }
+    $this->minkDefaultDriverArgs = ['chrome', NULL, 'http://localhost:4444'];
 
     try {
       return parent::initMink();
-    }
-    catch (DeadClient $e) {
-      $this->markTestSkipped('PhantomJS is either not installed or not running. Start it via phantomjs --ssl-protocol=any --ignore-ssl-errors=true vendor/jcalderonzumba/gastonjs/src/Client/main.js 8510 1024 768&');
     }
     catch (DriverException $e) {
       if ($this->minkDefaultDriverClass === DrupalSelenium2Driver::class) {
@@ -62,11 +69,41 @@ abstract class WebDriverTestBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function tearDown() {
+  protected function installModulesFromClassProperty(ContainerInterface $container) {
+    self::$modules = [
+      'js_testing_ajax_request_test',
+      'js_testing_log_test',
+      'jquery_keyevent_polyfill_test',
+    ];
+    if ($this->disableCssAnimations) {
+      self::$modules[] = 'css_disable_transitions_test';
+    }
+    parent::installModulesFromClassProperty($container);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function initFrontPage() {
+    parent::initFrontPage();
+    // Set a standard window size so that all javascript tests start with the
+    // same viewport.
+    $this->getSession()->resizeWindow(1024, 768);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function tearDown(): void {
     if ($this->mink) {
+      $status = $this->getStatus();
+      if ($status === BaseTestRunner::STATUS_ERROR || $status === BaseTestRunner::STATUS_WARNING || $status === BaseTestRunner::STATUS_FAILURE) {
+        // Ensure we capture the output at point of failure.
+        @$this->htmlOutput();
+      }
       // Wait for all requests to finish. It is possible that an AJAX request is
       // still on-going.
-      $result = $this->getSession()->wait(5000, '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length))');
+      $result = $this->getSession()->wait(5000, 'window.drupalActiveXhrCount === 0 || typeof window.drupalActiveXhrCount === "undefined"');
       if (!$result) {
         // If the wait is unsuccessful, there may still be an AJAX request in
         // progress. If we tear down now, then this AJAX request may fail with
@@ -75,53 +112,42 @@ abstract class WebDriverTestBase extends BrowserTestBase {
         // explaining what the problem is.
         throw new \RuntimeException('Unfinished AJAX requests while tearing down a test');
       }
+
+      $warnings = $this->getSession()->evaluateScript("JSON.parse(sessionStorage.getItem('js_testing_log_test.warnings') || JSON.stringify([]))");
+      foreach ($warnings as $warning) {
+        if (str_starts_with($warning, '[Deprecation]')) {
+          // phpcs:ignore Drupal.Semantics.FunctionTriggerError
+          @trigger_error('Javascript Deprecation:' . substr($warning, 13), E_USER_DEPRECATED);
+        }
+      }
     }
     parent::tearDown();
   }
 
   /**
-    * {@inheritdoc}
-    */
+   * Triggers a test failure if a JavaScript error was encountered.
+   *
+   * @throws \PHPUnit\Framework\AssertionFailedError
+   *
+   * @postCondition
+   */
+  protected function failOnJavaScriptErrors(): void {
+    if ($this->failOnJavascriptConsoleErrors) {
+      $errors = $this->getSession()->evaluateScript("JSON.parse(sessionStorage.getItem('js_testing_log_test.errors') || JSON.stringify([]))");
+      if (!empty($errors)) {
+        $this->fail(implode("\n", $errors));
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function getMinkDriverArgs() {
     if ($this->minkDefaultDriverClass === DrupalSelenium2Driver::class) {
-      return getenv('MINK_DRIVER_ARGS_WEBDRIVER') ?: getenv('MINK_DRIVER_ARGS_PHANTOMJS') ?: parent::getMinkDriverArgs();
-    }
-    elseif ($this->minkDefaultDriverClass === PhantomJSDriver::class) {
-      return getenv('MINK_DRIVER_ARGS_PHANTOMJS') ?: parent::getMinkDriverArgs();
+      return getenv('MINK_DRIVER_ARGS_WEBDRIVER') ?: parent::getMinkDriverArgs();
     }
     return parent::getMinkDriverArgs();
-  }
-
-  /**
-   * Asserts that the element with the given CSS selector is visible.
-   *
-   * @param string $css_selector
-   *   The CSS selector identifying the element to check.
-   * @param string $message
-   *   Optional message to show alongside the assertion.
-   *
-   * @deprecated in Drupal 8.1.0, will be removed before Drupal 9.0.0. Use
-   *   \Behat\Mink\Element\NodeElement::isVisible() instead.
-   */
-  protected function assertElementVisible($css_selector, $message = '') {
-    $this->assertTrue($this->getSession()->getDriver()->isVisible($this->cssSelectToXpath($css_selector)), $message);
-    @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 8.1.0 and will be removed in 9.0.0. Use \Behat\Mink\Element\NodeElement::isVisible() instead.', E_USER_DEPRECATED);
-  }
-
-  /**
-   * Asserts that the element with the given CSS selector is not visible.
-   *
-   * @param string $css_selector
-   *   The CSS selector identifying the element to check.
-   * @param string $message
-   *   Optional message to show alongside the assertion.
-   *
-   * @deprecated in Drupal 8.1.0, will be removed before Drupal 9.0.0. Use
-   *   \Behat\Mink\Element\NodeElement::isVisible() instead.
-   */
-  protected function assertElementNotVisible($css_selector, $message = '') {
-    $this->assertFalse($this->getSession()->getDriver()->isVisible($this->cssSelectToXpath($css_selector)), $message);
-    @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 8.1.0 and will be removed in 9.0.0. Use \Behat\Mink\Element\NodeElement::isVisible() instead.', E_USER_DEPRECATED);
   }
 
   /**
@@ -135,12 +161,12 @@ abstract class WebDriverTestBase extends BrowserTestBase {
    *   (optional) A message to display with the assertion. If left blank, a
    *   default message will be displayed.
    *
-   * @throws \PHPUnit_Framework_AssertionFailedError
+   * @throws \PHPUnit\Framework\AssertionFailedError
    *
    * @see \Behat\Mink\Driver\DriverInterface::evaluateScript()
    */
   protected function assertJsCondition($condition, $timeout = 10000, $message = '') {
-    $message = $message ?: "Javascript condition met:\n" . $condition;
+    $message = $message ?: "JavaScript condition met:\n" . $condition;
     $result = $this->getSession()->getDriver()->wait($timeout, $condition);
     $this->assertTrue($result, $message);
   }
@@ -149,11 +175,11 @@ abstract class WebDriverTestBase extends BrowserTestBase {
    * Creates a screenshot.
    *
    * @param string $filename
-   *   The file name of the resulting screenshot. If using the default phantomjs
-   *   driver then this should be a JPG filename.
+   *   The file name of the resulting screenshot including a writable path. For
+   *   example, /tmp/test_screenshot.jpg.
    * @param bool $set_background_color
    *   (optional) By default this method will set the background color to white.
-   *   Set to FALSE to override this behaviour.
+   *   Set to FALSE to override this behavior.
    *
    * @throws \Behat\Mink\Exception\UnsupportedDriverActionException
    *   When operation not supported by the driver.
@@ -196,8 +222,11 @@ abstract class WebDriverTestBase extends BrowserTestBase {
   }
 })();
 EndOfScript;
-
-    return $this->getSession()->evaluateScript($script) ?: [];
+    $settings = $this->getSession()->evaluateScript($script) ?: [];
+    if (isset($settings['ajaxPageState'])) {
+      $settings['ajaxPageState']['libraries'] = UrlHelper::uncompressQueryParameter($settings['ajaxPageState']['libraries']);
+    }
+    return $settings;
   }
 
   /**

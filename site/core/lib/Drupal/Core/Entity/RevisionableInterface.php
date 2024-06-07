@@ -19,8 +19,10 @@ namespace Drupal\Core\Entity;
  * @see \Drupal\Core\Entity\EntityTypeInterface::isRevisionable()
  * @see https://www.drupal.org/docs/8/api/entity-api/structure-of-an-entity-annotation
  * @see https://www.drupal.org/docs/8/api/entity-api/making-an-entity-revisionable
+ *
+ * @ingroup entity_type_characteristics
  */
-interface RevisionableInterface {
+interface RevisionableInterface extends EntityInterface {
 
   /**
    * Determines whether a new revision should be created on save.
@@ -48,7 +50,7 @@ interface RevisionableInterface {
   /**
    * Gets the revision identifier of the entity.
    *
-   * @return
+   * @return int|null|string
    *   The revision identifier of the entity, or NULL if the entity does not
    *   have a revision identifier.
    */
@@ -108,7 +110,7 @@ interface RevisionableInterface {
    *
    * @param EntityStorageInterface $storage
    *   The entity storage object.
-   * @param \stdClass $record
+   * @param object $record
    *   The revision object.
    */
   public function preSaveRevision(EntityStorageInterface $storage, \stdClass $record);

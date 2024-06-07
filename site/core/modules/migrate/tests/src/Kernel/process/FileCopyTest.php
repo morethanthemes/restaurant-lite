@@ -23,7 +23,7 @@ class FileCopyTest extends FileTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['migrate', 'system'];
+  protected static $modules = ['migrate', 'system'];
 
   /**
    * The file system service.
@@ -35,14 +35,14 @@ class FileCopyTest extends FileTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->fileSystem = $this->container->get('file_system');
     $this->container->get('stream_wrapper_manager')->registerWrapper('temporary', 'Drupal\Core\StreamWrapper\TemporaryStream', StreamWrapperInterface::LOCAL_NORMAL);
   }
 
   /**
-   * Test successful imports/copies.
+   * Tests successful imports/copies.
    */
   public function testSuccessfulCopies() {
     $file = $this->createUri(NULL, NULL, 'temporary');
@@ -50,7 +50,7 @@ class FileCopyTest extends FileTestBase {
     $data_sets = [
       // Test a local to local copy.
       [
-        $this->root . '/core/modules/simpletest/files/image-test.jpg',
+        $this->root . '/core/tests/fixtures/files/image-test.jpg',
         'public://file1.jpg',
       ],
       // Test a temporary file using an absolute path.
@@ -61,22 +61,21 @@ class FileCopyTest extends FileTestBase {
       // Test a temporary file using a relative path.
       [
         $file_absolute,
-        'temporary://core/modules/simpletest/files/test.jpg',
+        'temporary://core/tests/fixtures/files/test.jpg',
       ],
     ];
     foreach ($data_sets as $data) {
-      list($source_path, $destination_path) = $data;
+      [$source_path, $destination_path] = $data;
       $actual_destination = $this->doTransform($source_path, $destination_path);
-      $message = sprintf('File %s exists', $destination_path);
-      $this->assertFileExists($destination_path, $message);
+      $this->assertFileExists($destination_path);
       // Make sure we didn't accidentally do a move.
-      $this->assertFileExists($source_path, $message);
+      $this->assertFileExists($source_path);
       $this->assertSame($actual_destination, $destination_path, 'The import returned the copied filename.');
     }
   }
 
   /**
-   * Test successful file reuse.
+   * Tests successful file reuse.
    *
    * @dataProvider providerSuccessfulReuse
    *
@@ -90,7 +89,7 @@ class FileCopyTest extends FileTestBase {
     clearstatcache(TRUE, $destination_path);
 
     $timestamp = (new \SplFileInfo($file_reuse))->getMTime();
-    $this->assertInternalType('int', $timestamp);
+    $this->assertIsInt($timestamp);
 
     // We need to make sure the modified timestamp on the file is sooner than
     // the attempted migration.
@@ -113,7 +112,7 @@ class FileCopyTest extends FileTestBase {
   public function providerSuccessfulReuse() {
     return [
       [
-        'local_source_path' => static::getDrupalRoot() . '/core/modules/simpletest/files/image-test.jpg',
+        'local_source_path' => static::getDrupalRoot() . '/core/tests/fixtures/files/image-test.jpg',
         'local_destination_path' => 'public://file1.jpg',
       ],
       [
@@ -124,7 +123,7 @@ class FileCopyTest extends FileTestBase {
   }
 
   /**
-   * Test successful moves.
+   * Tests successful moves.
    */
   public function testSuccessfulMoves() {
     $file_1 = $this->createUri(NULL, NULL, 'temporary');
@@ -146,27 +145,26 @@ class FileCopyTest extends FileTestBase {
       // Test a temporary file using a relative path.
       [
         $file_2_absolute,
-        'temporary://core/modules/simpletest/files/test.jpg',
+        'temporary://core/tests/fixtures/files/test.jpg',
       ],
     ];
     foreach ($data_sets as $data) {
-      list($source_path, $destination_path) = $data;
+      [$source_path, $destination_path] = $data;
       $actual_destination = $this->doTransform($source_path, $destination_path, ['move' => TRUE]);
-      $message = sprintf('File %s exists', $destination_path);
-      $this->assertFileExists($destination_path, $message);
-      $message = sprintf('File %s does not exist', $source_path);
-      $this->assertFileNotExists($source_path, $message);
+      $this->assertFileExists($destination_path);
+      $this->assertFileDoesNotExist($source_path);
       $this->assertSame($actual_destination, $destination_path, 'The importer returned the moved filename.');
     }
   }
 
   /**
-   * Test that non-existent files throw an exception.
+   * Tests that non-existent files throw an exception.
    */
   public function testNonExistentSourceFile() {
     $source = '/non/existent/file';
-    $this->setExpectedException(MigrateException::class, "File '/non/existent/file' does not exist");
-    $this->doTransform($source, 'public://wontmatter.jpg');
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage("File '/non/existent/file' does not exist");
+    $this->doTransform($source, 'public://foo.jpg');
   }
 
   /**
@@ -191,19 +189,20 @@ class FileCopyTest extends FileTestBase {
     $this->fileSystem->chmod('public://dir', 0);
 
     // Check that the proper exception is raised.
-    $this->setExpectedException(MigrateException::class, "Could not create or write to directory 'public://dir/subdir2'");
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage("Could not create or write to directory 'public://dir/subdir2'");
     $this->doTransform($source, 'public://dir/subdir2/file.txt');
   }
 
   /**
-   * Test the 'rename' overwrite mode.
+   * Tests the 'rename' overwrite mode.
    */
   public function testRenameFile() {
     $source = $this->createUri(NULL, NULL, 'temporary');
     $destination = $this->createUri('foo.txt', NULL, 'public');
     $expected_destination = 'public://foo_0.txt';
     $actual_destination = $this->doTransform($source, $destination, ['file_exists' => 'rename']);
-    $this->assertFileExists($expected_destination, 'File was renamed on import');
+    $this->assertFileExists($expected_destination);
     $this->assertSame($actual_destination, $expected_destination, 'The importer returned the renamed filename.');
   }
 
@@ -211,7 +210,7 @@ class FileCopyTest extends FileTestBase {
    * Tests that remote URIs are delegated to the download plugin.
    */
   public function testDownloadRemoteUri() {
-    $download_plugin = $this->getMock(MigrateProcessInterface::class);
+    $download_plugin = $this->createMock(MigrateProcessInterface::class);
     $download_plugin->expects($this->once())->method('transform');
 
     $plugin = new FileCopy(
@@ -225,7 +224,7 @@ class FileCopyTest extends FileTestBase {
 
     $plugin->transform(
       ['http://drupal.org/favicon.ico', '/destination/path'],
-      $this->getMock(MigrateExecutableInterface::class),
+      $this->createMock(MigrateExecutableInterface::class),
       new Row([], []),
       $this->randomMachineName()
     );
@@ -252,7 +251,7 @@ class FileCopyTest extends FileTestBase {
     $executable = $this->prophesize(MigrateExecutableInterface::class)->reveal();
     $row = new Row([], []);
 
-    return $plugin->transform([$source_path, $destination_path], $executable, $row, 'foobaz');
+    return $plugin->transform([$source_path, $destination_path], $executable, $row, 'foo');
   }
 
 }

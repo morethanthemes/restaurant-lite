@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Menu;
 
 use Drupal\Core\Menu\MenuTreeParameters;
@@ -140,6 +142,26 @@ class MenuTreeParametersTest extends UnitTestCase {
     $parameters = new MenuTreeParameters();
     $parameters->excludeRoot();
     $this->assertEquals(1, $parameters->minDepth);
+  }
+
+  /**
+   * @covers ::serialize
+   * @covers ::unserialize
+   */
+  public function testSerialize() {
+    $parameters = new MenuTreeParameters();
+    $parameters->setRoot(1);
+    $parameters->setMinDepth('2');
+    $parameters->setMaxDepth('9');
+    $parameters->addExpandedParents(['', 'foo']);
+    $parameters->setActiveTrail(['', 'bar']);
+
+    $after_serialize = unserialize(serialize($parameters));
+    $this->assertSame('1', $after_serialize->root);
+    $this->assertSame(2, $after_serialize->minDepth);
+    $this->assertSame(9, $after_serialize->maxDepth);
+    $this->assertSame(['', 'foo'], $after_serialize->expandedParents);
+    $this->assertSame(['bar'], $after_serialize->activeTrail);
   }
 
 }

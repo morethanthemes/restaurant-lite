@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\layout_builder\Functional;
 
-use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\layout_builder\Entity\LayoutBuilderEntityViewDisplay;
 use Drupal\layout_builder\Plugin\SectionStorage\OverridesSectionStorage;
 use Drupal\layout_builder\Section;
@@ -19,12 +18,22 @@ class LayoutSectionTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['field_ui', 'layout_builder', 'node', 'block_test'];
+  protected static $modules = [
+    'field_ui',
+    'layout_builder',
+    'node',
+    'block_test',
+  ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'starterkit_theme';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->createContentType([
@@ -200,50 +209,6 @@ class LayoutSectionTest extends BrowserTestBase {
   }
 
   /**
-   * Tests the multilingual support of the section formatter.
-   */
-  public function testMultilingualLayoutSectionFormatter() {
-    $this->container->get('module_installer')->install(['content_translation']);
-    $this->rebuildContainer();
-
-    ConfigurableLanguage::createFromLangcode('es')->save();
-    $this->container->get('content_translation.manager')->setEnabled('node', 'bundle_with_section_field', TRUE);
-
-    $entity = $this->createSectionNode([
-      [
-        'section' => new Section('layout_onecol', [], [
-          'baz' => new SectionComponent('baz', 'content', [
-            'id' => 'system_powered_by_block',
-          ]),
-        ]),
-      ],
-    ]);
-    $entity->addTranslation('es', [
-      'title' => 'Translated node title',
-      OverridesSectionStorage::FIELD_NAME => [
-        [
-          'section' => new Section('layout_twocol', [], [
-            'foo' => new SectionComponent('foo', 'first', [
-              'id' => 'test_block_instantiation',
-              'display_message' => 'foo text',
-            ]),
-            'bar' => new SectionComponent('bar', 'second', [
-              'id' => 'test_block_instantiation',
-              'display_message' => 'bar text',
-            ]),
-          ]),
-        ],
-      ],
-    ]);
-    $entity->save();
-
-    $this->drupalGet($entity->toUrl('canonical'));
-    $this->assertLayoutSection('.layout--onecol', 'Powered by');
-    $this->drupalGet($entity->toUrl('canonical')->setOption('prefix', 'es/'));
-    $this->assertLayoutSection('.layout--twocol', ['foo text', 'bar text']);
-  }
-
-  /**
    * Ensures that the entity title is displayed.
    */
   public function testLayoutPageTitle() {
@@ -271,7 +236,7 @@ class LayoutSectionTest extends BrowserTestBase {
     $node->save();
 
     $this->drupalGet($node->toUrl('canonical')->toString() . '/layout');
-    $this->assertSession()->statusCodeEquals(404);
+    $this->assertSession()->statusCodeEquals(403);
   }
 
   /**
@@ -280,20 +245,20 @@ class LayoutSectionTest extends BrowserTestBase {
   public function testLayoutDeletingField() {
     $assert_session = $this->assertSession();
 
-    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/display-layout/default');
+    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/display/default/layout');
     $assert_session->statusCodeEquals(200);
     $assert_session->elementExists('css', '.field--name-body');
 
     // Delete the field from both bundles.
     $this->drupalGet('/admin/structure/types/manage/bundle_without_section_field/fields/node.bundle_without_section_field.body/delete');
     $this->submitForm([], 'Delete');
-    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/display-layout/default');
+    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/display/default/layout');
     $assert_session->statusCodeEquals(200);
     $assert_session->elementExists('css', '.field--name-body');
 
     $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/fields/node.bundle_with_section_field.body/delete');
     $this->submitForm([], 'Delete');
-    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/display-layout/default');
+    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/display/default/layout');
     $assert_session->statusCodeEquals(200);
     $assert_session->elementNotExists('css', '.field--name-body');
   }
@@ -307,7 +272,8 @@ class LayoutSectionTest extends BrowserTestBase {
     $display = LayoutBuilderEntityViewDisplay::load('node.bundle_with_section_field.default');
     $this->assertInstanceOf(LayoutBuilderEntityViewDisplay::class, $display);
 
-    $this->drupalPostForm('/admin/structure/types/manage/bundle_with_section_field/delete', [], 'Delete');
+    $this->drupalGet('/admin/structure/types/manage/bundle_with_section_field/delete');
+    $this->submitForm([], 'Delete');
     $assert_session->statusCodeEquals(200);
 
     $display = LayoutBuilderEntityViewDisplay::load('node.bundle_with_section_field.default');
@@ -327,8 +293,10 @@ class LayoutSectionTest extends BrowserTestBase {
    *   A string of cache tags to be found in the header.
    * @param string $expected_dynamic_cache
    *   The expected dynamic cache header. Either 'HIT', 'MISS' or 'UNCACHEABLE'.
+   *
+   * @internal
    */
-  protected function assertLayoutSection($expected_selector, $expected_content, $expected_cache_contexts = '', $expected_cache_tags = '', $expected_dynamic_cache = 'MISS') {
+  protected function assertLayoutSection($expected_selector, $expected_content, string $expected_cache_contexts = '', string $expected_cache_tags = '', string $expected_dynamic_cache = 'MISS'): void {
     $assert_session = $this->assertSession();
     // Find the given selector.
     foreach ((array) $expected_selector as $selector) {

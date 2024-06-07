@@ -21,7 +21,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'node',
     'content_moderation',
     'user',
@@ -41,7 +41,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installSchema('node', 'node_access');
@@ -49,13 +49,12 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $this->installEntitySchema('user');
     $this->installEntitySchema('content_moderation_state');
     $this->installConfig('content_moderation');
-    $this->installSchema('system', ['sequences']);
 
     $this->adminUser = $this->createUser(array_keys($this->container->get('user.permissions')->getPermissions()));
   }
 
   /**
-   * Test valid transitions.
+   * Tests valid transitions.
    *
    * @covers ::validate
    */
@@ -64,6 +63,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
 
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     $workflow = $this->createEditorialWorkflow();
@@ -85,7 +85,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
   }
 
   /**
-   * Test invalid transitions.
+   * Tests invalid transitions.
    *
    * @covers ::validate
    */
@@ -94,6 +94,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
 
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     $workflow = $this->createEditorialWorkflow();
@@ -111,15 +112,16 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $violations = $node->validate();
     $this->assertCount(1, $violations);
 
-    $this->assertEquals('Invalid state transition from <em class="placeholder">Draft</em> to <em class="placeholder">Archived</em>', $violations->get(0)->getMessage());
+    $this->assertEquals('Invalid state transition from Draft to Archived', $violations->get(0)->getMessage());
   }
 
   /**
-   * Test validation with an invalid state.
+   * Tests validation with an invalid state.
    */
   public function testInvalidState() {
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     $workflow = $this->createEditorialWorkflow();
@@ -134,17 +136,18 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $violations = $node->validate();
 
     $this->assertCount(1, $violations);
-    $this->assertEquals('State <em class="placeholder">invalid_state</em> does not exist on <em class="placeholder">Editorial</em> workflow', $violations->get(0)->getMessage());
+    $this->assertEquals('State invalid_state does not exist on Editorial workflow', $violations->get(0)->getMessage());
   }
 
   /**
-   * Test validation with content that has no initial state or an invalid state.
+   * Tests validation with no initial state or an invalid state.
    */
   public function testInvalidStateWithoutExisting() {
     $this->setCurrentUser($this->adminUser);
     // Create content without moderation enabled for the content type.
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     $node = Node::create([
@@ -161,6 +164,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $workflow->save();
 
     // Validate the invalid state.
+    $node = Node::load($node->id());
     $node->moderation_state->value = 'invalid_state';
     $violations = $node->validate();
     $this->assertCount(1, $violations);
@@ -186,7 +190,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
   }
 
   /**
-   * Test state transition validation with multiple languages.
+   * Tests state transition validation with multiple languages.
    */
   public function testInvalidStateMultilingual() {
     $this->setCurrentUser($this->adminUser);
@@ -194,6 +198,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     ConfigurableLanguage::createFromLangcode('fr')->save();
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
 
@@ -225,7 +230,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $node->moderation_state = 'archived';
     $violations = $node->validate();
     $this->assertCount(1, $violations);
-    $this->assertEquals('Invalid state transition from <em class="placeholder">Draft</em> to <em class="placeholder">Archived</em>', $violations->get(0)->getMessage());
+    $this->assertEquals('Invalid state transition from Draft to Archived', $violations->get(0)->getMessage());
 
     // From the default french published revision, there should be none.
     $node_fr = Node::load($node->id())->getTranslation('fr');
@@ -250,6 +255,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
 
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     /** @var \Drupal\node\NodeInterface $node */
@@ -289,6 +295,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
 
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     /** @var \Drupal\node\NodeInterface $node */
@@ -329,6 +336,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
   public function testTransitionAccessValidation($permissions, $target_state, $messages) {
     $node_type = NodeType::create([
       'type' => 'example',
+      'name' => 'Example',
     ]);
     $node_type->save();
     $workflow = $this->createEditorialWorkflow();
@@ -347,7 +355,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     ]);
     $this->assertTrue($node->isNew());
     $violations = $node->validate();
-    $this->assertCount(count($messages), $violations);
+    $this->assertSameSize($messages, $violations);
     foreach ($messages as $i => $message) {
       $this->assertEquals($message, $violations->get($i)->getMessage());
     }
@@ -361,12 +369,12 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'Invalid transition, no permissions validated' => [
         [],
         'archived',
-        ['Invalid state transition from <em class="placeholder">Draft</em> to <em class="placeholder">Archived</em>'],
+        ['Invalid state transition from Draft to Archived'],
       ],
       'Valid transition, missing permission' => [
         [],
         'published',
-        ['You do not have access to transition from <em class="placeholder">Draft</em> to <em class="placeholder">Published</em>'],
+        ['You do not have access to transition from Draft to Published'],
       ],
       'Valid transition, granted published permission' => [
         ['use editorial transition publish'],
@@ -381,7 +389,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'Valid transition, incorrect permission granted' => [
         ['use editorial transition create_new_draft'],
         'published',
-        ['You do not have access to transition from <em class="placeholder">Draft</em> to <em class="placeholder">Published</em>'],
+        ['You do not have access to transition from Draft to Published'],
       ],
       // Test with an additional state and set of transitions, since the
       // "published" transition can start from either "draft" or "published", it
@@ -395,7 +403,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'Valid transition, incorrect  foo permission granted' => [
         ['use editorial transition foo_to_foo'],
         'foo',
-        ['You do not have access to transition from <em class="placeholder">Draft</em> to <em class="placeholder">Foo</em>'],
+        ['You do not have access to transition from Draft to Foo'],
       ],
     ];
   }

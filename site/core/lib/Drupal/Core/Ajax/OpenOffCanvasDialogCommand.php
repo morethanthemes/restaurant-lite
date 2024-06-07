@@ -3,7 +3,7 @@
 namespace Drupal\Core\Ajax;
 
 /**
- * Defines an AJAX command to open content in a dialog in a off-canvas dialog.
+ * Defines an AJAX command to open content in a dialog in an off-canvas tray.
  *
  * @ingroup ajax
  */
@@ -18,8 +18,8 @@ class OpenOffCanvasDialogCommand extends OpenDialogCommand {
    * Constructs an OpenOffCanvasDialogCommand object.
    *
    * The off-canvas dialog differs from the normal modal provided by
-   * OpenDialogCommand in that a off-canvas has built in positioning and
-   * behaviours. Drupal provides a built-in off-canvas dialog for this purpose,
+   * OpenDialogCommand in that an off-canvas has built in positioning and
+   * behaviors. Drupal provides a built-in off-canvas dialog for this purpose,
    * so the selector is hard-coded in the call to the parent constructor.
    *
    * @param string $title
@@ -45,12 +45,13 @@ class OpenOffCanvasDialogCommand extends OpenDialogCommand {
     $this->dialogOptions['draggable'] = FALSE;
     $this->dialogOptions['drupalAutoButtons'] = FALSE;
     $this->dialogOptions['drupalOffCanvasPosition'] = $position;
-    // @todo drupal.ajax.js does not respect drupalAutoButtons properly, pass an
-    //   empty set of buttons until https://www.drupal.org/node/2793343 is in.
-    $this->dialogOptions['buttons'] = [];
     if (empty($dialog_options['dialogClass'])) {
       $this->dialogOptions['dialogClass'] = "ui-dialog-off-canvas ui-dialog-position-$position";
     }
+    // Add CSS class to #drupal-off-canvas element. This enables developers to
+    // select previous versions of off-canvas styles by using custom selector:
+    // #drupal-off-canvas:not(.drupal-off-canvas-reset).
+    $this->dialogOptions['classes']['ui-dialog-content'] = 'drupal-off-canvas-reset';
     // If no width option is provided then use the default width to avoid the
     // dialog staying at the width of the previous instance when opened
     // more than once, with different widths, on a single page.

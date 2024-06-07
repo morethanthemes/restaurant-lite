@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\action\Unit\Menu;
 
 use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
@@ -11,7 +13,10 @@ use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
  */
 class ActionLocalTasksTest extends LocalTaskIntegrationTestBase {
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     $this->directoryList = ['action' => 'core/modules/action'];
     parent::setUp();
   }

@@ -14,7 +14,12 @@ class ContainerRebuildWebTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['service_provider_test'];
+  protected static $modules = ['service_provider_test'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Sets a different deployment identifier.
@@ -45,7 +50,7 @@ class ContainerRebuildWebTest extends BrowserTestBase {
 
     // Ensure that after setting the parameter, without a container rebuild the
     // parameter is still not set.
-    $this->writeSettings(['settings' => ['container_rebuild_test_parameter' => (object) ['value' => 'rebuild_me_please', 'required' => TRUE]]]);
+    $this->writeSettings(['settings' => ['container_rebuild_test_parameter' => (object) ['value' => 'rebuild_me', 'required' => TRUE]]]);
 
     $this->drupalGet('<front>');
     $assert->responseHeaderEquals('container_rebuild_test_parameter', NULL);
@@ -53,7 +58,7 @@ class ContainerRebuildWebTest extends BrowserTestBase {
     // Ensure that after container invalidation the parameter is set.
     \Drupal::service('kernel')->invalidateContainer();
     $this->drupalGet('<front>');
-    $assert->responseHeaderEquals('container_rebuild_test_parameter', 'rebuild_me_please');
+    $assert->responseHeaderEquals('container_rebuild_test_parameter', 'rebuild_me');
   }
 
 }

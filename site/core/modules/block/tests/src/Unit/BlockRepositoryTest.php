@@ -1,16 +1,12 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\block\Unit\BlockRepositoryTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\block\Unit;
 
 use Drupal\block\BlockRepository;
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Block\BlockPluginInterface;
-use Drupal\Core\Plugin\ContextAwarePluginInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -25,7 +21,7 @@ class BlockRepositoryTest extends UnitTestCase {
   protected $blockRepository;
 
   /**
-   * @var \Drupal\Core\Entity\EntityStorageInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Entity\EntityStorageInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $blockStorage;
 
@@ -35,14 +31,14 @@ class BlockRepositoryTest extends UnitTestCase {
   protected $theme;
 
   /**
-   * @var \Drupal\Core\Plugin\Context\ContextHandlerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Plugin\Context\ContextHandlerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $contextHandler;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $active_theme = $this->getMockBuilder('Drupal\Core\Theme\ActiveTheme')
       ->disableOriginalConstructor()
@@ -59,19 +55,20 @@ class BlockRepositoryTest extends UnitTestCase {
         'bottom',
       ]);
 
-    $theme_manager = $this->getMock('Drupal\Core\Theme\ThemeManagerInterface');
+    $theme_manager = $this->createMock('Drupal\Core\Theme\ThemeManagerInterface');
     $theme_manager->expects($this->atLeastOnce())
       ->method('getActiveTheme')
-      ->will($this->returnValue($active_theme));
+      ->willReturn($active_theme);
 
-    $this->contextHandler = $this->getMock('Drupal\Core\Plugin\Context\ContextHandlerInterface');
-    $this->blockStorage = $this->getMock('Drupal\Core\Entity\EntityStorageInterface');
-    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
-    $entity_manager->expects($this->any())
+    $this->contextHandler = $this->createMock('Drupal\Core\Plugin\Context\ContextHandlerInterface');
+    $this->blockStorage = $this->createMock('Drupal\Core\Entity\EntityStorageInterface');
+    /** @var \Drupal\Core\Entity\EntityTypeManagerInterface|\PHPUnit\Framework\MockObject\MockObject $entity_type_manager */
+    $entity_type_manager = $this->createMock(EntityTypeManagerInterface::class);
+    $entity_type_manager->expects($this->any())
       ->method('getStorage')
       ->willReturn($this->blockStorage);
 
-    $this->blockRepository = new BlockRepository($entity_manager, $theme_manager, $this->contextHandler);
+    $this->blockRepository = new BlockRepository($entity_type_manager, $theme_manager, $this->contextHandler);
   }
 
   /**
@@ -84,10 +81,10 @@ class BlockRepositoryTest extends UnitTestCase {
   public function testGetVisibleBlocksPerRegion(array $blocks_config, array $expected_blocks) {
     $blocks = [];
     foreach ($blocks_config as $block_id => $block_config) {
-      $block = $this->getMock('Drupal\block\BlockInterface');
+      $block = $this->createMock('Drupal\block\BlockInterface');
       $block->expects($this->once())
         ->method('access')
-        ->will($this->returnValue($block_config[0]));
+        ->willReturn($block_config[0]);
       $block->expects($block_config[0] ? $this->atLeastOnce() : $this->never())
         ->method('getRegion')
         ->willReturn($block_config[1]);
@@ -153,7 +150,7 @@ class BlockRepositoryTest extends UnitTestCase {
    * @covers ::getVisibleBlocksPerRegion
    */
   public function testGetVisibleBlocksPerRegionWithContext() {
-    $block = $this->getMock('Drupal\block\BlockInterface');
+    $block = $this->createMock('Drupal\block\BlockInterface');
     $block->expects($this->once())
       ->method('access')
       ->willReturn(AccessResult::allowed()->addCacheTags(['config:block.block.block_id']));
@@ -188,7 +185,4 @@ class BlockRepositoryTest extends UnitTestCase {
     $this->assertEquals(['config:block.block.block_id'], $cacheable_metadata['top']->getCacheTags());
   }
 
-}
-
-interface TestContextAwareBlockInterface extends BlockPluginInterface, ContextAwarePluginInterface {
 }

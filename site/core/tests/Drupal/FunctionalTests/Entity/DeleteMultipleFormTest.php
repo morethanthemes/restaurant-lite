@@ -29,19 +29,26 @@ class DeleteMultipleFormTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['entity_test', 'user', 'language'];
+  protected static $modules = ['entity_test', 'user', 'language'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     EntityTestBundle::create([
       'id' => 'default',
       'label' => 'Default',
     ])->save();
-    $this->account = $this->drupalCreateUser(['administer entity_test content']);
+    $this->account = $this->drupalCreateUser([
+      'administer entity_test content',
+    ]);
     $this->drupalLogin($this->account);
   }
 
@@ -49,8 +56,8 @@ class DeleteMultipleFormTest extends BrowserTestBase {
    * Tests the delete form for translatable entities.
    */
   public function testTranslatableEntities() {
-    ConfigurableLanguage::create(['id' => 'es'])->save();
-    ConfigurableLanguage::create(['id' => 'fr'])->save();
+    ConfigurableLanguage::createFromLangcode('es')->save();
+    ConfigurableLanguage::createFromLangcode('fr')->save();
 
     $selection = [];
 
@@ -86,8 +93,8 @@ class DeleteMultipleFormTest extends BrowserTestBase {
     $this->drupalGet('/entity_test/delete');
     $assert = $this->assertSession();
     $assert->statusCodeEquals(200);
-    $assert->elementTextContains('css', '.page-title', 'Are you sure you want to delete these test entity - revisions, data table, and published interface entities?');
-    $list_selector = '#entity-test-mulrevpub-delete-multiple-confirm-form > div.item-list > ul';
+    $assert->elementTextContains('css', 'h1', 'Are you sure you want to delete these test entity - revisions, data table, and published interface entities?');
+    $list_selector = '#entity-test-mulrevpub-delete-multiple-confirm-form > ul[data-drupal-selector="edit-entities"]';
     $assert->elementTextContains('css', $list_selector, 'entity1 (Original translation) - The following test entity - revisions, data table, and published interface translations will be deleted:');
     $assert->elementTextContains('css', $list_selector, 'entity2 spanish');
     $assert->elementTextContains('css', $list_selector, 'entity2 french');
@@ -138,8 +145,8 @@ class DeleteMultipleFormTest extends BrowserTestBase {
     $this->drupalGet('/entity_test_rev/delete_multiple');
     $assert = $this->assertSession();
     $assert->statusCodeEquals(200);
-    $assert->elementTextContains('css', '.page-title', 'Are you sure you want to delete these test entity - revisions entities?');
-    $list_selector = '#entity-test-rev-delete-multiple-confirm-form > div.item-list > ul';
+    $assert->elementTextContains('css', 'h1', 'Are you sure you want to delete these test entity - revisions entities?');
+    $list_selector = '#entity-test-rev-delete-multiple-confirm-form > ul[data-drupal-selector="edit-entities"]';
     $assert->elementTextContains('css', $list_selector, 'entity1');
     $assert->elementTextContains('css', $list_selector, 'entity2');
     $delete_button = $this->getSession()->getPage()->findButton('Delete');

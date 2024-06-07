@@ -91,7 +91,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-01-looknfeel.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-01-looknfeel.jpg" />
    </a></div> ',
   );
 
@@ -109,7 +109,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-02-region.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-02-region.jpg" />
    </a></div> ',
   );
 
@@ -127,7 +127,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-03-article.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-03-article.jpg" />
    </a></div> ',
   );
 
@@ -145,7 +145,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-03-article.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-03-article.jpg" />
    </a></div> ',
   );
 
@@ -163,7 +163,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-04-layout.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-04-layout.jpg" />
    </a></div> ',
   );
 
@@ -181,7 +181,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-05-fonts.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-05-fonts.jpg" />
    </a></div> ',
   );
   
@@ -199,7 +199,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-06-slideshow.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-06-slideshow.jpg" />
    </a></div> ',
   );
 
@@ -217,7 +217,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-07-isotope.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-07-isotope.jpg" />
    </a></div> ',
   );
   
@@ -235,7 +235,7 @@ function restaurant_lite_form_system_theme_settings_alter(&$form, &$form_state) 
    '<div class="theme-settings-title">'.t("Available in the Premium version of this theme").'</div>
    <div class="theme-settings-image-wrapper">
    <a href="http://morethanthemes.com/themes/restaurantplus" target="_blank">
-   <img src="' . base_path() . drupal_get_path('theme', 'restaurant_lite') . '/images/premium-09-googlemaps.jpg" />
+   <img src="' . base_path() . \Drupal::service('extension.path.resolver')->getPath('theme', 'restaurant_lite') . '/images/premium-09-googlemaps.jpg" />
    </a></div> ',
   );
 

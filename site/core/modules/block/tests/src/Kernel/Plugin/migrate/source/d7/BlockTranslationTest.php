@@ -4,6 +4,8 @@ namespace Drupal\Tests\block\Kernel\Plugin\migrate\source\d7;
 
 use Drupal\Tests\migrate\Kernel\MigrateSqlSourceTestBase;
 
+// cspell:ignore objectid objectindex
+
 /**
  * Tests i18n block source plugin.
  *
@@ -16,7 +18,7 @@ class BlockTranslationTest extends MigrateSqlSourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block', 'migrate_drupal'];
+  protected static $modules = ['block', 'migrate_drupal'];
 
   /**
    * {@inheritdoc}
@@ -38,7 +40,7 @@ class BlockTranslationTest extends MigrateSqlSourceTestBase {
         'pages' => '',
         'title' => '',
         'cache' => -1,
-        'i18n_mode' => 0,
+        'i18n_mode' => 1,
       ],
       [
         'bid' => 2,
@@ -79,6 +81,16 @@ class BlockTranslationTest extends MigrateSqlSourceTestBase {
         'textgroup' => 'block',
         'context' => '1',
         'objectid' => 'navigation',
+        'type' => 'system',
+        'property' => 'title',
+        'objectindex' => 0,
+        'format' => '',
+      ],
+      [
+        'lid' => 2,
+        'textgroup' => 'block',
+        'context' => '1',
+        'objectid' => 'main',
         'type' => 'system',
         'property' => 'title',
         'objectindex' => 0,
@@ -141,6 +153,35 @@ class BlockTranslationTest extends MigrateSqlSourceTestBase {
       ],
     ];
 
+    // Change the name of the locale_target i18n status field.
+    $tests[1] = $tests[0];
+    foreach ($tests[1]['source_data']['locales_target'] as &$lt) {
+      $lt['status'] = $lt['i18n_status'];
+      unset($lt['i18n_status']);
+    }
+    $tests[1]['expected_data'] = [
+      [
+        'bid' => 2,
+        'module' => 'system',
+        'delta' => 'navigation',
+        'theme' => 'bartik',
+        'status' => 1,
+        'weight' => 0,
+        'region' => 'sidebar_first',
+        'custom' => '0',
+        'visibility' => 0,
+        'pages' => '',
+        'title' => 'Navigation',
+        'cache' => -1,
+        'i18n_mode' => 1,
+        'lid' => 1,
+        'translation' => 'fr - Navigation',
+        'language' => 'fr',
+        'plid' => 0,
+        'plural' => 0,
+        'i18n_status' => 0,
+      ],
+    ];
     return $tests;
   }
 

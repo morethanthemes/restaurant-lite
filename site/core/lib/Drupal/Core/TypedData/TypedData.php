@@ -3,6 +3,7 @@
 namespace Drupal\Core\TypedData;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
@@ -14,7 +15,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
  * @ingroup typed_data
  */
 abstract class TypedData implements TypedDataInterface, PluginInspectionInterface {
-
+  use DependencySerializationTrait;
   use StringTranslationTrait;
   use TypedDataTrait;
 
@@ -174,7 +175,11 @@ abstract class TypedData implements TypedDataInterface, PluginInspectionInterfac
       // The property path of this data object is the parent's path appended
       // by this object's name.
       $prefix = $this->parent->getPropertyPath();
-      return (strlen($prefix) ? $prefix . '.' : '') . $this->name;
+      // Variables in double quotes used to leverage fast string concatenation.
+      // In PHP 7+ concatenation with variable inside string is the fastest.
+      // @see https://blog.blackfire.io/php-7-performance-improvements-encapsed-strings-optimization.html
+      // This is being done because the code can run in the critical path.
+      return $prefix !== '' ? "{$prefix}.{$this->name}" : $this->name;
     }
     // If no parent is set, this is the root of the data tree. Thus the property
     // path equals the name of this data object.
@@ -189,24 +194,6 @@ abstract class TypedData implements TypedDataInterface, PluginInspectionInterfac
    */
   public function getParent() {
     return $this->parent;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __sleep() {
-    $vars = get_object_vars($this);
-    // Prevent services from being serialized. static::getStringTranslation()
-    // and static::getTypedDataManager() lazy-load them after $this has been
-    // unserialized.
-    // @todo Replace this with
-    //   \Drupal\Core\DependencyInjection\DependencySerializationTrait before
-    //   Drupal 9.0.0. We cannot use that now, because child classes already use
-    //   it and PHP 5 would consider that conflicts.
-    unset($vars['stringTranslation']);
-    unset($vars['typedDataManager']);
-
-    return array_keys($vars);
   }
 
 }

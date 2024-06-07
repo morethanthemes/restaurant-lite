@@ -13,8 +13,8 @@ use Drupal\language\ContentLanguageSettingsInterface;
  *
  * @ConfigEntityType(
  *   id = "language_content_settings",
- *   label = @Translation("Content Language Settings"),
- *   label_collection = @Translation("Content Language Settings"),
+ *   label = @Translation("Content language settings"),
+ *   label_collection = @Translation("Content language settings"),
  *   label_singular = @Translation("content language setting"),
  *   label_plural = @Translation("content languages settings"),
  *   label_count = @PluralTranslation(
@@ -25,6 +25,13 @@ use Drupal\language\ContentLanguageSettingsInterface;
  *   config_prefix = "content_settings",
  *   entity_keys = {
  *     "id" = "id"
+ *   },
+ *   config_export = {
+ *     "id",
+ *     "target_entity_type_id",
+ *     "target_bundle",
+ *     "default_langcode",
+ *     "language_alterable",
  *   },
  *   list_cache_tags = { "rendered" }
  * )
@@ -79,8 +86,9 @@ class ContentLanguageSettings extends ConfigEntityBase implements ContentLanguag
    *   - target_bundle: The bundle.
    *   Other array elements will be used to set the corresponding properties on
    *   the class; see the class property documentation for details.
-   *
-   * @see entity_create()
+   * @param string $entity_type
+   *   (optional) The entity type ID that is being created. Defaults to
+   *   "language_content_settings".
    */
   public function __construct(array $values, $entity_type = 'language_content_settings') {
     if (empty($values['target_entity_type_id'])) {
@@ -185,7 +193,7 @@ class ContentLanguageSettings extends ConfigEntityBase implements ContentLanguag
     if ($entity_type_id == NULL || $bundle == NULL) {
       return NULL;
     }
-    $config = \Drupal::entityManager()->getStorage('language_content_settings')->load($entity_type_id . '.' . $bundle);
+    $config = \Drupal::entityTypeManager()->getStorage('language_content_settings')->load($entity_type_id . '.' . $bundle);
     if ($config == NULL) {
       $config = ContentLanguageSettings::create(['target_entity_type_id' => $entity_type_id, 'target_bundle' => $bundle]);
     }
@@ -199,11 +207,32 @@ class ContentLanguageSettings extends ConfigEntityBase implements ContentLanguag
     parent::calculateDependencies();
 
     // Create dependency on the bundle.
-    $entity_type = \Drupal::entityManager()->getDefinition($this->target_entity_type_id);
+    $entity_type = \Drupal::entityTypeManager()->getDefinition($this->target_entity_type_id);
     $bundle_config_dependency = $entity_type->getBundleConfigDependency($this->target_bundle);
     $this->addDependency($bundle_config_dependency['type'], $bundle_config_dependency['name']);
 
     return $this;
+  }
+
+  /**
+   * Returns all valid values for the `default_langcode` property.
+   *
+   * @return string[]
+   *   All possible valid default langcodes. This includes all langcodes in the
+   *   standard list of human languages, along with special langcodes like
+   *   `site_default`, `current_interface` and `authors_default`.
+   *
+   * @see \Drupal\language\Element\LanguageConfiguration::getDefaultOptions()
+   * @see \Drupal\Core\TypedData\Plugin\DataType\LanguageReference::getAllValidLangcodes()
+   */
+  public static function getAllValidDefaultLangcodes(): array {
+    $language_manager = \Drupal::service('language_manager');
+    return array_unique([
+      ...array_keys($language_manager->getLanguages(LanguageInterface::STATE_ALL)),
+      LanguageInterface::LANGCODE_SITE_DEFAULT,
+      'current_interface',
+      'authors_default',
+    ]);
   }
 
 }

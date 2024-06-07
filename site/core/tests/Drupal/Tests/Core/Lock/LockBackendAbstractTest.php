@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Lock;
 
 use Drupal\Tests\UnitTestCase;
@@ -13,11 +15,16 @@ class LockBackendAbstractTest extends UnitTestCase {
   /**
    * The Mocked LockBackendAbstract object.
    *
-   * @var \Drupal\Core\Lock\LockBackendAbstract|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Lock\LockBackendAbstract|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $lock;
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->lock = $this->getMockForAbstractClass('Drupal\Core\Lock\LockBackendAbstract');
   }
 
@@ -28,7 +35,7 @@ class LockBackendAbstractTest extends UnitTestCase {
     $this->lock->expects($this->any())
       ->method('lockMayBeAvailable')
       ->with($this->equalTo('test_name'))
-      ->will($this->returnValue(TRUE));
+      ->willReturn(TRUE);
 
     $this->assertFalse($this->lock->wait('test_name'));
   }
@@ -43,19 +50,19 @@ class LockBackendAbstractTest extends UnitTestCase {
     $this->lock->expects($this->any())
       ->method('lockMayBeAvailable')
       ->with($this->equalTo('test_name'))
-      ->will($this->returnValue(FALSE));
+      ->willReturn(FALSE);
 
     $this->assertTrue($this->lock->wait('test_name', 1));
   }
 
   /**
-   * Test the getLockId() method.
+   * Tests the getLockId() method.
    */
   public function testGetLockId() {
     $lock_id = $this->lock->getLockId();
-    $this->assertInternalType('string', $lock_id);
+    $this->assertIsString($lock_id);
     // Example lock ID would be '7213141505232b6ee2cb967.27683891'.
-    $this->assertRegExp('/[\da-f]+\.\d+/', $lock_id);
+    $this->assertMatchesRegularExpression('/[\da-f]+\.\d+/', $lock_id);
     // Test the same lock ID is returned a second time.
     $this->assertSame($lock_id, $this->lock->getLockId());
   }

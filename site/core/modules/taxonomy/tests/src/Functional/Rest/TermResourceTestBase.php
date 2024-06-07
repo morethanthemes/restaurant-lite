@@ -5,18 +5,15 @@ namespace Drupal\Tests\taxonomy\Functional\Rest;
 use Drupal\Core\Cache\Cache;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\Entity\Vocabulary;
-use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
 use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
 use GuzzleHttp\RequestOptions;
 
 abstract class TermResourceTestBase extends EntityResourceTestBase {
 
-  use BcTimestampNormalizerUnixTestTrait;
-
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['taxonomy', 'path'];
+  protected static $modules = ['taxonomy', 'path'];
 
   /**
    * {@inheritdoc}
@@ -111,6 +108,7 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
           ],
         ];
         break;
+
       case [2]:
         $expected_parent_normalization = [
           [
@@ -121,6 +119,7 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
           ],
         ];
         break;
+
       case [0, 2]:
         $expected_parent_normalization = [
           [
@@ -134,6 +133,7 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
           ],
         ];
         break;
+
       case [3, 2]:
         $expected_parent_normalization = [
           [
@@ -154,6 +154,9 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
 
     return [
       'tid' => [
+        ['value' => 1],
+      ],
+      'revision_id' => [
         ['value' => 1],
       ],
       'uuid' => [
@@ -186,7 +189,10 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'changed' => [
-        $this->formatExpectedTimestampItemValues($this->entity->getChangedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp($this->entity->getChangedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'default_langcode' => [
         [
@@ -201,6 +207,20 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'status' => [
+        [
+          'value' => TRUE,
+        ],
+      ],
+      'revision_created' => [
+        [
+          'value' => (new \DateTime())->setTimestamp((int) $this->entity->getRevisionCreationTime())
+            ->setTimezone(new \DateTimeZone('UTC'))
+            ->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
+      ],
+      'revision_user' => [],
+      'revision_translation_affected' => [
         [
           'value' => TRUE,
         ],
@@ -220,12 +240,12 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
       ],
       'name' => [
         [
-          'value' => 'Dramallama',
+          'value' => 'Drama llama',
         ],
       ],
       'description' => [
         [
-          'value' => 'Dramallamas are the coolest camelids.',
+          'value' => 'Drama llamas are the coolest camelids.',
           'format' => NULL,
         ],
       ],
@@ -236,19 +256,19 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function getExpectedUnauthorizedAccessMessage($method) {
-    if ($this->config('rest.settings')->get('bc_entity_resource_permissions')) {
-      return parent::getExpectedUnauthorizedAccessMessage($method);
-    }
-
     switch ($method) {
       case 'GET':
         return "The 'access content' permission is required and the taxonomy term must be published.";
+
       case 'POST':
         return "The following permissions are required: 'create terms in camelids' OR 'administer taxonomy'.";
+
       case 'PATCH':
         return "The following permissions are required: 'edit terms in camelids' OR 'administer taxonomy'.";
+
       case 'DELETE':
         return "The following permissions are required: 'delete terms in camelids' OR 'administer taxonomy'.";
+
       default:
         return parent::getExpectedUnauthorizedAccessMessage($method);
     }
@@ -316,7 +336,7 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
       ->setName('Lamoids')
       ->save();
     Term::create(['vid' => Vocabulary::load('camelids')->id()])
-      ->setName('Wimoids')
+      ->setName('Camels')
       ->save();
 
     // Modify the entity under test to use the provided parent terms.
@@ -356,9 +376,9 @@ abstract class TermResourceTestBase extends EntityResourceTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function getExpectedUnauthorizedAccessCacheability() {
+  protected function getExpectedUnauthorizedEntityAccessCacheability($is_authenticated) {
     // @see \Drupal\taxonomy\TermAccessControlHandler::checkAccess()
-    return parent::getExpectedUnauthorizedAccessCacheability()
+    return parent::getExpectedUnauthorizedEntityAccessCacheability($is_authenticated)
       ->addCacheTags(['taxonomy_term:1']);
   }
 

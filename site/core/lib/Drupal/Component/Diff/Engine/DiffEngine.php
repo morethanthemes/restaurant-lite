@@ -24,12 +24,22 @@ namespace Drupal\Component\Diff\Engine;
  * @author Geoffrey T. Dairiki, Tim Starling
  * @private
  * @subpackage DifferenceEngine
+ *
+ * @deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. Use
+ *   sebastianbergmann/diff instead.
+ *
+ * @see https://www.drupal.org/node/3337942
  */
+#[\AllowDynamicProperties]
 class DiffEngine {
 
   const USE_ASSERTS = FALSE;
 
   const MAX_XREF_LENGTH = 10000;
+
+  public function __construct() {
+    @trigger_error('Drupal\Component\Diff\Engine\DiffEngine is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. Use sebastianbergmann/diff instead. See https://www.drupal.org/node/3337942', E_USER_DEPRECATED);
+  }
 
   public function diff($from_lines, $to_lines) {
 
@@ -129,11 +139,11 @@ class DiffEngine {
   }
 
   /**
-   * Returns the whole line if it's small enough, or the MD5 hash otherwise.
+   * Returns the whole line if it's small enough, or a hash otherwise.
    */
   protected function _line_hash($line) {
     if (mb_strlen($line) > $this::MAX_XREF_LENGTH) {
-      return md5($line);
+      return hash('crc32b', $line);
     }
     else {
       return $line;
@@ -165,7 +175,7 @@ class DiffEngine {
       // Things seems faster (I'm not sure I understand why)
       // when the shortest sequence in X.
       $flip = TRUE;
-      list($xoff, $xlim, $yoff, $ylim) = [$yoff, $ylim, $xoff, $xlim];
+      [$xoff, $xlim, $yoff, $ylim] = [$yoff, $ylim, $xoff, $xlim];
     }
 
     if ($flip) {
@@ -302,7 +312,7 @@ class DiffEngine {
       //$nchunks = sqrt(min($xlim - $xoff, $ylim - $yoff) / 2.5);
       //$nchunks = max(2, min(8, (int)$nchunks));
       $nchunks = min(7, $xlim - $xoff, $ylim - $yoff) + 1;
-      list($lcs, $seps) = $this->_diag($xoff, $xlim, $yoff, $ylim, $nchunks);
+      [$lcs, $seps] = $this->_diag($xoff, $xlim, $yoff, $ylim, $nchunks);
     }
 
     if ($lcs == 0) {

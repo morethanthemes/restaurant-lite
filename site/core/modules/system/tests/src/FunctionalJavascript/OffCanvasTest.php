@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\system\FunctionalJavascript;
 
 /**
@@ -21,9 +23,14 @@ class OffCanvasTest extends OffCanvasTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'off_canvas_test',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Tests that non-contextual links will work with the off-canvas dialog.
@@ -37,6 +44,9 @@ class OffCanvasTest extends OffCanvasTestBase {
     $page = $this->getSession()->getPage();
     $web_assert = $this->assertSession();
 
+    // Confirm touchevents detection is loaded with Off Canvas assets.
+    $this->assertNotNull($web_assert->waitForElement('css', 'html.no-touchevents'));
+
     // Make sure off-canvas dialog is on page when first loaded.
     $web_assert->elementNotExists('css', '#drupal-off-canvas');
 
@@ -44,20 +54,20 @@ class OffCanvasTest extends OffCanvasTestBase {
     // Make sure tray updates to new content.
     // Check the first link again to make sure the empty title class is
     // removed.
-    foreach (['1', '2', '1'] as $link_index) {
+    foreach ([1, 2, 1] as $link_index) {
       $this->assertOffCanvasDialog($link_index, 'side');
       $header_text = $this->getOffCanvasDialog()->find('css', '.ui-dialog-title')->getText();
-      if ($link_index == '2') {
+      if ($link_index === 2) {
         // Check no title behavior.
         $web_assert->elementExists('css', '.ui-dialog-empty-title');
         $this->assertEquals(' ', $header_text);
 
         $style = $page->find('css', '.ui-dialog-off-canvas')->getAttribute('style');
-        $this->assertTrue(strstr($style, 'width: 555px;') !== FALSE, 'Dialog width respected.');
+        $this->assertStringContainsString('width: 555px;', $style, 'Dialog width respected.');
         $page->clickLink("Open side panel 1");
         $this->waitForOffCanvasToOpen();
         $style = $page->find('css', '.ui-dialog-off-canvas')->getAttribute('style');
-        $this->assertTrue(strstr($style, 'width: 555px;') === FALSE, 'Dialog width reset to default.');
+        $this->assertStringNotContainsString('width: 555px;', $style, 'Dialog width reset to default.');
       }
       else {
         // Check that header is correct.
@@ -72,10 +82,10 @@ class OffCanvasTest extends OffCanvasTestBase {
 
       $style = $page->find('css', '.ui-dialog-off-canvas')->getAttribute('style');
       if ($link_index === 1) {
-        $this->assertTrue((bool) strstr($style, 'height: auto;'));
+        $this->assertStringContainsString('height: auto;', $style);
       }
       else {
-        $this->assertTrue((bool) strstr($style, 'height: 421px;'));
+        $this->assertStringContainsString('height: 421px;', $style);
       }
     }
 
@@ -87,7 +97,6 @@ class OffCanvasTest extends OffCanvasTestBase {
     $web_assert->linkExists('Off_canvas link!');
     // Click off-canvas link inside off-canvas dialog
     $page->clickLink('Off_canvas link!');
-    /*  @var \Behat\Mink\Element\NodeElement $dialog */
     $this->waitForOffCanvasToOpen();
     $web_assert->elementTextContains('css', '.ui-dialog[aria-describedby="drupal-off-canvas"]', 'Thing 2 says hello');
 
@@ -101,7 +110,6 @@ class OffCanvasTest extends OffCanvasTestBase {
     $web_assert->linkExists('Off_canvas link!');
     // Click off-canvas link inside off-canvas dialog
     $page->clickLink('Off_canvas link!');
-    /*  @var \Behat\Mink\Element\NodeElement $dialog */
     $this->waitForOffCanvasToOpen();
     $web_assert->elementTextContains('css', '.ui-dialog[aria-describedby="drupal-off-canvas"]', 'Thing 2 says hello');
   }
@@ -147,8 +155,10 @@ class OffCanvasTest extends OffCanvasTestBase {
    *   The index of the link to test.
    * @param string $position
    *   The position of the dialog to test.
+   *
+   * @internal
    */
-  protected function assertOffCanvasDialog($link_index, $position) {
+  protected function assertOffCanvasDialog(int $link_index, string $position): void {
     $page = $this->getSession()->getPage();
     $web_assert = $this->assertSession();
     $link_text = "Open $position panel $link_index";
@@ -156,7 +166,7 @@ class OffCanvasTest extends OffCanvasTestBase {
     // Click the first test like that should open the page.
     $page->clickLink($link_text);
     if ($this->lastDialogClass) {
-      $this->waitForNoElement('.' . $this->lastDialogClass);
+      $web_assert->assertNoElementAfterWait('css', '.' . $this->lastDialogClass);
     }
     $this->waitForOffCanvasToOpen($position);
     $this->lastDialogClass = "$position-$link_index";

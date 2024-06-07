@@ -7,8 +7,7 @@ use Drupal\views\ResultRow;
 use Drupal\views\ViewExecutable;
 
 /**
- * A handler to run a field through check_markup, using a companion
- * format field.
+ * Handler to run a field through check_markup, using a companion format field.
  *
  * - format: (REQUIRED) Either a string format id to use for this field or an
  *           array('field' => {$field}) where $field is the field in this table
@@ -20,6 +19,11 @@ use Drupal\views\ViewExecutable;
  * @ViewsField("markup")
  */
 class Markup extends FieldPluginBase {
+
+  /**
+   * The format to use for this field.
+   */
+  public string $format;
 
   /**
    * {@inheritdoc}

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Entity;
 
 use Drupal\Core\Entity\EntityForm;
@@ -21,7 +23,7 @@ class EntityFormTest extends UnitTestCase {
   /**
    * The mocked entity form.
    *
-   * @var \Drupal\Core\Entity\EntityFormInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Entity\EntityFormInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $entityForm;
 
@@ -35,7 +37,7 @@ class EntityFormTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->entityForm = new EntityForm();
@@ -52,14 +54,14 @@ class EntityFormTest extends UnitTestCase {
   public function testFormId($expected, $definition) {
     $this->entityType->set('entity_keys', ['bundle' => $definition['bundle']]);
 
-    $entity = $this->getMockForAbstractClass('Drupal\Core\Entity\Entity', [[], $definition['entity_type']], '', TRUE, TRUE, TRUE, ['getEntityType', 'bundle']);
+    $entity = $this->getMockForAbstractClass('Drupal\Core\Entity\EntityBase', [[], $definition['entity_type']], '', TRUE, TRUE, TRUE, ['getEntityType', 'bundle']);
 
     $entity->expects($this->any())
       ->method('getEntityType')
-      ->will($this->returnValue($this->entityType));
+      ->willReturn($this->entityType);
     $entity->expects($this->any())
       ->method('bundle')
-      ->will($this->returnValue($definition['bundle']));
+      ->willReturn($definition['bundle']);
 
     $this->entityForm->setEntity($entity);
     $this->entityForm->setOperation($definition['operation']);
@@ -72,31 +74,41 @@ class EntityFormTest extends UnitTestCase {
    */
   public function providerTestFormIds() {
     return [
-      ['node_article_form', [
+      [
+        'node_article_form',
+        [
           'entity_type' => 'node',
           'bundle' => 'article',
           'operation' => 'default',
         ],
       ],
-      ['node_article_delete_form', [
+      [
+        'node_article_delete_form',
+        [
           'entity_type' => 'node',
           'bundle' => 'article',
           'operation' => 'delete',
         ],
       ],
-      ['user_user_form', [
+      [
+        'user_user_form',
+        [
           'entity_type' => 'user',
           'bundle' => 'user',
           'operation' => 'default',
         ],
       ],
-      ['user_form', [
+      [
+        'user_form',
+        [
           'entity_type' => 'user',
           'bundle' => '',
           'operation' => 'default',
         ],
       ],
-      ['user_delete_form', [
+      [
+        'user_delete_form',
+        [
           'entity_type' => 'user',
           'bundle' => '',
           'operation' => 'delete',
@@ -113,7 +125,7 @@ class EntityFormTest extends UnitTestCase {
     $values = ['id' => $entity_id];
     $entity = $this->getMockBuilder('\Drupal\Tests\Core\Config\Entity\Fixtures\ConfigEntityBaseWithPluginCollections')
       ->setConstructorArgs([$values, 'test_config_entity'])
-      ->setMethods(['getPluginCollections'])
+      ->onlyMethods(['getPluginCollections'])
       ->getMock();
     $entity->expects($this->atLeastOnce())
       ->method('getPluginCollections')

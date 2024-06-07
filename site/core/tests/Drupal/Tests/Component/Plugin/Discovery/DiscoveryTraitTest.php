@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Plugin\Discovery;
 
+use Drupal\Component\Plugin\Discovery\DiscoveryTrait;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use PHPUnit\Framework\TestCase;
 
@@ -31,11 +34,9 @@ class DiscoveryTraitTest extends TestCase {
    * @dataProvider providerDoGetDefinition
    */
   public function testDoGetDefinition($expected, $definitions, $plugin_id) {
-    // Mock the trait.
-    $trait = $this->getMockForTrait('Drupal\Component\Plugin\Discovery\DiscoveryTrait');
+    $trait = new DiscoveryTraitMockableClass();
     // Un-protect the method using reflection.
     $method_ref = new \ReflectionMethod($trait, 'doGetDefinition');
-    $method_ref->setAccessible(TRUE);
     // Call doGetDefinition, with $exception_on_invalid always FALSE.
     $this->assertSame(
       $expected,
@@ -63,18 +64,11 @@ class DiscoveryTraitTest extends TestCase {
    * @uses \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function testDoGetDefinitionException($expected, $definitions, $plugin_id) {
-    // Mock the trait.
-    $trait = $this->getMockForTrait('Drupal\Component\Plugin\Discovery\DiscoveryTrait');
+    $trait = new DiscoveryTraitMockableClass();
     // Un-protect the method using reflection.
     $method_ref = new \ReflectionMethod($trait, 'doGetDefinition');
-    $method_ref->setAccessible(TRUE);
     // Call doGetDefinition, with $exception_on_invalid always TRUE.
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(PluginNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(PluginNotFoundException::class);
-    }
+    $this->expectException(PluginNotFoundException::class);
     $method_ref->invoke($trait, $definitions, $plugin_id, TRUE);
   }
 
@@ -86,7 +80,9 @@ class DiscoveryTraitTest extends TestCase {
     // Since getDefinition is a wrapper around doGetDefinition(), we can re-use
     // its data provider. We just have to tell abstract method getDefinitions()
     // to use the $definitions array.
-    $trait = $this->getMockForTrait('Drupal\Component\Plugin\Discovery\DiscoveryTrait');
+    $trait = $this->getMockBuilder(DiscoveryTraitMockableClass::class)
+      ->onlyMethods(['getDefinitions'])
+      ->getMock();
     $trait->expects($this->once())
       ->method('getDefinitions')
       ->willReturn($definitions);
@@ -106,17 +102,14 @@ class DiscoveryTraitTest extends TestCase {
     // Since getDefinition is a wrapper around doGetDefinition(), we can re-use
     // its data provider. We just have to tell abstract method getDefinitions()
     // to use the $definitions array.
-    $trait = $this->getMockForTrait('Drupal\Component\Plugin\Discovery\DiscoveryTrait');
+    $trait = $this->getMockBuilder(DiscoveryTraitMockableClass::class)
+      ->onlyMethods(['getDefinitions'])
+      ->getMock();
     $trait->expects($this->once())
       ->method('getDefinitions')
       ->willReturn($definitions);
     // Call getDefinition(), with $exception_on_invalid always TRUE.
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(PluginNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(PluginNotFoundException::class);
-    }
+    $this->expectException(PluginNotFoundException::class);
     $trait->getDefinition($plugin_id, TRUE);
   }
 
@@ -139,22 +132,35 @@ class DiscoveryTraitTest extends TestCase {
    * @dataProvider providerHasDefinition
    */
   public function testHasDefinition($expected, $plugin_id) {
-    $trait = $this->getMockBuilder('Drupal\Component\Plugin\Discovery\DiscoveryTrait')
-      ->setMethods(['getDefinition'])
-      ->getMockForTrait();
+    $trait = $this->getMockBuilder(DiscoveryTraitMockableClass::class)
+      ->onlyMethods(['getDefinition'])
+      ->getMock();
     // Set up our mocked getDefinition() to return TRUE for 'valid' and FALSE
     // for 'not_valid'.
     $trait->expects($this->once())
       ->method('getDefinition')
-      ->will($this->returnValueMap([
+      ->willReturnMap([
         ['valid', FALSE, TRUE],
         ['not_valid', FALSE, FALSE],
-      ]));
+      ]);
     // Call hasDefinition().
     $this->assertSame(
       $expected,
       $trait->hasDefinition($plugin_id)
     );
+  }
+
+}
+
+/**
+ * A class using the DiscoveryTrait for mocking purposes.
+ */
+class DiscoveryTraitMockableClass {
+
+  use DiscoveryTrait;
+
+  public function getDefinitions(): array {
+    return [];
   }
 
 }

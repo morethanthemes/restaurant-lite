@@ -1,14 +1,13 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\DependencyInjection\ContainerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\DependencyInjection;
 
 use Drupal\Component\Utility\Crypt;
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Symfony\Bridge\PhpUnit\ExpectDeprecationTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Exception\LogicException;
@@ -23,11 +22,13 @@ use Prophecy\Argument;
  * @group DependencyInjection
  */
 class ContainerTest extends TestCase {
+  use ExpectDeprecationTrait;
+  use ProphecyTrait;
 
   /**
    * The tested container.
    *
-   * @var \Symfony\Component\DependencyInjection\ContainerInterface
+   * @var \Drupal\Component\DependencyInjection\ContainerInterface
    */
   protected $container;
 
@@ -55,7 +56,7 @@ class ContainerTest extends TestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     $this->machineFormat = TRUE;
     $this->containerClass = '\Drupal\Component\DependencyInjection\Container';
     $this->containerDefinition = $this->getMockContainerDefinition();
@@ -70,12 +71,7 @@ class ContainerTest extends TestCase {
   public function testConstruct() {
     $container_definition = $this->getMockContainerDefinition();
     $container_definition['machine_format'] = !$this->machineFormat;
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidArgumentException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidArgumentException::class);
-    }
+    $this->expectException(InvalidArgumentException::class);
     $container = new $this->containerClass($container_definition);
   }
 
@@ -90,20 +86,14 @@ class ContainerTest extends TestCase {
   }
 
   /**
-   * Tests that Container::getParameter() works properly for non-existing
-   * parameters.
+   * Tests that Container::getParameter() works for non-existing parameters.
    *
    * @covers ::getParameter
    * @covers ::getParameterAlternatives
    * @covers ::getAlternatives
    */
   public function testGetParameterIfNotFound() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ParameterNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(ParameterNotFoundException::class);
-    }
+    $this->expectException(ParameterNotFoundException::class);
     $this->container->getParameter('parameter_that_does_not_exist');
   }
 
@@ -113,12 +103,7 @@ class ContainerTest extends TestCase {
    * @covers ::getParameter
    */
   public function testGetParameterIfNotFoundBecauseNull() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ParameterNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(ParameterNotFoundException::class);
-    }
+    $this->expectException(ParameterNotFoundException::class);
     $this->container->getParameter(NULL);
   }
 
@@ -152,12 +137,7 @@ class ContainerTest extends TestCase {
    */
   public function testSetParameterWithFrozenContainer() {
     $this->container = new $this->containerClass($this->containerDefinition);
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(LogicException::class);
-    }
-    else {
-      $this->setExpectedException(LogicException::class);
-    }
+    $this->expectException(LogicException::class);
     $this->container->setParameter('some_config', 'new_value');
   }
 
@@ -174,7 +154,7 @@ class ContainerTest extends TestCase {
     // Retrieve services of the container.
     $other_service_class = $this->containerDefinition['services']['other.service']['class'];
     $other_service = $this->container->get('other.service');
-    $this->assertInstanceOf($other_service_class, $other_service, 'other.service has the right class.');
+    $this->assertInstanceOf($other_service_class, $other_service);
 
     $some_parameter = $this->containerDefinition['parameters']['some_config'];
     $some_other_parameter = $this->containerDefinition['parameters']['some_other_config'];
@@ -185,7 +165,7 @@ class ContainerTest extends TestCase {
     $this->assertEquals($some_parameter, $service->getSomeParameter(), '%some_config% was injected via constructor.');
     $this->assertEquals($this->container, $service->getContainer(), 'Container was injected via setter injection.');
     $this->assertEquals($some_other_parameter, $service->getSomeOtherParameter(), '%some_other_config% was injected via setter injection.');
-    $this->assertEquals($service->_someProperty, 'foo', 'Service has added properties.');
+    $this->assertEquals('foo', $service->someProperty, 'Service has added properties.');
   }
 
   /**
@@ -214,7 +194,7 @@ class ContainerTest extends TestCase {
 
     $other_service_class = $this->containerDefinition['parameters']['some_parameter_class'];
     $other_service = $container->get('other.service_class_from_parameter');
-    $this->assertInstanceOf($other_service_class, $other_service, 'other.service_class_from_parameter has the right class.');
+    $this->assertInstanceOf($other_service_class, $other_service);
   }
 
   /**
@@ -262,12 +242,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    */
   public function testGetForCircularServices() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ServiceCircularReferenceException::class);
-    }
-    else {
-      $this->setExpectedException(ServiceCircularReferenceException::class);
-    }
+    $this->expectException(ServiceCircularReferenceException::class);
     $this->container->get('circular_dependency');
   }
 
@@ -279,13 +254,8 @@ class ContainerTest extends TestCase {
    * @covers ::getAlternatives
    * @covers ::getServiceAlternatives
    */
-  public function testGetForNonExistantService() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ServiceNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(ServiceNotFoundException::class);
-    }
+  public function testGetForNonExistentService() {
+    $this->expectException(ServiceNotFoundException::class);
     $this->container->get('service_not_exists');
   }
 
@@ -303,7 +273,7 @@ class ContainerTest extends TestCase {
     // Retrieve services of the container.
     $other_service_class = $this->containerDefinition['services']['other.service']['class'];
     $other_service = $container->get('other.service');
-    $this->assertInstanceOf($other_service_class, $other_service, 'other.service has the right class.');
+    $this->assertInstanceOf($other_service_class, $other_service);
 
     $service = $container->get('service.provider');
     $this->assertEquals($other_service, $service->getSomeOtherService(), '@other.service was injected via constructor.');
@@ -316,7 +286,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    * @covers ::resolveServicesAndParameters
    */
-  public function testGetForNonExistantParameterDependency() {
+  public function testGetForNonExistentParameterDependency() {
     $service = $this->container->get('service_parameter_not_exists', ContainerInterface::NULL_ON_INVALID_REFERENCE);
     $this->assertNull($service, 'Service is NULL.');
   }
@@ -334,12 +304,7 @@ class ContainerTest extends TestCase {
 
     // Reset the service.
     $this->container->set('service_parameter_not_exists', NULL);
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidArgumentException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidArgumentException::class);
-    }
+    $this->expectException(InvalidArgumentException::class);
     $this->container->get('service_parameter_not_exists');
   }
 
@@ -350,13 +315,8 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    * @covers ::resolveServicesAndParameters
    */
-  public function testGetForNonExistantParameterDependencyWithException() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidArgumentException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidArgumentException::class);
-    }
+  public function testGetForNonExistentParameterDependencyWithException() {
+    $this->expectException(InvalidArgumentException::class);
     $this->container->get('service_parameter_not_exists');
   }
 
@@ -367,7 +327,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    * @covers ::resolveServicesAndParameters
    */
-  public function testGetForNonExistantServiceDependency() {
+  public function testGetForNonExistentServiceDependency() {
     $service = $this->container->get('service_dependency_not_exists', ContainerInterface::NULL_ON_INVALID_REFERENCE);
     $this->assertNull($service, 'Service is NULL.');
   }
@@ -380,13 +340,8 @@ class ContainerTest extends TestCase {
    * @covers ::resolveServicesAndParameters
    * @covers ::getAlternatives
    */
-  public function testGetForNonExistantServiceDependencyWithException() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ServiceNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(ServiceNotFoundException::class);
-    }
+  public function testGetForNonExistentServiceDependencyWithException() {
+    $this->expectException(ServiceNotFoundException::class);
     $this->container->get('service_dependency_not_exists');
   }
 
@@ -396,7 +351,7 @@ class ContainerTest extends TestCase {
    * @covers ::get
    * @covers ::createService
    */
-  public function testGetForNonExistantServiceWhenUsingNull() {
+  public function testGetForNonExistentServiceWhenUsingNull() {
     $this->assertNull($this->container->get('service_not_exists', ContainerInterface::NULL_ON_INVALID_REFERENCE), 'Not found service does not throw exception.');
   }
 
@@ -405,13 +360,8 @@ class ContainerTest extends TestCase {
    * @covers ::get
    * @covers ::createService
    */
-  public function testGetForNonExistantNULLService() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ServiceNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(ServiceNotFoundException::class);
-    }
+  public function testGetForNonExistentNULLService() {
+    $this->expectException(ServiceNotFoundException::class);
     $this->container->get(NULL);
   }
 
@@ -421,7 +371,7 @@ class ContainerTest extends TestCase {
    * @covers ::get
    * @covers ::createService
    */
-  public function testGetForNonExistantServiceMultipleTimes() {
+  public function testGetForNonExistentServiceMultipleTimes() {
     $container = new $this->containerClass();
 
     $this->assertNull($container->get('service_not_exists', ContainerInterface::NULL_ON_INVALID_REFERENCE), 'Not found service does not throw exception.');
@@ -435,14 +385,9 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    * @covers ::getAlternatives
    */
-  public function testGetForNonExistantServiceWithExceptionOnSecondCall() {
+  public function testGetForNonExistentServiceWithExceptionOnSecondCall() {
     $this->assertNull($this->container->get('service_not_exists', ContainerInterface::NULL_ON_INVALID_REFERENCE), 'Not found service does nto throw exception.');
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(ServiceNotFoundException::class);
-    }
-    else {
-      $this->setExpectedException(ServiceNotFoundException::class);
-    }
+    $this->expectException(ServiceNotFoundException::class);
     $this->container->get('service_not_exists');
   }
 
@@ -478,12 +423,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    */
   public function testGetForSyntheticServiceWithException() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(RuntimeException::class);
-    }
-    else {
-      $this->setExpectedException(RuntimeException::class);
-    }
+    $this->expectException(RuntimeException::class);
     $this->container->get('synthetic');
   }
 
@@ -494,7 +434,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    */
   public function testGetWithFileInclude() {
-    $file_service = $this->container->get('container_test_file_service_test');
+    $this->container->get('container_test_file_service_test');
     $this->assertTrue(function_exists('container_test_file_service_test_service_function'));
     $this->assertEquals('Hello Container', container_test_file_service_test_service_function());
   }
@@ -522,12 +462,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    */
   public function testGetForWrongFactory() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(RuntimeException::class);
-    }
-    else {
-      $this->setExpectedException(RuntimeException::class);
-    }
+    $this->expectException(RuntimeException::class);
     $this->container->get('wrong_factory');
   }
 
@@ -565,12 +500,7 @@ class ContainerTest extends TestCase {
    * @covers ::createService
    */
   public function testGetForConfiguratorWithException() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidArgumentException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidArgumentException::class);
-    }
+    $this->expectException(InvalidArgumentException::class);
     $this->container->get('configurable_service_exception');
   }
 
@@ -607,13 +537,13 @@ class ContainerTest extends TestCase {
   public function testResolveServicesAndParametersForPrivateService() {
     $service = $this->container->get('service_using_private');
     $private_service = $service->getSomeOtherService();
-    $this->assertEquals($private_service->getSomeParameter(), 'really_private_lama', 'Private was found successfully.');
+    $this->assertEquals('really_private_lama', $private_service->getSomeParameter(), 'Private was found successfully.');
 
     // Test that sharing the same private services works.
     $service = $this->container->get('another_service_using_private');
     $another_private_service = $service->getSomeOtherService();
     $this->assertNotSame($private_service, $another_private_service, 'Private service is not shared.');
-    $this->assertEquals($private_service->getSomeParameter(), 'really_private_lama', 'Private was found successfully.');
+    $this->assertEquals('really_private_lama', $private_service->getSomeParameter(), 'Private was found successfully.');
   }
 
   /**
@@ -626,13 +556,13 @@ class ContainerTest extends TestCase {
   public function testResolveServicesAndParametersForSharedPrivateService() {
     $service = $this->container->get('service_using_shared_private');
     $private_service = $service->getSomeOtherService();
-    $this->assertEquals($private_service->getSomeParameter(), 'really_private_lama', 'Private was found successfully.');
+    $this->assertEquals('really_private_lama', $private_service->getSomeParameter(), 'Private was found successfully.');
 
     // Test that sharing the same private services works.
     $service = $this->container->get('another_service_using_shared_private');
     $same_private_service = $service->getSomeOtherService();
     $this->assertSame($private_service, $same_private_service, 'Private service is shared.');
-    $this->assertEquals($private_service->getSomeParameter(), 'really_private_lama', 'Private was found successfully.');
+    $this->assertEquals('really_private_lama', $private_service->getSomeParameter(), 'Private was found successfully.');
   }
 
   /**
@@ -661,6 +591,21 @@ class ContainerTest extends TestCase {
   }
 
   /**
+   * Tests that services wrapped in a closure work correctly.
+   *
+   * @covers ::get
+   * @covers ::createService
+   * @covers ::resolveServicesAndParameters
+   */
+  public function testResolveServicesAndParametersForServiceReferencedViaServiceClosure() {
+    $service = $this->container->get('service_within_service_closure');
+    $other_service = $this->container->get('other.service');
+    $factory_function = $service->getSomeOtherService();
+    $this->assertInstanceOf(\Closure::class, $factory_function);
+    $this->assertEquals($other_service, call_user_func($factory_function));
+  }
+
+  /**
    * Tests that an invalid argument throw an Exception.
    *
    * @covers ::get
@@ -668,12 +613,7 @@ class ContainerTest extends TestCase {
    * @covers ::resolveServicesAndParameters
    */
   public function testResolveServicesAndParametersForInvalidArgument() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidArgumentException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidArgumentException::class);
-    }
+    $this->expectException(InvalidArgumentException::class);
     $this->container->get('invalid_argument_service');
   }
 
@@ -687,12 +627,7 @@ class ContainerTest extends TestCase {
   public function testResolveServicesAndParametersForInvalidArguments() {
     // In case the machine-optimized format is not used, we need to simulate the
     // test failure.
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidArgumentException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidArgumentException::class);
-    }
+    $this->expectException(InvalidArgumentException::class);
     if (!$this->machineFormat) {
       throw new InvalidArgumentException('Simulating the test failure.');
     }
@@ -752,6 +687,35 @@ class ContainerTest extends TestCase {
   }
 
   /**
+   * Tests that raw type services arguments are resolved correctly.
+   *
+   * @covers ::get
+   * @covers ::createService
+   * @covers ::resolveServicesAndParameters
+   */
+  public function testResolveServicesAndParametersForRawArgument() {
+    $this->assertEquals(['ccc'], $this->container->get('service_with_raw_argument')->getArguments());
+  }
+
+  /**
+   * @covers \Drupal\Component\DependencyInjection\ServiceIdHashTrait::getServiceIdMappings
+   * @covers \Drupal\Component\DependencyInjection\ServiceIdHashTrait::generateServiceIdHash
+   *
+   * @group legacy
+   */
+  public function testGetServiceIdMappings() {
+    $this->expectDeprecation("Drupal\Component\DependencyInjection\ServiceIdHashTrait::generateServiceIdHash() is deprecated in drupal:9.5.1 and is removed from drupal:11.0.0. Use the 'Drupal\Component\DependencyInjection\ReverseContainer' service instead. See https://www.drupal.org/node/3327942");
+    $this->expectDeprecation("Drupal\Component\DependencyInjection\ServiceIdHashTrait::getServiceIdMappings() is deprecated in drupal:9.5.1 and is removed from drupal:11.0.0. Use the 'Drupal\Component\DependencyInjection\ReverseContainer' service instead. See https://www.drupal.org/node/3327942");
+    $this->assertEquals([], $this->container->getServiceIdMappings());
+    $s1 = $this->container->get('other.service');
+    $s2 = $this->container->get('late.service');
+    $this->assertEquals([
+      $this->container->generateServiceIdHash($s1) => 'other.service',
+      $this->container->generateServiceIdHash($s2) => 'late.service',
+    ], $this->container->getServiceIdMappings());
+  }
+
+  /**
    * Gets a mock container definition.
    *
    * @return array
@@ -793,7 +757,7 @@ class ContainerTest extends TestCase {
         $this->getServiceCall('other.service'),
         $this->getParameterCall('some_config'),
       ]),
-      'properties' => $this->getCollection(['_someProperty' => 'foo']),
+      'properties' => $this->getCollection(['someProperty' => 'foo']),
       'calls' => [
         [
           'setContainer',
@@ -893,6 +857,14 @@ class ContainerTest extends TestCase {
 
     ];
 
+    $services['service_within_service_closure'] = [
+      'class' => '\Drupal\Tests\Component\DependencyInjection\MockService',
+      'arguments' => $this->getCollection([
+        $this->getServiceClosureCall('other.service', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE),
+        $this->getParameterCall('some_private_config'),
+      ]),
+    ];
+
     $services['factory_service'] = [
       'class' => '\Drupal\service_container\ServiceContainer\ControllerInterface',
       'factory' => [
@@ -934,12 +906,9 @@ class ContainerTest extends TestCase {
     $services['synthetic'] = [
       'synthetic' => TRUE,
     ];
-    // The file could have been named as a .php file. The reason it is a .data
-    // file is that SimpleTest tries to load it. SimpleTest does not like such
-    // fixtures and hence we use a neutral name like .data.
     $services['container_test_file_service_test'] = [
       'class' => '\stdClass',
-      'file' => __DIR__ . '/Fixture/container_test_file_service_test_service_function.data',
+      'file' => __DIR__ . '/Fixture/container_test_file_service_test_service_function.php',
     ];
 
     // Test multiple arguments.
@@ -1002,6 +971,12 @@ class ContainerTest extends TestCase {
       'configurator' => 'configurator_service_test_does_not_exist',
     ];
 
+    // Raw argument
+    $services['service_with_raw_argument'] = [
+      'class' => '\Drupal\Tests\Component\DependencyInjection\MockInstantiationService',
+      'arguments' => $this->getCollection([$this->getRaw('ccc')]),
+    ];
+
     $aliases = [];
     $aliases['service.provider_alias'] = 'service.provider';
     $aliases['late.service_alias'] = 'late.service';
@@ -1027,7 +1002,18 @@ class ContainerTest extends TestCase {
   }
 
   /**
-   * Helper function to return a service definition.
+   * Helper function to return a service closure definition.
+   */
+  protected function getServiceClosureCall($id, $invalid_behavior = ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE) {
+    return (object) [
+      'type' => 'service_closure',
+      'id' => $id,
+      'invalidBehavior' => $invalid_behavior,
+    ];
+  }
+
+  /**
+   * Helper function to return a parameter definition.
    */
   protected function getParameterCall($name) {
     return (object) [
@@ -1060,6 +1046,16 @@ class ContainerTest extends TestCase {
       'type' => 'collection',
       'value' => $collection,
       'resolve' => $resolve,
+    ];
+  }
+
+  /**
+   * Helper function to return a raw value definition.
+   */
+  protected function getRaw($value) {
+    return (object) [
+      'type' => 'raw',
+      'value' => $value,
     ];
   }
 
@@ -1141,6 +1137,11 @@ class MockService {
    * @var string
    */
   protected $someOtherParameter;
+
+  /**
+   * @var string
+   */
+  public string $someProperty;
 
   /**
    * Constructs a MockService object.

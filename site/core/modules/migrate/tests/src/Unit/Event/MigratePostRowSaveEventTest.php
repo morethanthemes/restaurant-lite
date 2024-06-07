@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\migrate\Unit\Event;
 
 use Drupal\migrate\Event\MigratePostRowSaveEvent;
@@ -11,7 +13,7 @@ use Drupal\migrate\Event\MigratePostRowSaveEvent;
 class MigratePostRowSaveEventTest extends EventBaseTest {
 
   /**
-   * Test getDestinationIdValues method.
+   * Tests getDestinationIdValues method.
    *
    * @covers ::__construct
    * @covers ::getDestinationIdValues
@@ -25,7 +27,7 @@ class MigratePostRowSaveEventTest extends EventBaseTest {
   }
 
   /**
-   * Test getRow method.
+   * Tests getRow method.
    *
    * @covers ::__construct
    * @covers ::getRow

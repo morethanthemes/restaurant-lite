@@ -1,7 +1,7 @@
-(function ($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings, once) {
   Drupal.behaviors.mtToolTip = {
     attach: function (context, settings) {
-		  $(context).find('[data-toggle="tooltip"]').once('mtToolTipInit').tooltip();
+      once('mtToolTipInit', '[data-toggle="tooltip"]', context).forEach(element => $(element).tooltip());
     }
   };
-})(jQuery, Drupal, drupalSettings);
+})(jQuery, Drupal, drupalSettings, once);

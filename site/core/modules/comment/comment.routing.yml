@@ -95,7 +95,7 @@ comment.new_comments_node_links:
 comment.node_redirect:
   path: '/comment/{node}/reply'
   defaults:
-    _controller: 'Drupal\comment\Controller\CommentController::redirectNode'
+    _controller: '\Drupal\comment\Controller\CommentController::redirectNode'
   requirements:
     _entity_access: 'node.view'
     _module_dependencies: 'node'
@@ -135,7 +135,7 @@ entity.comment_type.edit_form:
   path: '/admin/structure/comment/manage/{comment_type}'
   defaults:
     _entity_form: 'comment_type.edit'
-    _title: 'Edit'
+    _title_callback: '\Drupal\Core\Entity\Controller\EntityController::title'
   requirements:
     _entity_access: 'comment_type.update'
   options:

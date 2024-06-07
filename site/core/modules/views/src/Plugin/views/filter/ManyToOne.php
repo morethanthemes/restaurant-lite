@@ -8,8 +8,9 @@ use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\ManyToOneHelper;
 
 /**
- * Complex filter to handle filtering for many to one relationships,
- * such as terms (many terms per node) or roles (many roles per user).
+ * Complex filter to handle filtering for many to one relationships.
+ *
+ * Examples are terms (many terms per node) or roles (many roles per user).
  *
  * The construct method needs to be overridden to provide a list of options;
  * alternately, the valueForm and adminSummary methods need to be overridden
@@ -113,8 +114,7 @@ class ManyToOne extends InOperator {
   }
 
   /**
-   * Override ensureMyTable so we can control how this joins in.
-   * The operator actually has influence over joining.
+   * {@inheritdoc}
    */
   public function ensureMyTable() {
     // Defer to helper if the operator specifies it.
@@ -132,7 +132,7 @@ class ManyToOne extends InOperator {
     }
     // Form API returns unchecked options in the form of option_id => 0. This
     // breaks the generated query for "is all of" filters so we remove them.
-    $this->value = array_filter($this->value, 'static::arrayFilterZero');
+    $this->value = array_filter($this->value, [static::class, 'arrayFilterZero']);
     $this->helper->addFilter();
   }
 

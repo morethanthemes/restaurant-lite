@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Asset;
 
 use Drupal\Core\Asset\LibraryDependencyResolver;
@@ -21,14 +23,14 @@ class LibraryDependencyResolverTest extends UnitTestCase {
   /**
    * The mocked library discovery service.
    *
-   * @var \Drupal\Core\Asset\LibraryDiscoveryInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Asset\LibraryDiscoveryInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $libraryDiscovery;
 
   /**
    * The mocked module handler.
    *
-   * @var \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $moduleHandler;
 
@@ -41,9 +43,11 @@ class LibraryDependencyResolverTest extends UnitTestCase {
     'no_deps_a' => ['js' => [], 'css' => []],
     'no_deps_b' => ['js' => [], 'css' => []],
     'no_deps_c' => ['js' => [], 'css' => []],
+    'no_deps_d' => ['js' => [], 'css' => []],
     'deps_a' => ['js' => [], 'css' => [], 'dependencies' => ['test/no_deps_a']],
     'deps_b' => ['js' => [], 'css' => [], 'dependencies' => ['test/no_deps_a', 'test/no_deps_b']],
     'deps_c' => ['js' => [], 'css' => [], 'dependencies' => ['test/no_deps_b', 'test/no_deps_a']],
+    'deps_d' => ['js' => [], 'css' => [], 'dependencies' => ['test/no_deps_d']],
     'nested_deps_a' => ['js' => [], 'css' => [], 'dependencies' => ['test/deps_a']],
     'nested_deps_b' => ['js' => [], 'css' => [], 'dependencies' => ['test/nested_deps_a']],
     'nested_deps_c' => ['js' => [], 'css' => [], 'dependencies' => ['test/nested_deps_b']],
@@ -52,15 +56,17 @@ class LibraryDependencyResolverTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->libraryDiscovery = $this->getMockBuilder('Drupal\Core\Asset\LibraryDiscovery')
       ->disableOriginalConstructor()
-      ->setMethods(['getLibrariesByExtension'])
+      ->onlyMethods(['getLibrariesByExtension'])
       ->getMock();
     $this->libraryDiscovery->expects($this->any())
       ->method('getLibrariesByExtension')
       ->with('test')
-      ->will($this->returnValue($this->libraryData));
+      ->willReturn($this->libraryData);
     $this->libraryDependencyResolver = new LibraryDependencyResolver($this->libraryDiscovery);
   }
 
@@ -137,6 +143,8 @@ class LibraryDependencyResolverTest extends UnitTestCase {
       [['test/deps_b', 'test/deps_a'], ['test/deps_b', 'test/deps_a']],
       [['test/deps_b', 'test/deps_c'], ['test/deps_b', 'test/deps_c']],
       [['test/deps_c', 'test/deps_b'], ['test/deps_c', 'test/deps_b']],
+      [['test/deps_a', 'test/deps_d', 'test/no_deps_a'], ['test/deps_a', 'test/deps_d']],
+      [['test/deps_a', 'test/deps_d', 'test/no_deps_d'], ['test/deps_a', 'test/deps_d']],
       // Multi-level (indirect) dependencies.
       [['test/nested_deps_a'], ['test/nested_deps_a']],
       [['test/nested_deps_b'], ['test/nested_deps_b']],
@@ -172,7 +180,8 @@ class LibraryDependencyResolverTest extends UnitTestCase {
    * @covers ::getMinimalRepresentativeSubset
    */
   public function testGetMinimalRepresentativeSubsetInvalidInput() {
-    $this->setExpectedException(\AssertionError::class, '$libraries can\'t contain duplicate items.');
+    $this->expectException(\AssertionError::class);
+    $this->expectExceptionMessage('$libraries can\'t contain duplicate items.');
     $this->libraryDependencyResolver->getMinimalRepresentativeSubset(['test/no_deps_a', 'test/no_deps_a']);
   }
 

@@ -6,9 +6,16 @@ use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\Update\UpdateHookRegistry;
 
 /**
  * Provides a list of available modules.
+ *
+ * @internal
+ *   This class is not yet stable and therefore there are no guarantees that the
+ *   internal implementations including constructor signature and protected
+ *   properties / methods will not change over time. This will be reviewed after
+ *   https://www.drupal.org/project/drupal/issues/2940481
  */
 class ModuleExtensionList extends ExtensionList {
 
@@ -22,7 +29,7 @@ class ModuleExtensionList extends ExtensionList {
     'description' => '',
     'package' => 'Other',
     'version' => NULL,
-    'php' => DRUPAL_MINIMUM_PHP,
+    'php' => \Drupal::MINIMUM_PHP,
   ];
 
   /**
@@ -81,7 +88,7 @@ class ModuleExtensionList extends ExtensionList {
   protected function getExtensionDiscovery() {
     $discovery = parent::getExtensionDiscovery();
 
-    if ($active_profile = $this->getActiveProfile()) {
+    if ($this->getActiveProfile()) {
       $discovery->setProfileDirectories($this->getProfileDirectories($discovery));
     }
 
@@ -102,16 +109,6 @@ class ModuleExtensionList extends ExtensionList {
     $all_profiles = $discovery->scan('profile');
     $active_profile = $all_profiles[$this->installProfile];
     $profiles = array_intersect_key($all_profiles, $this->configFactory->get('core.extension')->get('module') ?: [$active_profile->getName() => 0]);
-
-    // If a module is within a profile directory but specifies another
-    // profile for testing, it needs to be found in the parent profile.
-    $parent_profile = $this->configFactory->get('simpletest.settings')->get('parent_profile');
-
-    if ($parent_profile && !isset($profiles[$parent_profile])) {
-      // In case both profile directories contain the same extension, the
-      // actual profile always has precedence.
-      $profiles = [$parent_profile => $all_profiles[$parent_profile]] + $profiles;
-    }
 
     $profile_directories = array_map(function (Extension $profile) {
       return $profile->getPath();
@@ -165,9 +162,9 @@ class ModuleExtensionList extends ExtensionList {
     // Add status, weight, and schema version.
     $installed_modules = $this->configFactory->get('core.extension')->get('module') ?: [];
     foreach ($extensions as $name => $module) {
-      $module->weight = isset($installed_modules[$name]) ? $installed_modules[$name] : 0;
+      $module->weight = $installed_modules[$name] ?? 0;
       $module->status = (int) isset($installed_modules[$name]);
-      $module->schema_version = SCHEMA_UNINSTALLED;
+      $module->schema_version = UpdateHookRegistry::SCHEMA_UNINSTALLED;
     }
     $extensions = $this->moduleHandler->buildModuleDependencies($extensions);
 
@@ -214,7 +211,7 @@ class ModuleExtensionList extends ExtensionList {
   protected function ensureRequiredDependencies(Extension $module, array $modules = []) {
     if (!empty($module->info['required'])) {
       foreach ($module->info['dependencies'] as $dependency) {
-        $dependency_name = ModuleHandler::parseDependency($dependency)['name'];
+        $dependency_name = Dependency::createFromString($dependency)->getName();
         if (!isset($modules[$dependency_name]->info['required'])) {
           $modules[$dependency_name]->info['required'] = TRUE;
           $modules[$dependency_name]->info['explanation'] = $this->t('Dependency of required module @module', ['@module' => $module->info['name']]);

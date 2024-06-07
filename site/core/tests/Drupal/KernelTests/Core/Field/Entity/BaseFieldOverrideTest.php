@@ -19,7 +19,7 @@ class BaseFieldOverrideTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'system',
     'user',
     'entity_test',
@@ -28,7 +28,7 @@ class BaseFieldOverrideTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('base_field_override');
   }
@@ -59,7 +59,7 @@ class BaseFieldOverrideTest extends KernelTestBase {
         FALSE,
         FieldItemList::class,
       ],
-      'String (overriden class)' => [
+      'String (overridden class)' => [
         'string',
         static::class,
         static::class,
@@ -68,7 +68,7 @@ class BaseFieldOverrideTest extends KernelTestBase {
   }
 
   /**
-   * Test the default value callback.
+   * Tests the default value callback.
    */
   public function testDefaultValueCallback() {
     $base_field = BaseFieldDefinition::create('entity_reference')
@@ -80,6 +80,38 @@ class BaseFieldOverrideTest extends KernelTestBase {
 
     $this->assertEquals([['target_id' => 99]], $base_field->getDefaultValue($entity));
     $this->assertEquals([['target_id' => 99]], $base_field_override->getDefaultValue($entity));
+  }
+
+  /**
+   * Tests that some properties are inherited from the BaseFieldDefinition.
+   *
+   * @covers ::isReadOnly
+   * @covers ::isComputed
+   * @covers ::isInternal
+   * @covers ::getUniqueIdentifier
+   */
+  public function testInheritedProperties() {
+    $base_field = BaseFieldDefinition::create('string')
+      ->setName('Test Field')
+      ->setTargetEntityTypeId('entity_test')
+      ->setReadOnly(TRUE)
+      /** Ensure that the internal property is inherited from the base field and not the parent class. @see FieldConfigBase::isInternal */
+      ->setInternal(TRUE)
+      ->setComputed(FALSE);
+
+    // Getters of the properties to check.
+    $methods = [
+      'getUniqueIdentifier',
+      'getClass',
+      'isComputed',
+      'isReadOnly',
+      'isInternal',
+    ];
+
+    $override = BaseFieldOverride::createFromBaseFieldDefinition($base_field, 'test_bundle');
+    foreach ($methods as $method) {
+      $this->assertEquals($base_field->$method(), $override->$method());
+    }
   }
 
   /**

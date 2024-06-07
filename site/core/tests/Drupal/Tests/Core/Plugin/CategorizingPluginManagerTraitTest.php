@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Plugin\CategorizingPluginManagerTraitTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\Plugin;
 
@@ -22,15 +19,17 @@ class CategorizingPluginManagerTraitTest extends UnitTestCase {
   /**
    * The plugin manager to test.
    *
-   * @var \Drupal\Component\Plugin\CategorizingPluginManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Component\Plugin\CategorizingPluginManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $pluginManager;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
-    $module_handler = $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface');
+  protected function setUp(): void {
+    parent::setUp();
+
+    $module_handler = $this->createMock('Drupal\Core\Extension\ModuleHandlerInterface');
     $module_handler->expects($this->any())
       ->method('getModuleList')
       ->willReturn(['node' => []]);
@@ -48,9 +47,9 @@ class CategorizingPluginManagerTraitTest extends UnitTestCase {
    */
   public function testGetCategories() {
     $this->assertSame([
-        'fruits',
-        'vegetables',
-      ], array_values($this->pluginManager->getCategories()));
+      'fruits',
+      'vegetables',
+    ], array_values($this->pluginManager->getCategories()));
   }
 
   /**
@@ -113,7 +112,7 @@ class CategorizingPluginManager extends DefaultPluginManager implements Categori
   /**
    * Replace the constructor so we can instantiate a stub.
    *
-   * @param \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit_Framework_MockObject_MockObject $module_handler
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $module_handler
    *   The module handler.
    */
   public function __construct(ModuleHandlerInterface $module_handler) {

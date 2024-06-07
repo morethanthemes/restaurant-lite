@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\Utility\ArgumentsResolverTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Component\Utility;
 
@@ -19,7 +16,7 @@ class ArgumentsResolverTest extends TestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
   }
 
@@ -65,6 +62,15 @@ class ArgumentsResolverTest extends TestCase {
     $objects = ['foo' => new \stdClass()];
     $data[] = [
       function ($foo) {}, $scalars, $objects, [], ['baz'],
+    ];
+
+    // Test a static method string.
+    $data[] = [
+      TestStaticMethodClass::class . "::access",
+      [],
+      ['foo' => NULL],
+      [],
+      [NULL],
     ];
 
     return $data;
@@ -128,13 +134,8 @@ class ArgumentsResolverTest extends TestCase {
     $resolver = new ArgumentsResolver([], [], $wildcards);
 
     $callable = function ($route) {};
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(\RuntimeException::class);
-      $this->expectExceptionMessage('requires a value for the "$route" argument.');
-    }
-    else {
-      $this->setExpectedException(\RuntimeException::class, 'requires a value for the "$route" argument.');
-    }
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('requires a value for the "$route" argument.');
     $resolver->getArguments($callable);
   }
 
@@ -162,13 +163,8 @@ class ArgumentsResolverTest extends TestCase {
     $resolver = new ArgumentsResolver($scalars, $objects, []);
 
     $callable = function (\stdClass $foo) {};
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(\RuntimeException::class);
-      $this->expectExceptionMessage('requires a value for the "$foo" argument.');
-    }
-    else {
-      $this->setExpectedException(\RuntimeException::class, 'requires a value for the "$foo" argument.');
-    }
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('requires a value for the "$foo" argument.');
     $resolver->getArguments($callable);
   }
 
@@ -179,13 +175,8 @@ class ArgumentsResolverTest extends TestCase {
    */
   public function testHandleUnresolvedArgument($callable) {
     $resolver = new ArgumentsResolver([], [], []);
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(\RuntimeException::class);
-      $this->expectExceptionMessage('requires a value for the "$foo" argument.');
-    }
-    else {
-      $this->setExpectedException(\RuntimeException::class, 'requires a value for the "$foo" argument.');
-    }
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('requires a value for the "$foo" argument.');
     $resolver->getArguments($callable);
   }
 
@@ -208,6 +199,13 @@ class ArgumentsResolverTest extends TestCase {
 class TestClass {
 
   public function access($foo) {
+  }
+
+}
+
+class TestStaticMethodClass {
+
+  public static function access($foo) {
   }
 
 }

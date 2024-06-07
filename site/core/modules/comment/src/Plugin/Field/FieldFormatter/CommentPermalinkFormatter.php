@@ -19,9 +19,6 @@ use Drupal\Core\Field\Plugin\Field\FieldFormatter\StringFormatter;
  *   field_types = {
  *     "string",
  *     "uri",
- *   },
- *   quickedit = {
- *     "editor" = "plain_text"
  *   }
  * )
  */
@@ -31,7 +28,7 @@ class CommentPermalinkFormatter extends StringFormatter {
    * {@inheritdoc}
    */
   protected function getEntityUrl(EntityInterface $comment) {
-    /* @var $comment \Drupal\comment\CommentInterface */
+    /** @var \Drupal\comment\CommentInterface $comment */
     $comment_permalink = $comment->permalink();
     if ($comment->hasField('comment_body') && ($body = $comment->get('comment_body')->value)) {
       $attributes = $comment_permalink->getOption('attributes') ?: [];

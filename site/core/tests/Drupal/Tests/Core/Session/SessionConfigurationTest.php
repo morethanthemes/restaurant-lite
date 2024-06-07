@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Session;
 
 use Drupal\Tests\UnitTestCase;
@@ -14,10 +16,13 @@ class SessionConfigurationTest extends UnitTestCase {
   /**
    * Constructs a partially mocked SUT.
    *
-   * @returns \Drupal\Core\Session\SessionConfiguration|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\Core\Session\SessionConfiguration|\PHPUnit\Framework\MockObject\MockObject
    */
   protected function createSessionConfiguration($options = []) {
-    return $this->getMock('Drupal\Core\Session\SessionConfiguration', ['drupalValidTestUa'], [$options]);
+    return $this->getMockBuilder('Drupal\Core\Session\SessionConfiguration')
+      ->onlyMethods(['drupalValidTestUa'])
+      ->setConstructorArgs([$options])
+      ->getMock();
   }
 
   /**
@@ -39,7 +44,7 @@ class SessionConfigurationTest extends UnitTestCase {
   /**
    * Data provider for the cookie domain test.
    *
-   * @returns array
+   * @return array
    *   Test data
    */
   public function providerTestGeneratedCookieDomain() {
@@ -78,7 +83,7 @@ class SessionConfigurationTest extends UnitTestCase {
   /**
    * Data provider for the cookie domain test.
    *
-   * @returns array
+   * @return array
    *   Test data
    */
   public function providerTestEnforcedCookieDomain() {
@@ -114,6 +119,17 @@ class SessionConfigurationTest extends UnitTestCase {
   }
 
   /**
+   * Test that session.cookie_samesite is configured correctly.
+   */
+  public function testSameSiteCookie() {
+    $request = Request::create('https://example.com');
+
+    $config = $this->createSessionConfiguration(['cookie_samesite' => 'Strict']);
+    $options = $config->getOptions($request);
+    $this->assertEquals('Strict', $options['cookie_samesite']);
+  }
+
+  /**
    * Tests that session.cookie_secure ini settings cannot be overridden.
    *
    * @covers ::__construct
@@ -133,7 +149,7 @@ class SessionConfigurationTest extends UnitTestCase {
   /**
    * Data provider for the cookie secure test.
    *
-   * @returns array
+   * @return array
    *   Test data
    */
   public function providerTestCookieSecure() {
@@ -166,7 +182,7 @@ class SessionConfigurationTest extends UnitTestCase {
   /**
    * Data provider for the cookie name test.
    *
-   * @returns array
+   * @return array
    *   Test data
    */
   public function providerTestGeneratedSessionName() {
@@ -214,7 +230,7 @@ class SessionConfigurationTest extends UnitTestCase {
   /**
    * Data provider for the cookie name test.
    *
-   * @returns array
+   * @return array
    *   Test data
    */
   public function providerTestEnforcedSessionName() {
@@ -241,6 +257,35 @@ class SessionConfigurationTest extends UnitTestCase {
     return array_map(function ($record) {
       return [$record[0], $record[1] . substr(hash('sha256', $record[2]), 0, 32)];
     }, $data);
+  }
+
+  /**
+   * Tests constructor's default settings.
+   *
+   * @covers ::__construct
+   *
+   * @dataProvider providerTestConstructorDefaultSettings
+   */
+  public function testConstructorDefaultSettings(array $options, int $expected_sid_length, int $expected_sid_bits_per_character) {
+    $config = $this->createSessionConfiguration($options);
+    $options = $config->getOptions(Request::createFromGlobals());
+    $this->assertSame($expected_sid_length, $options['sid_length']);
+    $this->assertSame($expected_sid_bits_per_character, $options['sid_bits_per_character']);
+  }
+
+  /**
+   * Data provider for the constructor test.
+   *
+   * @return array
+   *   Test data
+   */
+  public function providerTestConstructorDefaultSettings() {
+    return [
+      [[], 48, 6],
+      [['sid_length' => 100], 100, 6],
+      [['sid_bits_per_character' => 5], 48, 5],
+      [['sid_length' => 100, 'sid_bits_per_character' => 5], 100, 5],
+    ];
   }
 
 }

@@ -5,7 +5,6 @@ namespace Drupal\Tests\link\Functional\Views;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\Tests\views\Functional\ViewTestBase;
-use Drupal\views\Tests\ViewTestData;
 
 /**
  * Tests the views integration for link tokens.
@@ -19,7 +18,12 @@ class LinkViewsTokensTest extends ViewTestBase {
    *
    * @var array
    */
-  public static $modules = ['link_test_views'];
+  protected static $modules = ['link_test_views'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Views used by this test.
@@ -38,9 +42,8 @@ class LinkViewsTokensTest extends ViewTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp($import_test_views = TRUE) {
-    parent::setUp($import_test_views);
-    ViewTestData::createTestViews(get_class($this), ['link_test_views']);
+  protected function setUp($import_test_views = TRUE, $modules = ['link_test_views']): void {
+    parent::setUp($import_test_views, $modules);
 
     // Create Basic page node type.
     $this->drupalCreateContentType([
@@ -67,7 +70,7 @@ class LinkViewsTokensTest extends ViewTestBase {
   public function testLinkViewsTokens() {
     // Array of URI's to test.
     $uris = [
-      'http://www.drupal.org' => 'Drupal.org',
+      'http://www.example.com' => 'example.com',
     ];
 
     // Add nodes with the URI's and titles.
@@ -81,17 +84,17 @@ class LinkViewsTokensTest extends ViewTestBase {
 
     foreach ($uris as $uri => $title) {
       // Formatted link: {{ field_link }}<br />
-      $this->assertRaw("Formated: <a href=\"$uri\" class=\"test-link-class\">$title</a>");
+      $this->assertSession()->responseContains("Formatted: <a href=\"$uri\" class=\"test-link-class\">$title</a>");
 
       // Raw uri: {{ field_link__uri }}<br />
-      $this->assertRaw("Raw uri: $uri");
+      $this->assertSession()->responseContains("Raw uri: $uri");
 
       // Raw title: {{ field_link__title }}<br />
-      $this->assertRaw("Raw title: $title");
+      $this->assertSession()->responseContains("Raw title: $title");
 
       // Raw options: {{ field_link__options }}<br />
       // Options is an array and should return empty after token replace.
-      $this->assertRaw("Raw options: .");
+      $this->assertSession()->responseContains("Raw options: .");
     }
   }
 

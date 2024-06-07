@@ -12,7 +12,7 @@ use Drupal\Core\Site\Settings;
 class MailFormatHelper {
 
   /**
-   * Internal array of urls replaced with tokens.
+   * Internal array of URLs replaced with tokens.
    *
    * @var array
    */
@@ -54,9 +54,9 @@ class MailFormatHelper {
     $text = str_replace("\r", '', $text);
     // See if soft-wrapping is allowed.
     $clean_indent = static::htmlToTextClean($indent);
-    $soft = strpos($clean_indent, ' ') === FALSE;
+    $soft = !str_contains($clean_indent, ' ');
     // Check if the string has line breaks.
-    if (strpos($text, "\n") !== FALSE) {
+    if (str_contains($text, "\n")) {
       // Remove trailing spaces to make existing breaks hard, but leave
       // signature marker untouched (RFC 3676, Section 4.3).
       $text = preg_replace('/(?(?<!^--) +\n|  +\n)/m', "\n", $text);
@@ -125,7 +125,7 @@ class MailFormatHelper {
     // 'See the Drupal site [1]' with the URL included as a footnote.
     static::htmlToMailUrls(NULL, TRUE);
     $pattern = '@(<a[^>]+?href="([^"]*)"[^>]*?>(.+?)</a>)@i';
-    $string = preg_replace_callback($pattern, 'static::htmlToMailUrls', $string);
+    $string = preg_replace_callback($pattern, [static::class, 'htmlToMailUrls'], $string);
     $urls = static::htmlToMailUrls();
     $footnotes = '';
     if (count($urls)) {
@@ -142,8 +142,6 @@ class MailFormatHelper {
     // required).
     // Odd/even counter (tag or no tag).
     $tag = FALSE;
-    // Case conversion function.
-    $casing = NULL;
     $output = '';
     // All current indentation string chunks.
     $indent = [];
@@ -155,7 +153,7 @@ class MailFormatHelper {
 
       // Process HTML tags (but don't output any literally).
       if ($tag) {
-        list($tagname) = explode(' ', strtolower($value), 2);
+        [$tagname] = explode(' ', strtolower($value), 2);
         switch ($tagname) {
           // List counters.
           case 'ul':
@@ -221,17 +219,14 @@ class MailFormatHelper {
           // Fancy headers.
           case 'h1':
             $indent[] = '======== ';
-            $casing = 'mb_strtoupper';
             break;
 
           case 'h2':
             $indent[] = '-------- ';
-            $casing = 'mb_strtoupper';
             break;
 
           case '/h1':
           case '/h2':
-            $casing = NULL;
             // Pad the line with dashes.
             $output = static::htmlToTextPad($output, ($tagname == '/h1') ? '=' : '-', ' ');
             array_pop($indent);
@@ -266,10 +261,6 @@ class MailFormatHelper {
 
       // See if there is something waiting to be output.
       if (isset($chunk)) {
-        // Apply any necessary case conversion.
-        if (isset($casing)) {
-          $chunk = call_user_func($casing, $chunk);
-        }
         $line_endings = Settings::get('mail_line_endings', PHP_EOL);
         // Format it and apply the current indentation.
         $output .= static::wrapMail($chunk, implode('', $indent)) . $line_endings;
@@ -311,13 +302,13 @@ class MailFormatHelper {
 
     // Do not break MIME headers which could be longer than 77 characters.
     foreach ($mime_headers as $header) {
-      if (strpos($line, $header . ': ') === 0) {
+      if (str_starts_with($line, $header . ': ')) {
         $line_is_mime_header = TRUE;
         break;
       }
     }
     if (!$line_is_mime_header) {
-      // Use soft-breaks only for purely quoted or unindented text.
+      // Use soft-breaks only for purely quoted or un-indented text.
       $line = wordwrap($line, 77 - $values['length'], $values['soft'] ? " \n" : "\n");
     }
     // Break really long words at the maximum width allowed.
@@ -343,7 +334,7 @@ class MailFormatHelper {
         static::$regexp = '@^' . preg_quote($base_path, '@') . '@';
       }
       if ($match) {
-        list(, , $url, $label) = $match;
+        [, , $url, $label] = $match;
         // Ensure all URLs are absolute.
         static::$urls[] = strpos($url, '://') ? $url : preg_replace(static::$regexp, $base_url . '/', $url);
         return $label . ' [' . count(static::$urls) . ']';

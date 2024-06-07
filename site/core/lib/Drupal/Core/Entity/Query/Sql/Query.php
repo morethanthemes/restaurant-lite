@@ -22,6 +22,13 @@ class Query extends QueryBase implements QueryInterface {
   protected $sqlQuery;
 
   /**
+   * The Tables object for this query.
+   *
+   * @var \Drupal\Core\Entity\Query\Sql\TablesInterface
+   */
+  protected $tables;
+
+  /**
    * An array of fields keyed by the field alias.
    *
    * Each entry correlates to the arguments of
@@ -34,8 +41,9 @@ class Query extends QueryBase implements QueryInterface {
   protected $sqlFields = [];
 
   /**
-   * An array of strings added as to the group by, keyed by the string to avoid
-   * duplicates.
+   * An array of strings for the SQL 'group by' operation.
+   *
+   * Array is keyed by the string to avoid duplicates.
    *
    * @var array
    */
@@ -79,7 +87,7 @@ class Query extends QueryBase implements QueryInterface {
   /**
    * Prepares the basic query with proper metadata/tags and base fields.
    *
-   * @return \Drupal\Core\Entity\Query\Sql\Query
+   * @return $this
    *   Returns the called object.
    *
    * @throws \Drupal\Core\Entity\Query\QueryException
@@ -101,6 +109,9 @@ class Query extends QueryBase implements QueryInterface {
       $simple_query = FALSE;
     }
     $this->sqlQuery = $this->connection->select($base_table, 'base_table', ['conjunction' => $this->conjunction]);
+    // Reset the tables structure, as it might have been built for a previous
+    // execution of this query.
+    $this->tables = NULL;
     $this->sqlQuery->addMetaData('entity_type', $this->entityTypeId);
     $id_field = $this->entityType->getKey('id');
     // Add the key field for fetchAllKeyed().
@@ -122,10 +133,13 @@ class Query extends QueryBase implements QueryInterface {
     // Add a self-join to the base revision table if we're querying only the
     // latest revisions.
     if ($this->latestRevision && $revision_field) {
-      $this->sqlQuery->leftJoin($base_table, 'base_table_2', "base_table.$id_field = base_table_2.$id_field AND base_table.$revision_field < base_table_2.$revision_field");
+      $this->sqlQuery->leftJoin($base_table, 'base_table_2', "[base_table].[$id_field] = [base_table_2].[$id_field] AND [base_table].[$revision_field] < [base_table_2].[$revision_field]");
       $this->sqlQuery->isNull("base_table_2.$id_field");
     }
 
+    if (is_null($this->accessCheck)) {
+      throw new QueryException('Entity queries must explicitly set whether the query should be access checked or not. See Drupal\Core\Entity\Query\QueryInterface::accessCheck().');
+    }
     if ($this->accessCheck) {
       $this->sqlQuery->addTag($this->entityTypeId . '_access');
     }
@@ -155,7 +169,7 @@ class Query extends QueryBase implements QueryInterface {
   /**
    * Compiles the conditions.
    *
-   * @return \Drupal\Core\Entity\Query\Sql\Query
+   * @return $this
    *   Returns the called object.
    */
   protected function compile() {
@@ -166,7 +180,7 @@ class Query extends QueryBase implements QueryInterface {
   /**
    * Adds the sort to the build query.
    *
-   * @return \Drupal\Core\Entity\Query\Sql\Query
+   * @return $this
    *   Returns the called object.
    */
   protected function addSort() {
@@ -224,7 +238,7 @@ class Query extends QueryBase implements QueryInterface {
   /**
    * Finish the query by adding fields, GROUP BY and range.
    *
-   * @return \Drupal\Core\Entity\Query\Sql\Query
+   * @return $this
    *   Returns the called object.
    */
   protected function finish() {
@@ -236,7 +250,7 @@ class Query extends QueryBase implements QueryInterface {
       $this->sqlQuery->groupBy($field);
     }
     foreach ($this->sqlFields as $field) {
-      $this->sqlQuery->addField($field[0], $field[1], isset($field[2]) ? $field[2] : NULL);
+      $this->sqlQuery->addField($field[0], $field[1], $field[2] ?? NULL);
     }
     return $this;
   }
@@ -249,7 +263,7 @@ class Query extends QueryBase implements QueryInterface {
    */
   protected function result() {
     if ($this->count) {
-      return $this->sqlQuery->countQuery()->execute()->fetchField();
+      return (int) $this->sqlQuery->countQuery()->execute()->fetchField();
     }
     // Return a keyed array of results. The key is either the revision_id or
     // the entity_id depending on whether the entity type supports revisions.
@@ -314,6 +328,31 @@ class Query extends QueryBase implements QueryInterface {
   public function getTables(SelectInterface $sql_query) {
     $class = static::getClass($this->namespaces, 'Tables');
     return new $class($sql_query);
+  }
+
+  /**
+   * Implements the magic __toString method.
+   */
+  public function __toString() {
+    // Clone the query so the prepare and compile doesn't get repeated.
+    $clone = clone($this);
+
+    $clone->prepare()
+      ->compile()
+      ->addSort()
+      ->finish();
+
+    // Quote arguments so query is able to be run.
+    $quoted = [];
+    foreach ($clone->sqlQuery->getArguments() as $key => $value) {
+      $quoted[$key] = is_null($value) ? 'NULL' : $this->connection->quote($value);
+    }
+
+    // Replace table name brackets.
+    $sql = $clone->connection->prefixTables((string) $clone->sqlQuery);
+    $sql = $clone->connection->quoteIdentifiers($sql);
+
+    return strtr($sql, $quoted);
   }
 
 }

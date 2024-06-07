@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Form;
 
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
@@ -61,7 +64,9 @@ class SubformStateTest extends UnitTestCase {
    * @dataProvider providerGetValues
    *
    * @param string[] $parents
+   *   The parents.
    * @param string $expected
+   *   The expected state values.
    */
   public function testGetValues(array $parents, $expected) {
     $parent_form_state = new FormState();
@@ -98,10 +103,12 @@ class SubformStateTest extends UnitTestCase {
    * @dataProvider providerGetValuesBroken
    *
    * @param string[] $parents
+   *   The parents.
    * @param string $expected
+   *   The expected state values.
    */
   public function testGetValuesBroken(array $parents, $expected) {
-    $this->setExpectedException(\UnexpectedValueException::class);
+    $this->expectException(\UnexpectedValueException::class);
     $this->testGetValues($parents, $expected);
   }
 
@@ -162,7 +169,7 @@ class SubformStateTest extends UnitTestCase {
    * @dataProvider providerTestGetValueBroken
    */
   public function testGetValueBroken(array $parents, $key, $expected, $default = NULL) {
-    $this->setExpectedException(\UnexpectedValueException::class);
+    $this->expectException(\UnexpectedValueException::class);
     $this->testGetValue($parents, $key, $expected, $default);
   }
 
@@ -217,7 +224,7 @@ class SubformStateTest extends UnitTestCase {
    * @dataProvider providerTestSetValuesBroken
    */
   public function testSetValuesBroken($parents, $new_values, $expected) {
-    $this->setExpectedException(\UnexpectedValueException::class);
+    $this->expectException(\UnexpectedValueException::class);
     $this->testSetValues($parents, $new_values, $expected);
   }
 
@@ -296,6 +303,7 @@ class SubformStateTest extends UnitTestCase {
   public function testSetErrorByName() {
     $parent_form_error_name = 'dog][name';
     $subform_error_name = 'name';
+    // cSpell:disable-next-line
     $message = 'De kat krabt de krullen van de trap.';
 
     $parent_form_state = $this->prophesize(FormStateInterface::class);
@@ -304,6 +312,20 @@ class SubformStateTest extends UnitTestCase {
 
     $subform_state = SubformState::createForSubform($this->parentForm['dog'], $this->parentForm, $parent_form_state->reveal());
     $this->assertSame($subform_state, $subform_state->setErrorByName($subform_error_name, $message));
+  }
+
+  /**
+   * @covers ::getFormObject
+   */
+  public function testFormObject() {
+    $parent_form_state = $this->prophesize(FormStateInterface::class);
+    $parent_form_object = $this->prophesize(FormInterface::class)->reveal();
+    $parent_form_state->getFormObject()->willReturn($parent_form_object)->shouldBeCalledOnce();
+
+    $subform_form_object = $this->prophesize(FormInterface::class)->reveal();
+    $subform_state = SubformState::createForSubform($this->parentForm['dog'], $this->parentForm, $parent_form_state->reveal(), $subform_form_object);
+    $this->assertSame($subform_form_object, $subform_state->getFormObject());
+    $this->assertSame($parent_form_object, $subform_state->getCompleteFormState()->getFormObject());
   }
 
 }

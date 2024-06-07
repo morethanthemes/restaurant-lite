@@ -2,38 +2,56 @@
 
 namespace Drupal\KernelTests\Core\Database;
 
-use Drupal\KernelTests\KernelTestBase;
-
 /**
  * Tests the sequences API.
  *
  * @group Database
+ * @group legacy
  */
-class NextIdTest extends KernelTestBase {
+class NextIdTest extends DatabaseTestBase {
 
   /**
    * The modules to enable.
+   *
    * @var array
    */
-  public static $modules = ['system'];
+  protected static $modules = ['database_test', 'system'];
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
-    $this->installSchema('system', 'sequences');
+
+    $table_specification = [
+      'description' => 'Stores IDs.',
+      'fields' => [
+        'value' => [
+          'description' => 'The value of the sequence.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+      ],
+      'primary key' => ['value'],
+    ];
+    $this->connection->schema()->createTable('sequences', $table_specification);
   }
 
   /**
    * Tests that the sequences API works.
    */
   public function testDbNextId() {
-    $first = db_next_id();
-    $second = db_next_id();
+    $this->expectDeprecation('Drupal\Core\Database\Connection::nextId() is deprecated in drupal:10.2.0 and is removed from drupal:11.0.0. Modules should use instead the keyvalue storage for the last used id. See https://www.drupal.org/node/3349345');
+
+    $first = $this->connection->nextId();
+    $second = $this->connection->nextId();
     // We can test for exact increase in here because we know there is no
     // other process operating on these tables -- normally we could only
     // expect $second > $first.
-    $this->assertEqual($first + 1, $second, 'The second call from a sequence provides a number increased by one.');
-    $result = db_next_id(1000);
-    $this->assertEqual($result, 1001, 'Sequence provides a larger number than the existing ID.');
+    $this->assertEquals($first + 1, $second, 'The second call from a sequence provides a number increased by one.');
+    $result = $this->connection->nextId(1000);
+    $this->assertEquals(1001, $result, 'Sequence provides a larger number than the existing ID.');
   }
 
 }

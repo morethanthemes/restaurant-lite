@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\block\Unit\Plugin\migrate\process;
 
 use Drupal\block\Plugin\migrate\process\BlockRegion;
@@ -48,6 +50,8 @@ class BlockRegionTest extends UnitTestCase {
   }
 
   /**
+   * Tests transforming a block with the same theme and an existing region.
+   *
    * If the source and destination themes are identical, the region should only
    * be passed through if it actually exists in the destination theme.
    *
@@ -58,6 +62,8 @@ class BlockRegionTest extends UnitTestCase {
   }
 
   /**
+   * Tests transforming a block with the same theme and a non-existent region.
+   *
    * If the source and destination themes are identical, the region should be
    * changed to 'content' if it doesn't exist in the destination theme.
    *

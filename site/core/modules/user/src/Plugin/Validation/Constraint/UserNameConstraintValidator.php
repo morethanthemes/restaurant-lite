@@ -2,6 +2,7 @@
 
 namespace Drupal\user\Plugin\Validation\Constraint;
 
+use Drupal\user\UserInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
@@ -19,13 +20,13 @@ class UserNameConstraintValidator extends ConstraintValidator {
       return;
     }
     $name = $items->first()->value;
-    if (substr($name, 0, 1) == ' ') {
+    if (str_starts_with($name, ' ')) {
       $this->context->addViolation($constraint->spaceBeginMessage);
     }
     if (substr($name, -1) == ' ') {
       $this->context->addViolation($constraint->spaceEndMessage);
     }
-    if (strpos($name, '  ') !== FALSE) {
+    if (str_contains($name, '  ')) {
       $this->context->addViolation($constraint->multipleSpacesMessage);
     }
     if (preg_match('/[^\x{80}-\x{F7} a-z0-9@+_.\'-]/i', $name)
@@ -52,8 +53,8 @@ class UserNameConstraintValidator extends ConstraintValidator {
     ) {
       $this->context->addViolation($constraint->illegalMessage);
     }
-    if (mb_strlen($name) > USERNAME_MAX_LENGTH) {
-      $this->context->addViolation($constraint->tooLongMessage, ['%name' => $name, '%max' => USERNAME_MAX_LENGTH]);
+    if (mb_strlen($name) > UserInterface::USERNAME_MAX_LENGTH) {
+      $this->context->addViolation($constraint->tooLongMessage, ['%name' => $name, '%max' => UserInterface::USERNAME_MAX_LENGTH]);
     }
   }
 

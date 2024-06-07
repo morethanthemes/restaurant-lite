@@ -176,8 +176,8 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
    *   A placeholder.
    *
    * @return bool
-   *   Whether the placeholder is safe for use in a HTML attribute (in case it's
-   *   a placeholder for a HTML attribute value or a subset of it).
+   *   Whether the placeholder is safe for use in an HTML attribute (in case
+   *   it's a placeholder for an HTML attribute value or a subset of it).
    */
   protected static function placeholderIsAttributeSafe($placeholder) {
     assert(is_string($placeholder));
@@ -198,8 +198,23 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
   protected static function createBigPipeJsPlaceholder($original_placeholder, array $placeholder_render_array) {
     $big_pipe_placeholder_id = static::generateBigPipePlaceholderId($original_placeholder, $placeholder_render_array);
 
+    $interface_preview = [];
+    if (isset($placeholder_render_array['#lazy_builder'])) {
+      $interface_preview = [
+        '#theme' => 'big_pipe_interface_preview',
+        '#callback' => $placeholder_render_array['#lazy_builder'][0],
+        '#arguments' => $placeholder_render_array['#lazy_builder'][1],
+      ];
+      if (isset($placeholder_render_array['#preview'])) {
+        $interface_preview['#preview'] = $placeholder_render_array['#preview'];
+        unset($placeholder_render_array['#preview']);
+      }
+    }
+
     return [
-      '#markup' => '<span data-big-pipe-placeholder-id="' . Html::escape($big_pipe_placeholder_id) . '"></span>',
+      '#prefix' => '<span data-big-pipe-placeholder-id="' . Html::escape($big_pipe_placeholder_id) . '">',
+      'interface_preview' => $interface_preview,
+      '#suffix' => '</span>',
       '#cache' => [
         'max-age' => 0,
         'contexts' => [
@@ -210,7 +225,7 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
         'library' => [
           'big_pipe/big_pipe',
         ],
-        // Inform BigPipe' JavaScript known BigPipe placeholder IDs (a whitelist).
+        // Inform BigPipe' JavaScript known BigPipe placeholder IDs.
         'drupalSettings' => [
           'bigPipePlaceholderIds' => [$big_pipe_placeholder_id => TRUE],
         ],
@@ -229,8 +244,8 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
    * @param array $placeholder_render_array
    *   The render array for a placeholder.
    * @param bool $placeholder_must_be_attribute_safe
-   *   Whether the placeholder must be safe for use in a HTML attribute (in case
-   *   it's a placeholder for a HTML attribute value or a subset of it).
+   *   Whether the placeholder must be safe for use in an HTML attribute (in
+   *   case it's a placeholder for an HTML attribute value or a subset of it).
    *
    * @return array
    *   The resulting BigPipe no-JS placeholder render array.
@@ -274,6 +289,16 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
     // Generate a BigPipe placeholder ID (to be used by BigPipe's JavaScript).
     // @see \Drupal\Core\Render\PlaceholderGenerator::createPlaceholder()
     if (isset($placeholder_render_array['#lazy_builder'])) {
+      // Be sure cache contexts and tags are sorted before serializing them and
+      // making hash. Issue #3225328 removes sort from contexts and tags arrays
+      // for performances reasons.
+      if (isset($placeholder_render_array['#cache']['contexts'])) {
+        sort($placeholder_render_array['#cache']['contexts']);
+      }
+      if (isset($placeholder_render_array['#cache']['tags'])) {
+        sort($placeholder_render_array['#cache']['tags']);
+      }
+
       $callback = $placeholder_render_array['#lazy_builder'][0];
       $arguments = $placeholder_render_array['#lazy_builder'][1];
       $token = Crypt::hashBase64(serialize($placeholder_render_array));

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Plugin;
 
 use PHPUnit\Framework\TestCase;
@@ -41,7 +43,7 @@ class PluginBaseTest extends TestCase {
    * @coves ::getBaseId
    */
   public function testGetBaseId($plugin_id, $expected) {
-    /** @var \Drupal\Component\Plugin\PluginBase|\PHPUnit_Framework_MockObject_MockObject $plugin_base */
+    /** @var \Drupal\Component\Plugin\PluginBase|\PHPUnit\Framework\MockObject\MockObject $plugin_base */
     $plugin_base = $this->getMockForAbstractClass('Drupal\Component\Plugin\PluginBase', [
       [],
       $plugin_id,
@@ -68,7 +70,7 @@ class PluginBaseTest extends TestCase {
    * @covers ::getDerivativeId
    */
   public function testGetDerivativeId($plugin_id = NULL, $expected = NULL) {
-    /** @var \Drupal\Component\Plugin\PluginBase|\PHPUnit_Framework_MockObject_MockObject $plugin_base */
+    /** @var \Drupal\Component\Plugin\PluginBase|\PHPUnit\Framework\MockObject\MockObject $plugin_base */
     $plugin_base = $this->getMockForAbstractClass('Drupal\Component\Plugin\PluginBase', [
       [],
       $plugin_id,

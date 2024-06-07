@@ -32,7 +32,7 @@ interface StorageInterface {
    * @param string $name
    *   The name of a configuration object to load.
    *
-   * @return array|bool
+   * @return array|false
    *   The configuration data stored for the configuration object name. If no
    *   configuration data exists for the given name, FALSE is returned.
    */
@@ -173,7 +173,7 @@ interface StorageInterface {
    *   configuration in a way that allows retrieval of configuration for a
    *   particular collection.
    *
-   * @return \Drupal\Core\Config\StorageInterface
+   * @return $this
    *   A new instance of the storage backend with the collection set.
    */
   public function createCollection($collection);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Plugin\views\query;
 
 use Drupal\Core\Database\Connection;
@@ -25,7 +27,7 @@ class PostgresqlDateSqlTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->database = $this->prophesize(Connection::class)->reveal();
   }
@@ -38,7 +40,7 @@ class PostgresqlDateSqlTest extends UnitTestCase {
   public function testGetDateField() {
     $date_sql = new PostgresqlDateSql($this->database);
 
-    $expected = "TO_TIMESTAMP(foo.field, 'YYYY-MM-DD HH24:MI:SS')";
+    $expected = "TO_TIMESTAMP(foo.field, 'YYYY-MM-DD\"T\"HH24:MI:SS')";
     $this->assertEquals($expected, $date_sql->getDateField('foo.field', TRUE));
 
     $expected = 'TO_TIMESTAMP(foo.field)';

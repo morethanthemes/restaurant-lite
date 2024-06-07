@@ -6,175 +6,176 @@
  */
 
 use Drupal\Core\Config\Entity\ConfigEntityUpdater;
-use Drupal\Core\Entity\Display\EntityDisplayInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
-use Drupal\Core\Entity\Entity\EntityFormDisplay;
-use Drupal\Core\Entity\Entity\EntityViewDisplay;
+use Drupal\Core\Entity\EntityViewModeInterface;
+use Drupal\Core\Entity\EntityFormModeInterface;
+use Drupal\Core\Field\Plugin\Field\FieldFormatter\TimestampFormatter;
 
 /**
- * Re-save all configuration entities to recalculate dependencies.
+ * Implements hook_removed_post_updates().
  */
-function system_post_update_recalculate_configuration_entity_dependencies(&$sandbox = NULL) {
-  if (!isset($sandbox['config_names'])) {
-    $sandbox['config_names'] = \Drupal::configFactory()->listAll();
-    $sandbox['count'] = count($sandbox['config_names']);
-  }
-  /** @var \Drupal\Core\Config\ConfigManagerInterface $config_manager */
-  $config_manager = \Drupal::service('config.manager');
-
-  $count = 0;
-  foreach ($sandbox['config_names'] as $key => $config_name) {
-    if ($entity = $config_manager->loadConfigEntityByName($config_name)) {
-      $entity->save();
-    }
-    unset($sandbox['config_names'][$key]);
-    $count++;
-    // Do 50 at a time.
-    if ($count == 50) {
-      break;
-    }
-  }
-
-  $sandbox['#finished'] = empty($sandbox['config_names']) ? 1 : ($sandbox['count'] - count($sandbox['config_names'])) / $sandbox['count'];
-  return t('Configuration dependencies recalculated');
-}
-
-/**
- * Update entity displays to contain the region for each field.
- */
-function system_post_update_add_region_to_entity_displays() {
-  $entity_save = function (EntityDisplayInterface $entity) {
-    // preSave() will fill in the correct region based on the 'type'.
-    $entity->save();
-  };
-  array_map($entity_save, EntityViewDisplay::loadMultiple());
-  array_map($entity_save, EntityFormDisplay::loadMultiple());
-}
-
-/**
- * Force caches using hashes to be cleared (Twig, render cache, etc.).
- */
-function system_post_update_hashes_clear_cache() {
-  // Empty post-update hook.
-}
-
-/**
- * Force plugin definitions to be cleared.
- *
- * @see https://www.drupal.org/node/2802663
- */
-function system_post_update_timestamp_plugins() {
-  // Empty post-update hook.
-}
-
-/**
- * Clear caches to ensure Classy's message library is always added.
- */
-function system_post_update_classy_message_library() {
-  // Empty post-update hook.
-}
-
-/**
- * Force field type plugin definitions to be cleared.
- *
- * @see https://www.drupal.org/node/2403703
- */
-function system_post_update_field_type_plugins() {
-  // Empty post-update hook.
-}
-
-/**
- * Clear caches due to schema changes in core.entity.schema.yml.
- */
-function system_post_update_field_formatter_entity_schema() {
-  // Empty post-update hook.
-}
-
-/**
- * Change plugin IDs of actions.
- */
-function system_post_update_change_action_plugins() {
-  $old_new_action_id_map = [
-    'comment_publish_action' => 'entity:publish_action:comment',
-    'comment_unpublish_action' => 'entity:unpublish_action:comment',
-    'comment_save_action' => 'entity:save_action:comment',
-    'node_publish_action' => 'entity:publish_action:node',
-    'node_unpublish_action' => 'entity:unpublish_action:node',
-    'node_save_action' => 'entity:save_action:node',
+function system_removed_post_updates() {
+  return [
+    'system_post_update_recalculate_configuration_entity_dependencies' => '9.0.0',
+    'system_post_update_add_region_to_entity_displays' => '9.0.0',
+    'system_post_update_hashes_clear_cache' => '9.0.0',
+    'system_post_update_timestamp_plugins' => '9.0.0',
+    'system_post_update_classy_message_library' => '9.0.0',
+    'system_post_update_field_type_plugins' => '9.0.0',
+    'system_post_update_field_formatter_entity_schema' => '9.0.0',
+    'system_post_update_fix_jquery_extend' => '9.0.0',
+    'system_post_update_change_action_plugins' => '9.0.0',
+    'system_post_update_change_delete_action_plugins' => '9.0.0',
+    'system_post_update_language_item_callback' => '9.0.0',
+    'system_post_update_extra_fields' => '9.0.0',
+    'system_post_update_states_clear_cache' => '9.0.0',
+    'system_post_update_add_expand_all_items_key_in_system_menu_block' => '9.0.0',
+    'system_post_update_clear_menu_cache' => '9.0.0',
+    'system_post_update_layout_plugin_schema_change' => '9.0.0',
+    'system_post_update_entity_reference_autocomplete_match_limit' => '9.0.0',
+    'system_post_update_extra_fields_form_display' => '10.0.0',
+    'system_post_update_uninstall_simpletest' => '10.0.0',
+    'system_post_update_uninstall_entity_reference_module' => '10.0.0',
+    'system_post_update_entity_revision_metadata_bc_cleanup' => '10.0.0',
+    'system_post_update_uninstall_classy' => '10.0.0',
+    'system_post_update_uninstall_stable' => '10.0.0',
+    'system_post_update_claro_dropbutton_variants' => '10.0.0',
+    'system_post_update_schema_version_int' => '10.0.0',
+    'system_post_update_delete_rss_settings' => '10.0.0',
+    'system_post_update_remove_key_value_expire_all_index' => '10.0.0',
+    'system_post_update_service_advisory_settings' => '10.0.0',
+    'system_post_update_delete_authorize_settings' => '10.0.0',
+    'system_post_update_sort_all_config' => '10.0.0',
+    'system_post_update_enable_provider_database_driver' => '10.0.0',
   ];
-
-  /** @var \Drupal\system\Entity\Action[] $actions */
-  $actions = \Drupal::entityTypeManager()->getStorage('action')->loadMultiple();
-  foreach ($actions as $action) {
-    if (isset($old_new_action_id_map[$action->getPlugin()->getPluginId()])) {
-      $action->setPlugin($old_new_action_id_map[$action->getPlugin()->getPluginId()]);
-      $action->save();
-    }
-  }
 }
 
 /**
- * Change plugin IDs of delete actions.
+ * Add new menu linkset endpoint setting.
  */
-function system_post_update_change_delete_action_plugins() {
-  $old_new_action_id_map = [
-    'comment_delete_action' => 'entity:delete_action:comment',
-    'node_delete_action' => 'entity:delete_action:node',
-  ];
-
-  /** @var \Drupal\system\Entity\Action[] $actions */
-  $actions = \Drupal::entityTypeManager()->getStorage('action')->loadMultiple();
-  foreach ($actions as $action) {
-    if (isset($old_new_action_id_map[$action->getPlugin()->getPluginId()])) {
-      $action->setPlugin($old_new_action_id_map[$action->getPlugin()->getPluginId()]);
-      $action->save();
-    }
-  }
+function system_post_update_linkset_settings() {
+  $config = \Drupal::configFactory()->getEditable('system.feature_flags');
+  $config->set('linkset_endpoint', FALSE)->save();
 }
 
 /**
- * Force cache clear for language item callback.
- *
- * @see https://www.drupal.org/node/2851736
+ * Update timestamp formatter settings for entity view displays.
  */
-function system_post_update_language_item_callback() {
-  // Empty post-update hook.
-}
+function system_post_update_timestamp_formatter(array &$sandbox = NULL): void {
+  /** @var \Drupal\Core\Field\FormatterPluginManager $field_formatter_manager */
+  $field_formatter_manager = \Drupal::service('plugin.manager.field.formatter');
 
-/**
- * Update all entity displays that contain extra fields.
- */
-function system_post_update_extra_fields(&$sandbox = NULL) {
-  $config_entity_updater = \Drupal::classResolver(ConfigEntityUpdater::class);
-  $entity_field_manager = \Drupal::service('entity_field.manager');
+  \Drupal::classResolver(ConfigEntityUpdater::class)->update($sandbox, 'entity_view_display', function (EntityViewDisplayInterface $entity_view_display) use ($field_formatter_manager): bool {
+    $update = FALSE;
+    foreach ($entity_view_display->getComponents() as $name => $component) {
+      if (empty($component['type'])) {
+        continue;
+      }
 
-  $callback = function (EntityDisplayInterface $display) use ($entity_field_manager) {
-    $display_context = $display instanceof EntityViewDisplayInterface ? 'display' : 'form';
-    $extra_fields = $entity_field_manager->getExtraFields($display->getTargetEntityTypeId(), $display->getTargetBundle());
+      $plugin_definition = $field_formatter_manager->getDefinition($component['type'], FALSE);
+      // Check also potential plugins extending TimestampFormatter.
+      if (!is_a($plugin_definition['class'], TimestampFormatter::class, TRUE)) {
+        continue;
+      }
 
-    // If any extra fields are used as a component, resave the display with the
-    // updated component information.
-    $needs_save = FALSE;
-    if (!empty($extra_fields[$display_context])) {
-      foreach ($extra_fields[$display_context] as $name => $extra_field) {
-        if ($component = $display->getComponent($name)) {
-          $display->setComponent($name, $component);
-          $needs_save = TRUE;
-        }
+      // The 'tooltip' and 'time_diff' settings might have been set, with their
+      // default values, if this entity has been already saved in a previous
+      // (post)update, such as layout_builder_post_update_timestamp_formatter().
+      // Ensure that existing timestamp formatters doesn't show any tooltip.
+      if (!isset($component['settings']['tooltip']) || !isset($component['settings']['time_diff']) || $component['settings']['tooltip']['date_format'] !== '') {
+        // Existing timestamp formatters don't have tooltip.
+        $component['settings']['tooltip'] = [
+          'date_format' => '',
+          'custom_date_format' => '',
+        ];
+        $entity_view_display->setComponent($name, $component);
+        $update = TRUE;
       }
     }
-    return $needs_save;
-  };
-
-  $config_entity_updater->update($sandbox, 'entity_form_display', $callback);
-  $config_entity_updater->update($sandbox, 'entity_view_display', $callback);
+    return $update;
+  });
 }
 
 /**
- * Force cache clear to ensure aggregated JavaScript files are regenerated.
- *
- * @see https://www.drupal.org/project/drupal/issues/2995570
+ * Enable the password compatibility module.
  */
-function system_post_update_states_clear_cache() {
-  // Empty post-update hook.
+function system_post_update_enable_password_compatibility() {
+  \Drupal::service('module_installer')->install(['phpass']);
+}
+
+/**
+ * Remove redundant asset state and config.
+ */
+function system_post_update_remove_asset_entries() {
+  \Drupal::state()->delete('drupal_css_cache_files');
+  \Drupal::state()->delete('system.js_cache_files');
+  $config = \Drupal::configFactory()->getEditable('system.performance');
+  $config->clear('stale_file_threshold');
+  $config->save();
+}
+
+/**
+ * Remove redundant asset query string state.
+ */
+function system_post_update_remove_asset_query_string() {
+  \Drupal::state()->delete('system.css_js_query_string');
+}
+
+/**
+ * Update description for view modes.
+ */
+function system_post_update_add_description_to_entity_view_mode(array &$sandbox = NULL): void {
+  $config_entity_updater = \Drupal::classResolver(ConfigEntityUpdater::class);
+
+  $callback = function (EntityViewModeInterface $entity_view_mode) {
+    return $entity_view_mode->get('description') === NULL;
+  };
+
+  $config_entity_updater->update($sandbox, 'entity_view_mode', $callback);
+}
+
+/**
+ * Update description for form modes.
+ */
+function system_post_update_add_description_to_entity_form_mode(array &$sandbox = NULL): void {
+  $config_entity_updater = \Drupal::classResolver(ConfigEntityUpdater::class);
+
+  $callback = function (EntityFormModeInterface $entity_form_mode) {
+    return $entity_form_mode->get('description') === NULL;
+  };
+
+  $config_entity_updater->update($sandbox, 'entity_form_mode', $callback);
+}
+
+/**
+ * Updates system.theme.global:logo.url config if it's still at the default.
+ */
+function system_post_update_set_blank_log_url_to_null() {
+  $global_theme_settings = \Drupal::configFactory()->getEditable('system.theme.global');
+  if ($global_theme_settings->get('logo.url') === '') {
+    $global_theme_settings
+      ->set('logo.url', NULL)
+      ->save(TRUE);
+  }
+}
+
+/**
+ * Add new default mail transport dsn.
+ */
+function system_post_update_mailer_dsn_settings() {
+}
+
+/**
+ * Add new default mail transport dsn.
+ */
+function system_post_update_mailer_structured_dsn_settings() {
+  $config = \Drupal::configFactory()->getEditable('system.mail');
+  $config->set('mailer_dsn', [
+    'scheme' => 'sendmail',
+    'host' => 'default',
+    'user' => NULL,
+    'password' => NULL,
+    'port' => NULL,
+    'options' => [],
+  ])->save();
 }

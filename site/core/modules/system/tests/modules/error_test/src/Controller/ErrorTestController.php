@@ -41,12 +41,15 @@ class ErrorTestController extends ControllerBase {
    * Generate warnings to test the error handler.
    */
   public function generateWarnings($collect_errors = FALSE) {
-    // Tell Drupal error reporter to send errors to Simpletest or not.
+    // Tell Drupal error reporter to collect test errors or not.
     define('SIMPLETEST_COLLECT_ERRORS', $collect_errors);
     // This will generate a notice.
-    $monkey_love = $bananas;
+    $notice = new \stdClass();
+    $notice == 1 ? 1 : 0;
     // This will generate a warning.
-    $awesomely_big = 1 / 0;
+    $obj = new \stdClass();
+    $obj->p =& $obj;
+    var_export($obj, TRUE);
     // This will generate a user error. Use & to check for double escaping.
     trigger_error("Drupal & awesome", E_USER_WARNING);
     return [];
@@ -65,9 +68,17 @@ class ErrorTestController extends ControllerBase {
 
   /**
    * Trigger an exception to test the exception handler.
+   *
+   * @param string $argument
+   *   A function argument which will be included in the exception backtrace.
+   *
+   * @throws \Exception
    */
-  public function triggerException() {
+  public function triggerException(string $argument = "<script>alert('xss')</script>"): void {
     define('SIMPLETEST_COLLECT_ERRORS', FALSE);
+    // Add function arguments to the exception backtrace.
+    ini_set('zend.exception_ignore_args', FALSE);
+    ini_set('zend.exception_string_param_max_len', 1024);
     throw new \Exception("Drupal & awesome");
   }
 
@@ -76,7 +87,9 @@ class ErrorTestController extends ControllerBase {
    */
   public function triggerPDOException() {
     define('SIMPLETEST_COLLECT_ERRORS', FALSE);
-    $this->database->query('SELECT * FROM bananas_are_awesome');
+    $this->database->select('bananas_are_awesome', 'b')
+      ->fields('b')
+      ->execute();
   }
 
   /**

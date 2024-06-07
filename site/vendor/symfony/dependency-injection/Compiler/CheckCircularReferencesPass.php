@@ -26,19 +26,21 @@ use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceExce
  */
 class CheckCircularReferencesPass implements CompilerPassInterface
 {
-    private $currentPath;
-    private $checkedNodes;
+    private array $currentPath;
+    private array $checkedNodes;
 
     /**
      * Checks the ContainerBuilder object for circular references.
+     *
+     * @return void
      */
     public function process(ContainerBuilder $container)
     {
         $graph = $container->getCompiler()->getServiceReferenceGraph();
 
-        $this->checkedNodes = array();
+        $this->checkedNodes = [];
         foreach ($graph->getNodes() as $id => $node) {
-            $this->currentPath = array($id);
+            $this->currentPath = [$id];
 
             $this->checkOutEdges($node->getOutEdges());
         }
@@ -51,7 +53,7 @@ class CheckCircularReferencesPass implements CompilerPassInterface
      *
      * @throws ServiceCircularReferenceException when a circular reference is found
      */
-    private function checkOutEdges(array $edges)
+    private function checkOutEdges(array $edges): void
     {
         foreach ($edges as $edge) {
             $node = $edge->getDestNode();

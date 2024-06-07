@@ -5,9 +5,11 @@ namespace Drupal\Core\Update;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Site\Settings;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Drupal\Core\StackMiddleware\ReverseProxyMiddleware;
+use Drupal\Core\Routing\RouteObjectInterface;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -53,12 +55,13 @@ class UpdateKernel extends DrupalKernel {
   /**
    * {@inheritdoc}
    */
-  public function handle(Request $request, $type = self::MASTER_REQUEST, $catch = TRUE) {
+  public function handle(Request $request, $type = self::MAIN_REQUEST, $catch = TRUE): Response {
     try {
       static::bootEnvironment();
 
       // First boot up basic things, like loading the include files.
       $this->initializeSettings($request);
+      ReverseProxyMiddleware::setSettingsOnRequest($request, Settings::getInstance());
       $this->boot();
       $container = $this->getContainer();
       /** @var \Symfony\Component\HttpFoundation\RequestStack $request_stack */
@@ -69,7 +72,7 @@ class UpdateKernel extends DrupalKernel {
       // Handle the actual request. We need the session both for authentication
       // as well as the DB update, like
       // \Drupal\system\Controller\DbUpdateController::batchFinished.
-      $this->bootSession($request, $type);
+      $this->bootSession($request);
       $result = $this->handleRaw($request);
       $this->shutdownSession($request);
 
@@ -96,7 +99,7 @@ class UpdateKernel extends DrupalKernel {
   protected function handleRaw(Request $request) {
     $container = $this->getContainer();
 
-    $this->handleAccess($request, $container);
+    $this->handleAccess($request);
 
     /** @var \Drupal\Core\Controller\ControllerResolverInterface $controller_resolver */
     $controller_resolver = $container->get('controller_resolver');
@@ -157,7 +160,7 @@ class UpdateKernel extends DrupalKernel {
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $this->getContainer()->get('router.route_provider')->getRouteByName('system.db_update'));
     $op = $args[0] ?: 'info';
     $request->attributes->set('op', $op);
-    $request->attributes->set('_raw_variables', new ParameterBag(['op' => $op]));
+    $request->attributes->set('_raw_variables', new InputBag(['op' => $op]));
   }
 
   /**

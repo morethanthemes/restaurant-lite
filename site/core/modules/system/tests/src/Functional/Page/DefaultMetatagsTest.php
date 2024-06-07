@@ -12,21 +12,24 @@ use Drupal\Tests\BrowserTestBase;
 class DefaultMetatagsTest extends BrowserTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Tests meta tags.
    */
   public function testMetaTag() {
     $this->drupalGet('');
     // Ensures that the charset metatag is on the page.
-    $result = $this->xpath('//meta[@charset="utf-8"]');
-    $this->assertEqual(count($result), 1);
+    $this->assertSession()->elementsCount('xpath', '//meta[@charset="utf-8"]', 1);
 
     // Ensure that the charset one is the first metatag.
     $result = $this->xpath('//meta');
-    $this->assertEqual((string) $result[0]->getAttribute('charset'), 'utf-8');
+    $this->assertEquals('utf-8', (string) $result[0]->getAttribute('charset'));
 
-    // Ensure that the shortcut icon is on the page.
-    $result = $this->xpath('//link[@rel = "shortcut icon"]');
-    $this->assertEqual(count($result), 1, 'The shortcut icon is present.');
+    // Ensure that the icon is on the page.
+    $this->assertSession()->elementsCount('xpath', '//link[@rel = "icon"]', 1);
   }
 
 }

@@ -2,6 +2,8 @@
 
 namespace Drupal\Core\Theme;
 
+use Drupal\Core\Routing\RouteMatchInterface;
+
 /**
  * Provides a high level access to the active theme and methods to use it.
  *
@@ -16,8 +18,9 @@ interface ThemeManagerInterface {
    * See the @link themeable Default theme implementations topic @endlink for
    * details.
    *
-   * @param string $hook
-   *   The name of the theme hook to call.
+   * @param string|string[] $hook
+   *   The name of the theme hook to call or an array of names of theme hooks to
+   *   call.
    * @param array $variables
    *   An associative array of theme variables.
    *
@@ -29,9 +32,12 @@ interface ThemeManagerInterface {
   /**
    * Returns the active theme object.
    *
+   * @param \Drupal\Core\Routing\RouteMatchInterface|null $route_match
+   *   The route match.
+   *
    * @return \Drupal\Core\Theme\ActiveTheme
    */
-  public function getActiveTheme();
+  public function getActiveTheme(RouteMatchInterface $route_match = NULL);
 
   /**
    * Determines whether there is an active theme.
@@ -58,6 +64,7 @@ interface ThemeManagerInterface {
    *
    * @param \Drupal\Core\Theme\ActiveTheme $active_theme
    *   The new active theme.
+   *
    * @return $this
    */
   public function setActiveTheme(ActiveTheme $active_theme);
@@ -87,9 +94,9 @@ interface ThemeManagerInterface {
    *   $this->alter('mymodule_data', $alterable1, $alterable2, $context);
    * @endcode
    *
-   * Note that objects are always passed by reference in PHP5. If it is
-   * absolutely required that no implementation alters a passed object in
-   * $context, then an object needs to be cloned:
+   * Note that objects are always passed by reference. If it is absolutely
+   * required that no implementation alters a passed object in $context, then an
+   * object needs to be cloned:
    * @code
    *   $context = array(
    *     'unalterable_object' => clone $object,

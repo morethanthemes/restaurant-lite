@@ -17,7 +17,12 @@ abstract class ContentTranslationPendingRevisionTestBase extends ContentTranslat
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['language', 'content_translation', 'content_moderation', 'node'];
+  protected static $modules = [
+    'language',
+    'content_translation',
+    'content_moderation',
+    'node',
+  ];
 
   /**
    * The entity storage.
@@ -43,7 +48,7 @@ abstract class ContentTranslationPendingRevisionTestBase extends ContentTranslat
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     $this->entityTypeId = 'node';
     $this->bundle = 'article';
 
@@ -76,7 +81,8 @@ abstract class ContentTranslationPendingRevisionTestBase extends ContentTranslat
     $workflow_id = 'editorial';
     $this->drupalGet('/admin/config/workflow/workflows');
     $edit['bundles[' . $this->bundle . ']'] = TRUE;
-    $this->drupalPostForm('admin/config/workflow/workflows/manage/' . $workflow_id . '/type/' . $this->entityTypeId, $edit, t('Save'));
+    $this->drupalGet('admin/config/workflow/workflows/manage/' . $workflow_id . '/type/' . $this->entityTypeId);
+    $this->submitForm($edit, 'Save');
     // Ensure the parent environment is up-to-date.
     // @see content_moderation_workflow_insert()
     \Drupal::service('entity_type.bundle.info')->clearCachedBundles();

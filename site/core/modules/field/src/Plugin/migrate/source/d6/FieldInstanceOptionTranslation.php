@@ -2,8 +2,15 @@
 
 namespace Drupal\field\Plugin\migrate\source\d6;
 
+// cspell:ignore cnfi
+
 /**
- * Gets field instance option label translations.
+ * Drupal 6 i18n field instance option labels source from database.
+ *
+ * For available configuration keys, refer to the parent classes.
+ *
+ * @see \Drupal\migrate\Plugin\migrate\source\SqlBase
+ * @see \Drupal\migrate\Plugin\migrate\source\SourcePluginBase
  *
  * @MigrateSource(
  *   id = "d6_field_instance_option_translation",
@@ -17,7 +24,7 @@ class FieldInstanceOptionTranslation extends FieldOptionTranslation {
    */
   public function query() {
     $query = parent::query();
-    $query->join('content_node_field_instance', 'cnfi', 'cnf.field_name = cnfi.field_name');
+    $query->join('content_node_field_instance', 'cnfi', '[cnfi].[field_name] = [cnf].[field_name]');
     $query->addField('cnfi', 'type_name');
     return $query;
   }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\TestSuites;
 
 require_once __DIR__ . '/TestSuiteBase.php';
@@ -16,7 +18,7 @@ class FunctionalJavascriptTestSuite extends TestSuiteBase {
    *   The test suite.
    */
   public static function suite() {
-    $root = dirname(dirname(dirname(__DIR__)));
+    $root = dirname(__DIR__, 3);
 
     $suite = new static('functional-javascript');
     $suite->addTestsBySuiteNamespace($root, 'FunctionalJavascript');

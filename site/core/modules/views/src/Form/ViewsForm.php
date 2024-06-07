@@ -40,7 +40,7 @@ class ViewsForm implements FormInterface, ContainerInjectionInterface {
   protected $requestStack;
 
   /**
-   * The url generator to generate the form action.
+   * The URL generator to generate the form action.
    *
    * @var \Drupal\Core\Routing\UrlGeneratorInterface
    */
@@ -73,7 +73,7 @@ class ViewsForm implements FormInterface, ContainerInjectionInterface {
    * @param \Drupal\Core\DependencyInjection\ClassResolverInterface $class_resolver
    *   The class resolver to get the subform form objects.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
-   *   The url generator to generate the form action.
+   *   The URL generator to generate the form action.
    * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
    *   The request stack.
    * @param string $view_id
@@ -148,13 +148,16 @@ class ViewsForm implements FormInterface, ContainerInjectionInterface {
     }
     $form_state->set(['step_controller', 'views_form_views_form'], 'Drupal\views\Form\ViewsFormMainForm');
 
-    // Add the base form ID.
-    $form_state->addBuildInfo('base_form_id', $this->getBaseFormId());
+    // Views forms without view arguments return the same Base Form ID and
+    // Form ID. Base form ID should only be added when different.
+    if ($this->getBaseFormId() !== $this->getFormId()) {
+      $form_state->addBuildInfo('base_form_id', $this->getBaseFormId());
+    }
 
     $form = [];
 
     $query = $this->requestStack->getCurrentRequest()->query->all();
-    $query = UrlHelper::filterQueryParameters($query, [], '');
+    $query = UrlHelper::filterQueryParameters($query, ['_wrapper_format'], '');
 
     $options = ['query' => $query];
     $form['#action'] = $view->hasUrl() ? $view->getUrl()->setOptions($options)->toString() : Url::fromRoute('<current>')->setOptions($options)->toString();

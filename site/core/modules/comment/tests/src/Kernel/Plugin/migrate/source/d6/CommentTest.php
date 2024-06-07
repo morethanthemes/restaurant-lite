@@ -15,7 +15,7 @@ class CommentTest extends MigrateSqlSourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['comment', 'migrate_drupal'];
+  protected static $modules = ['comment', 'migrate_drupal'];
 
   /**
    * {@inheritdoc}
@@ -39,7 +39,7 @@ class CommentTest extends MigrateSqlSourceTestBase {
         'name' => '',
         'mail' => '',
         'homepage' => '',
-        'format' => 'testformat1',
+        'format' => 'test_format1',
         'type' => 'story',
       ],
       [
@@ -56,7 +56,7 @@ class CommentTest extends MigrateSqlSourceTestBase {
         'name' => '',
         'mail' => '',
         'homepage' => '',
-        'format' => 'testformat2',
+        'format' => 'test_format2',
         'type' => 'page',
       ],
     ];
@@ -90,7 +90,7 @@ class CommentTest extends MigrateSqlSourceTestBase {
         'name' => '',
         'mail' => '',
         'homepage' => '',
-        'format' => 'testformat1',
+        'format' => 'test_format1',
         'type' => 'story',
         'language' => 'en',
       ],
@@ -108,7 +108,7 @@ class CommentTest extends MigrateSqlSourceTestBase {
         'name' => '',
         'mail' => '',
         'homepage' => '',
-        'format' => 'testformat2',
+        'format' => 'test_format2',
         'type' => 'page',
         'language' => 'fr',
       ],

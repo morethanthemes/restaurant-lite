@@ -28,6 +28,15 @@ use Drupal\Core\Entity\EntityStorageInterface;
  *     "label" = "label",
  *     "status" = "status"
  *   },
+ *   config_export = {
+ *     "id",
+ *     "label",
+ *     "weight",
+ *     "style",
+ *     "size",
+ *     "size_value",
+ *     "protected_property",
+ *   },
  *   links = {
  *     "edit-form" = "/admin/structure/config_test/manage/{config_test}",
  *     "delete-form" = "/admin/structure/config_test/manage/{config_test}/delete",
@@ -94,9 +103,9 @@ class ConfigTest extends ConfigEntityBase implements ConfigTestInterface {
       ]);
       $secondary->save();
     }
-    if ($this->id() == 'deleter') {
-      $deletee = $storage->load('deletee');
-      $deletee->delete();
+    if ($this->id() == 'dependency') {
+      $dependent = $storage->load('dependent');
+      $dependent->delete();
     }
   }
 
@@ -106,9 +115,9 @@ class ConfigTest extends ConfigEntityBase implements ConfigTestInterface {
   public static function postDelete(EntityStorageInterface $storage, array $entities) {
     parent::postDelete($storage, $entities);
     foreach ($entities as $entity) {
-      if ($entity->id() == 'deleter') {
-        $deletee = $storage->load('deletee');
-        $deletee->delete();
+      if ($entity->id() == 'dependency') {
+        $dependent = $storage->load('dependent');
+        $dependent->delete();
       }
     }
   }

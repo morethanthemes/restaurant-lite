@@ -4,14 +4,15 @@ namespace Drupal\media_library\Plugin\views\field;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\CloseDialogCommand;
-use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Ajax\MessageCommand;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\media_library\MediaLibraryState;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\views\ResultRow;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Defines a field that outputs a checkbox and form for selecting media.
@@ -19,6 +20,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  * @ViewsField("media_library_select_form")
  *
  * @internal
+ *   Plugin classes are internal.
  */
 class MediaLibrarySelectForm extends FieldPluginBase {
 
@@ -45,15 +47,29 @@ class MediaLibrarySelectForm extends FieldPluginBase {
    *   The current state of the form.
    */
   public function viewsForm(array &$form, FormStateInterface $form_state) {
-    // Only add the bulk form options and buttons if there are results.
-    if (empty($this->view->result)) {
-      return;
+    $form['#attributes']['class'] = ['js-media-library-views-form'];
+    // Add target for AJAX messages.
+    $form['media_library_messages'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'media-library-messages',
+      ],
+      '#weight' => -10,
+    ];
+
+    // Add an attribute that identifies the media type displayed in the form.
+    if (isset($this->view->args[0])) {
+      $form['#attributes']['data-drupal-media-type'] = $this->view->args[0];
     }
 
     // Render checkboxes for all rows.
     $form[$this->options['id']]['#tree'] = TRUE;
     foreach ($this->view->result as $row_index => $row) {
       $entity = $this->getEntity($row);
+      if (!$entity) {
+        $form[$this->options['id']][$row_index] = [];
+        continue;
+      }
       $form[$this->options['id']][$row_index] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Select @label', [
@@ -64,23 +80,35 @@ class MediaLibrarySelectForm extends FieldPluginBase {
       ];
     }
 
+    // The selection is persistent across different pages in the media library
+    // and populated via JavaScript.
+    $selection_field_id = $this->options['id'] . '_selection';
+    $form[$selection_field_id] = [
+      '#type' => 'hidden',
+      '#attributes' => [
+        // This is used to identify the hidden field in the form via JavaScript.
+        'id' => 'media-library-modal-selection',
+      ],
+    ];
+
     // @todo Remove in https://www.drupal.org/project/drupal/issues/2504115
     // Currently the default URL for all AJAX form elements is the current URL,
     // not the form action. This causes bugs when this form is rendered from an
     // AJAX path like /views/ajax, which cannot process AJAX form submits.
-    $url = parse_url($form['#action'], PHP_URL_PATH);
-    $query = \Drupal::request()->query->all();
+    $query = $this->view->getRequest()->query->all();
     $query[FormBuilderInterface::AJAX_FORM_REQUEST] = TRUE;
+    $query['views_display_id'] = $this->view->getDisplay()->display['id'];
     $form['actions']['submit']['#ajax'] = [
-      'url' => Url::fromUserInput($url),
+      'url' => Url::fromRoute('media_library.ui'),
       'options' => [
         'query' => $query,
       ],
       'callback' => [static::class, 'updateWidget'],
     ];
 
-    $form['actions']['submit']['#value'] = $this->t('Select media');
-    $form['actions']['submit']['#field_id'] = $this->options['id'];
+    $form['actions']['submit']['#value'] = $this->t('Insert selected');
+    $form['actions']['submit']['#button_type'] = 'primary';
+    $form['actions']['submit']['#field_id'] = $selection_field_id;
   }
 
   /**
@@ -90,21 +118,36 @@ class MediaLibrarySelectForm extends FieldPluginBase {
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The current request.
    *
    * @return \Drupal\Core\Ajax\AjaxResponse
    *   A command to send the selection to the current field widget.
    */
-  public static function updateWidget(array &$form, FormStateInterface $form_state) {
-    $widget_id = \Drupal::request()->query->get('media_library_widget_id');
-    if (!$widget_id || !is_string($widget_id)) {
-      throw new BadRequestHttpException('The "media_library_widget_id" query parameter is required and must be a string.');
-    }
+  public static function updateWidget(array &$form, FormStateInterface $form_state, Request $request) {
     $field_id = $form_state->getTriggeringElement()['#field_id'];
-    $selected = array_values(array_filter($form_state->getValue($field_id, [])));
-    // Pass the selection to the field widget based on the current widget ID.
-    return (new AjaxResponse())
-      ->addCommand(new InvokeCommand("[data-media-library-widget-value=\"$widget_id\"]", 'val', [implode(',', $selected)]))
-      ->addCommand(new InvokeCommand("[data-media-library-widget-update=\"$widget_id\"]", 'trigger', ['mousedown']))
+    $selected_ids = $form_state->getValue($field_id);
+    $selected_ids = $selected_ids ? array_filter(explode(',', $selected_ids)) : [];
+
+    // Allow the opener service to handle the selection.
+    $state = MediaLibraryState::fromRequest($request);
+
+    $current_selection = $form_state->getValue('media_library_select_form_selection');
+    $available_slots = $state->getAvailableSlots();
+    $selected_count = count(explode(',', $current_selection));
+    if ($available_slots > 0 && $selected_count > $available_slots) {
+      $response = new AjaxResponse();
+      $error = \Drupal::translation()->formatPlural($selected_count - $available_slots, 'There are currently @total items selected. The maximum number of items for the field is @max. Remove @count item from the selection.', 'There are currently @total items selected. The maximum number of items for the field is @max. Remove @count items from the selection.', [
+        '@total' => $selected_count,
+        '@max' => $available_slots,
+      ]);
+      $response->addCommand(new MessageCommand($error, '#media-library-messages', ['type' => 'error']));
+      return $response;
+    }
+
+    return \Drupal::service('media_library.opener_resolver')
+      ->get($state)
+      ->getSelectionResponse($state, $selected_ids)
       ->addCommand(new CloseDialogCommand());
   }
 

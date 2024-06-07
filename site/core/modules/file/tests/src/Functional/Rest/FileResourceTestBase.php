@@ -3,18 +3,15 @@
 namespace Drupal\Tests\file\Functional\Rest;
 
 use Drupal\file\Entity\File;
-use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
 use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
 use Drupal\user\Entity\User;
 
 abstract class FileResourceTestBase extends EntityResourceTestBase {
 
-  use BcTimestampNormalizerUnixTestTrait;
-
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['file', 'user'];
+  protected static $modules = ['file', 'user'];
 
   /**
    * {@inheritdoc}
@@ -52,26 +49,17 @@ abstract class FileResourceTestBase extends EntityResourceTestBase {
         break;
 
       case 'PATCH':
-      case 'DELETE':
         // \Drupal\file\FileAccessControlHandler::checkAccess() grants 'update'
-        // and 'delete' access only to the user that owns the file. So there is
-        // no permission to grant: instead, the file owner must be changed from
-        // its default (user 1) to the current user.
+        // access only to the user that owns the file. So there is no permission
+        // to grant: instead, the file owner must be changed from its default
+        // (user 1) to the current user.
         $this->makeCurrentUserFileOwner();
+        return;
+
+      case 'DELETE':
+        $this->grantPermissionsToTestedRole(['delete any file']);
         break;
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function grantPermissionsToTestedRole(array $permissions) {
-    // testPatch() and testDelete() test the 'bc_entity_resource_permissions' BC
-    // layer; also call makeCurrentUserFileOwner() then.
-    if ($permissions === ['restful patch entity:file'] || $permissions === ['restful delete entity:file']) {
-      $this->makeCurrentUserFileOwner();
-    }
-    parent::grantPermissionsToTestedRole($permissions);
   }
 
   /**
@@ -95,7 +83,7 @@ abstract class FileResourceTestBase extends EntityResourceTestBase {
     $file->setFilename('drupal.txt');
     $file->setMimeType('text/plain');
     $file->setFileUri('public://drupal.txt');
-    $file->set('status', FILE_STATUS_PERMANENT);
+    $file->setPermanent();
     $file->save();
 
     file_put_contents($file->getFileUri(), 'Drupal');
@@ -109,10 +97,16 @@ abstract class FileResourceTestBase extends EntityResourceTestBase {
   protected function getExpectedNormalizedEntity() {
     return [
       'changed' => [
-        $this->formatExpectedTimestampItemValues($this->entity->getChangedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp($this->entity->getChangedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'created' => [
-        $this->formatExpectedTimestampItemValues((int) $this->entity->getCreatedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp((int) $this->entity->getCreatedTime())->setTimezone(new \DateTimeZone('UTC'))->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'fid' => [
         [
@@ -196,6 +190,7 @@ abstract class FileResourceTestBase extends EntityResourceTestBase {
    */
   protected function getExpectedCacheContexts() {
     return [
+      'url.site',
       'user.permissions',
     ];
   }
@@ -217,17 +212,12 @@ abstract class FileResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function getExpectedUnauthorizedAccessMessage($method) {
-    if ($this->config('rest.settings')->get('bc_entity_resource_permissions')) {
-      return parent::getExpectedUnauthorizedAccessMessage($method);
-    }
-
-    if ($method === 'GET') {
-      return "The 'access content' permission is required.";
-    }
-    if ($method === 'PATCH' || $method === 'DELETE') {
-      return 'Only the file owner can update or delete the file entity.';
-    }
-    return parent::getExpectedUnauthorizedAccessMessage($method);
+    return match($method) {
+      'GET' => "The 'access content' permission is required.",
+      'PATCH' => "Only the file owner can update the file entity.",
+      'DELETE' => "The 'delete any file' permission is required.",
+      default =>  parent::getExpectedUnauthorizedAccessMessage($method),
+    };
   }
 
 }

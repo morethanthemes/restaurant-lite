@@ -77,6 +77,13 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   protected $admin_permission;
 
   /**
+   * The name of the collection permission.
+   *
+   * @var string
+   */
+  protected $collection_permission;
+
+  /**
    * The permission granularity level.
    *
    * The allowed values are respectively "entity_type" or "bundle".
@@ -90,21 +97,6 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    * @var array
    */
   protected $links = [];
-
-  /**
-   * The name of a callback that returns the label of the entity.
-   *
-   * @var callable|null
-   *
-   * @deprecated in Drupal 8.0.x-dev and will be removed before Drupal 9.0.0.
-   *   Use Drupal\Core\Entity\EntityInterface::label() for complex label
-   *   generation as needed.
-   *
-   * @see \Drupal\Core\Entity\EntityInterface::label()
-   *
-   * @todo Remove usages of label_callback https://www.drupal.org/node/2450793.
-   */
-  protected $label_callback = NULL;
 
   /**
    * The name of the entity type which provides bundles.
@@ -179,7 +171,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The human-readable name of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getLabel()
    */
@@ -188,7 +180,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The human-readable label for a collection of entities of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getCollectionLabel()
    */
@@ -197,7 +189,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The indefinite singular name of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getSingularLabel()
    */
@@ -206,7 +198,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The indefinite plural name of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getPluralLabel()
    */
@@ -215,7 +207,13 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * A definite singular/plural name of the type.
    *
-   * Needed keys: "singular" and "plural".
+   * Needed keys: "singular" and "plural". Can also have key: "context".
+   * @code
+   * [
+   *    'singular' => '@count entity',
+   *    'plural' => '@count entities',
+   *    'context' => 'Entity context',
+   * ]
    *
    * @var string[]
    *
@@ -232,11 +230,19 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
 
   /**
    * The machine name of the entity type group.
+   *
+   * @var string
+   *
+   * @see self::getGroup()
    */
   protected $group;
 
   /**
    * The human-readable name of the entity type group.
+   *
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
+   *
+   * @see \Drupal\Core\Entity\EntityTypeInterface::getGroupLabel()
    */
   protected $group_label;
 
@@ -341,10 +347,10 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function get($property) {
     if (property_exists($this, $property)) {
-      $value = isset($this->{$property}) ? $this->{$property} : NULL;
+      $value = $this->{$property} ?? NULL;
     }
     else {
-      $value = isset($this->additional[$property]) ? $this->additional[$property] : NULL;
+      $value = $this->additional[$property] ?? NULL;
     }
     return $value;
   }
@@ -402,7 +408,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function getKey($key) {
     $keys = $this->getKeys();
-    return isset($keys[$key]) ? $keys[$key] : FALSE;
+    return $keys[$key] ?? FALSE;
   }
 
   /**
@@ -443,13 +449,6 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * {@inheritdoc}
    */
-  public function isSubclassOf($class) {
-    return $this->entityClassImplements($class);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function getHandlerClasses() {
     return $this->handlers;
   }
@@ -462,6 +461,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
       $handlers = $this->getHandlerClasses();
       return $nested ? $handlers[$handler_type][$nested] : $handlers[$handler_type];
     }
+    return NULL;
   }
 
   /**
@@ -618,6 +618,13 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * {@inheritdoc}
    */
+  public function getCollectionPermission(): ?string {
+    return $this->collection_permission;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getPermissionGranularity() {
     return $this->permission_granularity;
   }
@@ -634,7 +641,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function getLinkTemplate($key) {
     $links = $this->getLinkTemplates();
-    return isset($links[$key]) ? $links[$key] : FALSE;
+    return $links[$key] ?? FALSE;
   }
 
   /**
@@ -655,28 +662,6 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
 
     $this->links[$key] = $path;
     return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getLabelCallback() {
-    return $this->label_callback;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setLabelCallback($callback) {
-    $this->label_callback = $callback;
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hasLabelCallback() {
-    return isset($this->label_callback);
   }
 
   /**
@@ -768,13 +753,6 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * {@inheritdoc}
    */
-  public function getLowercaseLabel() {
-    return mb_strtolower($this->getLabel());
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function getCollectionLabel() {
     if (empty($this->label_collection)) {
       $label = $this->getLabel();
@@ -788,7 +766,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function getSingularLabel() {
     if (empty($this->label_singular)) {
-      $lowercase_label = $this->getLowercaseLabel();
+      $lowercase_label = mb_strtolower($this->getLabel());
       $this->label_singular = $lowercase_label;
     }
     return $this->label_singular;
@@ -799,7 +777,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function getPluralLabel() {
     if (empty($this->label_plural)) {
-      $lowercase_label = $this->getLowercaseLabel();
+      $lowercase_label = $this->getSingularLabel();
       $this->label_plural = new TranslatableMarkup('@label entities', ['@label' => $lowercase_label], [], $this->getStringTranslation());
     }
     return $this->label_plural;
@@ -810,10 +788,13 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function getCountLabel($count) {
     if (empty($this->label_count)) {
-      return $this->formatPlural($count, '@count @label', '@count @label entities', ['@label' => $this->getLowercaseLabel()], ['context' => 'Entity type label']);
+      return $this->formatPlural($count, '@count @label', '@count @label entities', ['@label' => $this->getSingularLabel()], ['context' => 'Entity type label']);
     }
-    $context = isset($this->label_count['context']) ? $this->label_count['context'] : 'Entity type label';
-    return $this->formatPlural($count, $this->label_count['singular'], $this->label_count['plural'], ['context' => $context]);
+    $options = [];
+    if (isset($this->label_count['context'])) {
+      $options['context'] = $this->label_count['context'];
+    }
+    return $this->formatPlural($count, $this->label_count['singular'], $this->label_count['plural'], [], $options);
   }
 
   /**
@@ -906,7 +887,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
     // If this entity type uses entities to manage its bundles then depend on
     // the bundle entity.
     if ($bundle_entity_type_id = $this->getBundleEntityType()) {
-      if (!$bundle_entity = \Drupal::entityManager()->getStorage($bundle_entity_type_id)->load($bundle)) {
+      if (!$bundle_entity = \Drupal::entityTypeManager()->getStorage($bundle_entity_type_id)->load($bundle)) {
         throw new \LogicException(sprintf('Missing bundle entity, entity type %s, entity id %s.', $bundle_entity_type_id, $bundle));
       }
       $config_dependency = [

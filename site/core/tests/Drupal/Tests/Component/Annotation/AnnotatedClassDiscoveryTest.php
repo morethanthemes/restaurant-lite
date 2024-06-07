@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Annotation;
 
 use Drupal\Component\Annotation\Plugin;
@@ -10,13 +12,14 @@ use PHPUnit\Framework\TestCase;
 /**
  * @coversDefaultClass \Drupal\Component\Annotation\Plugin\Discovery\AnnotatedClassDiscovery
  * @group Annotation
+ * @runTestsInSeparateProcesses
  */
 class AnnotatedClassDiscoveryTest extends TestCase {
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     // Ensure the file cache is disabled.
     FileCacheFactory::setConfiguration([FileCacheFactory::DISABLE_CACHE => TRUE]);
@@ -32,8 +35,6 @@ class AnnotatedClassDiscoveryTest extends TestCase {
     $discovery = new AnnotatedClassDiscovery(['com/example' => [__DIR__]]);
 
     $reflection = new \ReflectionMethod($discovery, 'getPluginNamespaces');
-    $reflection->setAccessible(TRUE);
-
     $result = $reflection->invoke($discovery);
     $this->assertEquals(['com/example' => [__DIR__]], $result);
   }

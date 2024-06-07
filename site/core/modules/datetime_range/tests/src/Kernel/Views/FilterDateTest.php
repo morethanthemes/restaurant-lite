@@ -18,14 +18,19 @@ class FilterDateTest extends DateTimeHandlerTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['datetime_test', 'node', 'datetime_range', 'field'];
+  protected static $modules = [
+    'datetime_test',
+    'node',
+    'datetime_range',
+    'field',
+  ];
 
   /**
    * Type of the field.
    *
    * @var string
    */
-  protected static $field_type = 'daterange';
+  protected static $fieldType = 'daterange';
 
   /**
    * {@inheritdoc}
@@ -34,6 +39,8 @@ class FilterDateTest extends DateTimeHandlerTestBase {
 
   /**
    * For offset tests, set to the current time.
+   *
+   * @var int
    */
   protected static $date;
 
@@ -43,14 +50,14 @@ class FilterDateTest extends DateTimeHandlerTestBase {
    * Create nodes with relative date range of:
    * yesterday - today, today - today, and today - tomorrow.
    */
-  protected function setUp($import_test_views = TRUE) {
+  protected function setUp($import_test_views = TRUE): void {
     parent::setUp($import_test_views);
 
     // Set to 'today'.
     static::$date = $this->getUTCEquivalentOfUserNowAsTimestamp();
 
     // Change field storage to date-only.
-    $storage = FieldStorageConfig::load('node.' . static::$field_name);
+    $storage = FieldStorageConfig::load('node.' . static::$fieldName);
     $storage->setSetting('datetime_type', DateRangeItem::DATETIME_TYPE_DATE);
     $storage->save();
 
@@ -96,9 +103,9 @@ class FilterDateTest extends DateTimeHandlerTestBase {
     // Add end date filter to the test_filter_datetime view.
     /** @var \Drupal\views\Entity\View $view */
     $view = \Drupal::entityTypeManager()->getStorage('view')->load('test_filter_datetime');
-    $field_end = static::$field_name . '_end_value';
+    $field_end = static::$fieldName . '_end_value';
     $display = $view->getDisplay('default');
-    $filter_end_date = $display['display_options']['filters'][static::$field_name . '_value'];
+    $filter_end_date = $display['display_options']['filters'][static::$fieldName . '_value'];
     $filter_end_date['id'] = $field_end;
     $filter_end_date['field'] = $field_end;
 
@@ -107,12 +114,12 @@ class FilterDateTest extends DateTimeHandlerTestBase {
   }
 
   /**
-   * Test offsets with date-only fields.
+   * Tests offsets with date-only fields.
    */
   public function testDateOffsets() {
     $view = Views::getView('test_filter_datetime');
-    $field_start = static::$field_name . '_value';
-    $field_end = static::$field_name . '_end_value';
+    $field_start = static::$fieldName . '_value';
+    $field_end = static::$fieldName . '_end_value';
 
     // Test simple operations.
     $view->initHandlers();

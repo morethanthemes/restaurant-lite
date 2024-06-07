@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Render;
 
 use Drupal\Core\Render\MetadataBubblingUrlGenerator;
@@ -18,17 +20,17 @@ class MetadataBubblingUrlGeneratorTest extends UrlGeneratorTest {
   /**
    * The renderer.
    *
-   * @var \Drupal\Core\Render\RendererInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Render\RendererInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $renderer;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
-    $this->renderer = $this->getMock('\Drupal\Core\Render\RendererInterface');
+    $this->renderer = $this->createMock('\Drupal\Core\Render\RendererInterface');
     $this->renderer->expects($this->any())
       ->method('hasRenderContext')
       ->willReturn(TRUE);
@@ -55,8 +57,8 @@ class MetadataBubblingUrlGeneratorTest extends UrlGeneratorTest {
 
     $this->renderer->expects($this->exactly($invocations))
       ->method('render')
-      ->willReturnCallback(function ($build) use ($self) {
-        $self->assertTrue(!empty($build['#cache']));
+      ->willReturnCallback(function ($build) {
+        $this->assertArrayHasKey('#cache', $build);
       });
 
     $url = new Url('test_1', [], $options);

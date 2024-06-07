@@ -3,6 +3,7 @@
 namespace Drupal\Tests\system\Kernel\Theme;
 
 use Drupal\KernelTests\KernelTestBase;
+use Twig\TemplateWrapper;
 
 /**
  * Tests Twig namespaces.
@@ -16,24 +17,34 @@ class TwigNamespaceTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['twig_theme_test', 'twig_namespace_a', 'twig_namespace_b', 'node'];
+  protected static $modules = [
+    'twig_theme_test',
+    'twig_namespace_a',
+    'twig_namespace_b',
+    'node',
+  ];
 
   /**
    * @var \Drupal\Core\Template\TwigEnvironment
    */
   protected $twig;
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
-    \Drupal::service('theme_handler')->install(['test_theme', 'bartik']);
+    \Drupal::service('theme_installer')->install(['test_theme', 'olivero']);
     $this->twig = \Drupal::service('twig');
   }
 
   /**
    * Checks to see if a value is a twig template.
+   *
+   * @internal
    */
-  public function assertTwigTemplate($value, $message = '', $group = 'Other') {
-    $this->assertTrue($value instanceof \Twig_Template, $message, $group);
+  public function assertTwigTemplate($value, string $message = ''): void {
+    $this->assertInstanceOf(TemplateWrapper::class, $value, $message);
   }
 
   /**
@@ -41,10 +52,10 @@ class TwigNamespaceTest extends KernelTestBase {
    */
   public function testTemplateDiscovery() {
     // Tests resolving namespaced templates in modules.
-    $this->assertTwigTemplate($this->twig->resolveTemplate('@node/node.html.twig'), 'Found node.html.twig in node module.');
+    $this->assertTwigTemplate($this->twig->load('@node/node.html.twig'), 'Found node.html.twig in node module.');
 
     // Tests resolving namespaced templates in themes.
-    $this->assertTwigTemplate($this->twig->resolveTemplate('@bartik/page.html.twig'), 'Found page.html.twig in Bartik theme.');
+    $this->assertTwigTemplate($this->twig->load('@olivero/layout/page.html.twig'), 'Found page.html.twig in Olivero theme.');
   }
 
   /**

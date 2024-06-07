@@ -2,14 +2,16 @@
 
 namespace Drupal\KernelTests\Core\Routing;
 
+use ColinODell\PsrTestLogger\TestLogger;
+use Drupal\Core\Database\Database;
 use Drupal\Core\KeyValueStore\KeyValueMemoryFactory;
+use Drupal\Core\Routing\MatcherDumper;
+use Drupal\Core\Routing\RouteCompiler;
 use Drupal\Core\State\State;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\Core\Routing\RoutingFixtures;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
-use Drupal\Core\Database\Database;
-use Drupal\Core\Routing\MatcherDumper;
-use Drupal\Tests\Core\Routing\RoutingFixtures;
 
 /**
  * Confirm that the matcher dumper is functioning properly.
@@ -32,11 +34,20 @@ class MatcherDumperTest extends KernelTestBase {
    */
   protected $state;
 
-  protected function setUp() {
+  /**
+   * The logger.
+   */
+  protected TestLogger $logger;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->fixtures = new RoutingFixtures();
     $this->state = new State(new KeyValueMemoryFactory());
+    $this->logger = new TestLogger();
   }
 
   /**
@@ -44,10 +55,10 @@ class MatcherDumperTest extends KernelTestBase {
    */
   public function testCreate() {
     $connection = Database::getConnection();
-    $dumper = new MatcherDumper($connection, $this->state);
+    $dumper = new MatcherDumper($connection, $this->state, $this->logger);
 
     $class_name = 'Drupal\Core\Routing\MatcherDumper';
-    $this->assertTrue($dumper instanceof $class_name, 'Dumper created successfully');
+    $this->assertInstanceOf($class_name, $dumper);
   }
 
   /**
@@ -55,7 +66,7 @@ class MatcherDumperTest extends KernelTestBase {
    */
   public function testAddRoutes() {
     $connection = Database::getConnection();
-    $dumper = new MatcherDumper($connection, $this->state);
+    $dumper = new MatcherDumper($connection, $this->state, $this->logger);
 
     $route = new Route('test');
     $collection = new RouteCollection();
@@ -67,7 +78,7 @@ class MatcherDumperTest extends KernelTestBase {
     $collection_routes = $collection->all();
 
     foreach ($dumper_routes as $name => $route) {
-      $this->assertEqual($route->getPath(), $collection_routes[$name]->getPath(), 'Routes match');
+      $this->assertEquals($collection_routes[$name]->getPath(), $route->getPath(), 'Routes match');
     }
   }
 
@@ -76,7 +87,7 @@ class MatcherDumperTest extends KernelTestBase {
    */
   public function testAddAdditionalRoutes() {
     $connection = Database::getConnection();
-    $dumper = new MatcherDumper($connection, $this->state);
+    $dumper = new MatcherDumper($connection, $this->state, $this->logger);
 
     $route = new Route('test');
     $collection = new RouteCollection();
@@ -94,16 +105,8 @@ class MatcherDumperTest extends KernelTestBase {
     $dumper_routes = $dumper->getRoutes()->all();
     $collection_routes = $collection->all();
 
-    $success = TRUE;
     foreach ($collection_routes as $name => $route) {
-      if (empty($dumper_routes[$name])) {
-        $success = FALSE;
-        $this->fail(t('Not all routes found in the dumper.'));
-      }
-    }
-
-    if ($success) {
-      $this->pass('All routes found in the dumper.');
+      $this->assertNotEmpty($dumper_routes[$name], "Route $name should be present in the dumper.");
     }
   }
 
@@ -112,10 +115,10 @@ class MatcherDumperTest extends KernelTestBase {
    */
   public function testDump() {
     $connection = Database::getConnection();
-    $dumper = new MatcherDumper($connection, $this->state, 'test_routes');
+    $dumper = new MatcherDumper($connection, $this->state, $this->logger, 'test_routes');
 
     $route = new Route('/test/{my}/path');
-    $route->setOption('compiler_class', 'Drupal\Core\Routing\RouteCompiler');
+    $route->setOption('compiler_class', RouteCompiler::class);
     $collection = new RouteCollection();
     $collection->add('test_route', $route);
 
@@ -125,15 +128,21 @@ class MatcherDumperTest extends KernelTestBase {
 
     $dumper->dump(['provider' => 'test']);
 
-    $record = $connection->query("SELECT * FROM {test_routes} WHERE name= :name", [':name' => 'test_route'])->fetchObject();
+    $record = $connection->select('test_routes', 'tr')
+      ->fields('tr')
+      ->condition('name', 'test_route')
+      ->execute()
+      ->fetchObject();
 
     $loaded_route = unserialize($record->route);
 
-    $this->assertEqual($record->name, 'test_route', 'Dumped route has correct name.');
-    $this->assertEqual($record->path, '/test/{my}/path', 'Dumped route has correct pattern.');
-    $this->assertEqual($record->pattern_outline, '/test/%/path', 'Dumped route has correct pattern outline.');
-    $this->assertEqual($record->fit, 5 /* 101 in binary */, 'Dumped route has correct fit.');
-    $this->assertTrue($loaded_route instanceof Route, 'Route object retrieved successfully.');
+    $this->assertEquals('test_route', $record->name, 'Dumped route has correct name.');
+    $this->assertEquals('/test/{my}/path', $record->path, 'Dumped route has correct pattern.');
+    $this->assertEquals('/test/%/path', $record->pattern_outline, 'Dumped route has correct pattern outline.');
+    // Verify that the dumped route has the correct fit. Note that 5 decimal
+    // equals 101 binary.
+    $this->assertEquals(5, $record->fit, 'Dumped route has correct fit.');
+    $this->assertInstanceOf(Route::class, $loaded_route);
   }
 
   /**
@@ -141,13 +150,13 @@ class MatcherDumperTest extends KernelTestBase {
    */
   public function testMenuMasksGeneration() {
     $connection = Database::getConnection();
-    $dumper = new MatcherDumper($connection, $this->state, 'test_routes');
+    $dumper = new MatcherDumper($connection, $this->state, $this->logger, 'test_routes');
 
     $collection = new RouteCollection();
     $collection->add('test_route_1', new Route('/test-length-3/{my}/path'));
     $collection->add('test_route_2', new Route('/test-length-3/hello/path'));
-    $collection->add('test_route_3', new Route('/test-length-5/{my}/path/marvin/magrathea'));
-    $collection->add('test_route_4', new Route('/test-length-7/{my}/path/marvin/magrathea/earth/ursa-minor'));
+    $collection->add('test_route_3', new Route('/test-length-5/{my}/path/marvin/android'));
+    $collection->add('test_route_4', new Route('/test-length-7/{my}/path/marvin/android/earth/ursa-minor'));
 
     $dumper->addRoutes($collection);
 
@@ -162,7 +171,7 @@ class MatcherDumperTest extends KernelTestBase {
       bindec('111'),
       bindec('101'),
     ];
-    $this->assertEqual($this->state->get('routing.menu_masks.test_routes'), $expected);
+    $this->assertEquals($expected, $this->state->get('routing.menu_masks.test_routes'));
   }
 
 }

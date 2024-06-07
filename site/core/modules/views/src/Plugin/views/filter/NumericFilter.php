@@ -5,7 +5,7 @@ namespace Drupal\views\Plugin\views\filter;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Simple filter to handle greater than/less than filters
+ * Simple filter to handle greater than/less than filters.
  *
  * @ingroup views_filter_handlers
  *
@@ -145,6 +145,12 @@ class NumericFilter extends FilterPluginBase {
         'method' => 'opRegex',
         'values' => 1,
       ],
+      'not_regular_expression' => [
+        'title' => $this->t('Negated regular expression'),
+        'short' => $this->t('not regex'),
+        'method' => 'opNotRegex',
+        'values' => 1,
+      ],
     ];
 
     // if the definition allows for the empty operator, add it.
@@ -169,7 +175,7 @@ class NumericFilter extends FilterPluginBase {
   }
 
   /**
-   * Provide a list of all the numeric operators
+   * Provide a list of all the numeric operators.
    */
   public function operatorOptions($which = 'title') {
     $options = [];
@@ -192,7 +198,7 @@ class NumericFilter extends FilterPluginBase {
   }
 
   /**
-   * Provide a simple textfield for equality
+   * Provide a simple textfield for equality.
    */
   protected function valueForm(&$form, FormStateInterface $form_state) {
     $form['value']['#tree'] = TRUE;
@@ -258,20 +264,35 @@ class NumericFilter extends FilterPluginBase {
       }
     }
 
-    if ($which == 'all' || $which == 'minmax') {
+    // Minimum and maximum form fields are associated to some specific operators
+    // like 'between'. Ensure that min and max fields are only visible if
+    // the associated operator is not excluded from the operator list.
+    $two_value_operators_available = ($which == 'all' || $which == 'minmax');
+
+    if (!empty($this->options['expose']['operator_limit_selection']) &&
+        !empty($this->options['expose']['operator_list'])) {
+      $two_value_operators_available = FALSE;
+      foreach ($this->options['expose']['operator_list'] as $operator) {
+        if (in_array($operator, $this->operatorValues(2), TRUE)) {
+          $two_value_operators_available = TRUE;
+          break;
+        }
+      }
+    }
+
+    if ($two_value_operators_available) {
       $form['value']['min'] = [
         '#type' => 'textfield',
-        '#title' => !$exposed ? $this->t('Min') : $this->exposedInfo()['label'],
+        '#title' => $this->t('Min'),
         '#size' => 30,
         '#default_value' => $this->value['min'],
-        '#description' => !$exposed ? '' : $this->exposedInfo()['description'],
       ];
       if (!empty($this->options['expose']['min_placeholder'])) {
         $form['value']['min']['#attributes']['placeholder'] = $this->options['expose']['min_placeholder'];
       }
       $form['value']['max'] = [
         '#type' => 'textfield',
-        '#title' => !$exposed ? $this->t('And max') : $this->t('And'),
+        '#title' => $this->t('Max'),
         '#size' => 30,
         '#default_value' => $this->value['max'],
       ];
@@ -316,12 +337,24 @@ class NumericFilter extends FilterPluginBase {
     }
   }
 
+  /**
+   * Filters by operator between.
+   *
+   * @param object $field
+   *   The views field.
+   */
   protected function opBetween($field) {
-    if ($this->operator == 'between') {
-      $this->query->addWhere($this->options['group'], $field, [$this->value['min'], $this->value['max']], 'BETWEEN');
+    if (is_numeric($this->value['min']) && is_numeric($this->value['max'])) {
+      $operator = $this->operator == 'between' ? 'BETWEEN' : 'NOT BETWEEN';
+      $this->query->addWhere($this->options['group'], $field, [$this->value['min'], $this->value['max']], $operator);
     }
-    else {
-      $this->query->addWhere($this->options['group'], $field, [$this->value['min'], $this->value['max']], 'NOT BETWEEN');
+    elseif (is_numeric($this->value['min'])) {
+      $operator = $this->operator == 'between' ? '>=' : '<';
+      $this->query->addWhere($this->options['group'], $field, $this->value['min'], $operator);
+    }
+    elseif (is_numeric($this->value['max'])) {
+      $operator = $this->operator == 'between' ? '<=' : '>';
+      $this->query->addWhere($this->options['group'], $field, $this->value['max'], $operator);
     }
   }
 
@@ -350,6 +383,16 @@ class NumericFilter extends FilterPluginBase {
     $this->query->addWhere($this->options['group'], $field, $this->value['value'], 'REGEXP');
   }
 
+  /**
+   * Filters by a negated regular expression.
+   *
+   * @param string $field
+   *   The expression pointing to the queries field, for example "foo.bar".
+   */
+  protected function opNotRegex($field) {
+    $this->query->addWhere($this->options['group'], $field, $this->value['value'], 'NOT REGEXP');
+  }
+
   public function adminSummary() {
     if ($this->isAGroup()) {
       return $this->t('grouped');
@@ -370,22 +413,25 @@ class NumericFilter extends FilterPluginBase {
   }
 
   /**
-   * Do some minor translation of the exposed input
+   * Do some minor translation of the exposed input.
    */
   public function acceptExposedInput($input) {
     if (empty($this->options['exposed'])) {
       return TRUE;
     }
 
-    // rewrite the input value so that it's in the correct format so that
+    // Rewrite the input value so that it's in the correct format so that
     // the parent gets the right data.
-    if (!empty($this->options['expose']['identifier'])) {
-      $value = &$input[$this->options['expose']['identifier']];
-      if (!is_array($value)) {
-        $value = [
-          'value' => $value,
-        ];
-      }
+    $key = $this->isAGroup() ? 'group_info' : 'expose';
+    if (empty($this->options[$key]['identifier'])) {
+      // Invalid identifier configuration. Value can't be resolved.
+      return FALSE;
+    }
+    $value = &$input[$this->options[$key]['identifier']];
+    if (!is_array($value)) {
+      $value = [
+        'value' => $value,
+      ];
     }
 
     $rc = parent::acceptExposedInput($input);
@@ -400,6 +446,7 @@ class NumericFilter extends FilterPluginBase {
               return FALSE;
             }
             break;
+
           case 2:
             if ($value['min'] === '' && $value['max'] === '') {
               return FALSE;

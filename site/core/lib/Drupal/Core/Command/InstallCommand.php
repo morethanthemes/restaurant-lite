@@ -60,7 +60,7 @@ class InstallCommand extends Command {
   /**
    * {@inheritdoc}
    */
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     $io = new SymfonyStyle($input, $output);
     if (!extension_loaded('pdo_sqlite')) {
       $io->getErrorStyle()->error('You must have the pdo_sqlite PHP extension installed. See core/INSTALL.sqlite.txt for instructions.');
@@ -68,7 +68,7 @@ class InstallCommand extends Command {
     }
 
     // Change the directory to the Drupal root.
-    chdir(dirname(dirname(dirname(dirname(dirname(__DIR__))))));
+    chdir(dirname(__DIR__, 5));
 
     // Check whether there is already an installation.
     if ($this->isDrupalInstalled()) {
@@ -126,6 +126,9 @@ class InstallCommand extends Command {
    *
    * @throws \Exception
    *   Thrown when failing to create the $site_path directory or settings.php.
+   *
+   * @return int
+   *   The command exit status.
    */
   protected function install($class_loader, SymfonyStyle $io, $profile, $langcode, $site_path, $site_name) {
     $password = Crypt::randomBytesBase64(12);
@@ -155,8 +158,9 @@ class InstallCommand extends Command {
             ],
           ],
           'enable_update_status_module' => TRUE,
-          // form_type_checkboxes_value() requires NULL instead of FALSE values
-          // for programmatic form submissions to disable a checkbox.
+          // \Drupal\Core\Render\Element\Checkboxes::valueCallback() requires
+          // NULL instead of FALSE values for programmatic form submissions to
+          // disable a checkbox.
           'enable_update_status_emails' => NULL,
         ],
       ],
@@ -211,6 +215,8 @@ class InstallCommand extends Command {
     $progress_bar->finish();
     $io->writeln('<info>Username:</info> admin');
     $io->writeln("<info>Password:</info> $password");
+
+    return 0;
   }
 
   /**
@@ -285,7 +291,7 @@ class InstallCommand extends Command {
       $alternatives = [];
       foreach (array_keys($profiles) as $profile_name) {
         $lev = levenshtein($install_profile, $profile_name);
-        if ($lev <= strlen($profile_name) / 4 || FALSE !== strpos($profile_name, $install_profile)) {
+        if ($lev <= strlen($profile_name) / 4 || str_contains($profile_name, $install_profile)) {
           $alternatives[] = $profile_name;
         }
       }
@@ -314,7 +320,7 @@ class InstallCommand extends Command {
     $listing = new ExtensionDiscovery(getcwd(), FALSE);
     $listing->setProfileDirectories([]);
     $profiles = [];
-    $info_parser = new InfoParserDynamic();
+    $info_parser = new InfoParserDynamic(getcwd());
     foreach ($listing->scan('profile') as $profile) {
       $details = $info_parser->parse($profile->getPathname());
       // Don't show hidden profiles.
@@ -323,8 +329,8 @@ class InstallCommand extends Command {
       }
       // Determine the name of the profile; default to the internal name if none
       // is specified.
-      $name = isset($details['name']) ? $details['name'] : $profile->getName();
-      $description = isset($details['description']) ? $details['description'] : $name;
+      $name = $details['name'] ?? $profile->getName();
+      $description = $details['description'] ?? $name;
       $profiles[$profile->getName()] = $description;
 
       if ($auto_select_distributions && !empty($details['distribution'])) {

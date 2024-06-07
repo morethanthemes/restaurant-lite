@@ -72,10 +72,10 @@ search.page.*:
   label: 'Search page'
   mapping:
     id:
-      type: string
+      type: machine_name
       label: 'ID'
     label:
-      type: label
+      type: required_label
       label: 'Label'
     path:
       type: string
@@ -88,3 +88,11 @@ search.page.*:
       label: 'Plugin'
     configuration:
       type: search.plugin.[%parent.plugin]
+
+block.settings.search_form_block:
+  type: block_settings
+  label: 'Search block'
+  mapping:
+    page_id:
+      type: string
+      label: 'Search page'

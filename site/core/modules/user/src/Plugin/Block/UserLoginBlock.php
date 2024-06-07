@@ -2,25 +2,29 @@
 
 namespace Drupal\user\Plugin\Block;
 
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Block\Attribute\Block;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Security\TrustedCallbackInterface;
 use Drupal\Core\Routing\RedirectDestinationTrait;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Block\BlockBase;
+use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides a 'User login' block.
- *
- * @Block(
- *   id = "user_login_block",
- *   admin_label = @Translation("User login"),
- *   category = @Translation("Forms")
- * )
  */
-class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterface {
+#[Block(
+  id: "user_login_block",
+  admin_label: new TranslatableMarkup("User login"),
+  category: new TranslatableMarkup("Forms")
+)]
+class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterface, TrustedCallbackInterface {
 
   use RedirectDestinationTrait;
 
@@ -82,13 +86,6 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
   public function build() {
     $form = \Drupal::formBuilder()->getForm('Drupal\user\Form\UserLoginForm');
     unset($form['name']['#attributes']['autofocus']);
-    // When unsetting field descriptions, also unset aria-describedby attributes
-    // to avoid introducing an accessibility bug.
-    // @todo Do this automatically in https://www.drupal.org/node/2547063.
-    unset($form['name']['#description']);
-    unset($form['name']['#attributes']['aria-describedby']);
-    unset($form['pass']['#description']);
-    unset($form['pass']['#attributes']['aria-describedby']);
     $form['name']['#size'] = 15;
     $form['pass']['#size'] = 15;
 
@@ -102,6 +99,7 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
     // This is based on the implementation in
     // \Drupal\Core\Form\FormBuilder::prepareForm(), but the user login block
     // requires different behavior for the destination query argument.
+    // cspell:disable-next-line
     $placeholder = 'form_action_p_4r8ITd22yaUvXM6SzwrSe9rnQWe48hz9k1Sxto3pBvE';
 
     $form['#attached']['placeholders'][$placeholder] = [
@@ -111,7 +109,7 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
 
     // Build action links.
     $items = [];
-    if (\Drupal::config('user.settings')->get('register') != USER_REGISTER_ADMINISTRATORS_ONLY) {
+    if (\Drupal::config('user.settings')->get('register') != UserInterface::REGISTER_ADMINISTRATORS_ONLY) {
       $items['create_account'] = [
         '#type' => 'link',
         '#title' => $this->t('Create new account'),
@@ -153,9 +151,16 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
   public static function renderPlaceholderFormAction() {
     return [
       '#type' => 'markup',
-      '#markup' => Url::fromRoute('<current>', [], ['query' => \Drupal::destination()->getAsArray(), 'external' => FALSE])->toString(),
+      '#markup' => UrlHelper::filterBadProtocol(Url::fromRoute('<current>', [], ['query' => \Drupal::destination()->getAsArray(), 'external' => FALSE])->toString()),
       '#cache' => ['contexts' => ['url.path', 'url.query_args']],
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function trustedCallbacks() {
+    return ['renderPlaceholderFormAction'];
   }
 
 }

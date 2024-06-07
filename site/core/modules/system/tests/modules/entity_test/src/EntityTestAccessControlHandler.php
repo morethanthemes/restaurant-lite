@@ -5,6 +5,7 @@ namespace Drupal\entity_test;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityAccessControlHandler;
+use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\entity_test\Entity\EntityTestLabel;
 
@@ -47,17 +48,45 @@ class EntityTestAccessControlHandler extends EntityAccessControlHandler {
     }
     elseif (in_array($operation, ['view', 'view label'])) {
       if (!$entity->isDefaultTranslation()) {
-        return AccessResult::allowedIfHasPermission($account, 'view test entity translations');
+        if ($entity instanceof EntityPublishedInterface && !$entity->isPublished()) {
+          return AccessResult::allowedIfHasPermission($account, 'view unpublished test entity translations');
+        }
+        else {
+          return AccessResult::allowedIfHasPermission($account, 'view test entity translations');
+        }
+      }
+      if ($entity instanceof EntityPublishedInterface && !$entity->isPublished()) {
+        return AccessResult::neutral('Unpublished entity');
       }
       return AccessResult::allowedIfHasPermission($account, 'view test entity');
     }
     elseif (in_array($operation, ['update', 'delete'])) {
-      return AccessResult::allowedIfHasPermission($account, 'administer entity_test content');
+      $access = AccessResult::allowedIfHasPermission($account, 'administer entity_test content');
+      if (!$access->isAllowed() && $operation === 'update' && $account->hasPermission('edit own entity_test content')) {
+        $access = $access->orIf(AccessResult::allowedIf($entity->getOwnerId() === $account->id()))->cachePerUser()->addCacheableDependency($entity);
+      }
+      return $access;
+    }
+
+    // Access to revisions is based on labels, so access can vary by individual
+    // revisions, since the 'name' field can vary by revision.
+    $labels = explode(',', $entity->label());
+    $labels = array_map('trim', $labels);
+    if (in_array($operation, [
+      'view all revisions',
+      'view revision',
+    ], TRUE)) {
+      return AccessResult::allowedIf(in_array($operation, $labels, TRUE));
+    }
+    elseif ($operation === 'revert') {
+      return AccessResult::allowedIf(in_array('revert', $labels, TRUE));
+    }
+    elseif ($operation === 'delete revision') {
+      return AccessResult::allowedIf(in_array('delete revision', $labels, TRUE));
     }
 
     // No opinion.
     return AccessResult::neutral();
-
   }
 
   /**

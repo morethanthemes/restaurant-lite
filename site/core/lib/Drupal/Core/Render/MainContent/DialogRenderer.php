@@ -7,6 +7,7 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\OpenDialogCommand;
 use Drupal\Core\Controller\TitleResolverInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Render\RendererInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -22,13 +23,23 @@ class DialogRenderer implements MainContentRendererInterface {
   protected $titleResolver;
 
   /**
+   * The renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
+
+  /**
    * Constructs a new DialogRenderer.
    *
    * @param \Drupal\Core\Controller\TitleResolverInterface $title_resolver
    *   The title resolver.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer.
    */
-  public function __construct(TitleResolverInterface $title_resolver) {
+  public function __construct(TitleResolverInterface $title_resolver, RendererInterface $renderer) {
     $this->titleResolver = $title_resolver;
+    $this->renderer = $renderer;
   }
 
   /**
@@ -38,7 +49,7 @@ class DialogRenderer implements MainContentRendererInterface {
     $response = new AjaxResponse();
 
     // First render the main content, because it might provide a title.
-    $content = drupal_render_root($main_content);
+    $content = $this->renderer->renderRoot($main_content);
 
     // Attach the library necessary for using the OpenDialogCommand and set the
     // attachments for this Ajax response.
@@ -47,10 +58,10 @@ class DialogRenderer implements MainContentRendererInterface {
 
     // Determine the title: use the title provided by the main content if any,
     // otherwise get it from the routing information.
-    $title = isset($main_content['#title']) ? $main_content['#title'] : $this->titleResolver->getTitle($request, $route_match->getRouteObject());
+    $title = $main_content['#title'] ?? $this->titleResolver->getTitle($request, $route_match->getRouteObject());
 
     // Determine the dialog options and the target for the OpenDialogCommand.
-    $options = $request->request->get('dialogOptions', []);
+    $options = $this->getDialogOptions($request);
     $target = $this->determineTargetSelector($options, $route_match);
 
     $response->addCommand(new OpenDialogCommand($target, $title, $content, $options));
@@ -75,7 +86,7 @@ class DialogRenderer implements MainContentRendererInterface {
       // If the target was nominated in the incoming options, use that.
       $target = $options['target'];
       // Ensure the target includes the #.
-      if (substr($target, 0, 1) != '#') {
+      if (!str_starts_with($target, '#')) {
         $target = '#' . $target;
       }
       // This shouldn't be passed on to jQuery.ui.dialog.
@@ -87,6 +98,22 @@ class DialogRenderer implements MainContentRendererInterface {
       $target = '#' . Html::getUniqueId("drupal-dialog-$route_name");
     }
     return $target;
+  }
+
+  /**
+   * Returns the dialog options from request.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The HTTP request.
+   *
+   * @return array
+   *   The dialog options used for OpenDialogCommand.
+   */
+  protected function getDialogOptions(Request $request): array {
+    if ($request->getMethod() === 'GET') {
+      return $request->query->all('dialogOptions');
+    }
+    return $request->request->all('dialogOptions');
   }
 
 }

@@ -6,6 +6,8 @@ use Drupal\migrate\Plugin\MigrateIdMapInterface;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\Row;
 
+// cspell:ignore objectid
+
 /**
  * Gets an i18n translation from the source database.
  */
@@ -71,7 +73,7 @@ trait I18nQueryTrait {
       ->fields('i18n', ['lid'])
       ->condition('i18n.property', $property_not_in_row)
       ->condition('i18n.objectid', $object_id);
-    $query->leftJoin('locales_target', 'lt', 'i18n.lid = lt.lid');
+    $query->leftJoin('locales_target', 'lt', '[i18n].[lid] = [lt].[lid]');
     $query->condition('lt.language', $language);
     $query->addField('lt', 'translation');
     $results = $query->execute()->fetchAssoc();

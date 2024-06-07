@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Cache\Context;
 
 use Drupal\Core\Cache\Context\SessionCacheContext;
@@ -30,11 +32,16 @@ class SessionCacheContextTest extends UnitTestCase {
   /**
    * The session object.
    *
-   * @var \Symfony\Component\HttpFoundation\Session\SessionInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpFoundation\Session\SessionInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $session;
 
-  public function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->request = new Request();
 
     $this->requestStack = new RequestStack();
@@ -51,15 +58,16 @@ class SessionCacheContextTest extends UnitTestCase {
     $this->request->setSession($this->session);
     $cache_context = new SessionCacheContext($this->requestStack);
 
+    // cspell:disable-next-line
     $session_id = 'aSebeZ52bbM6SvADurQP89SFnEpxY6j8';
     $this->session->expects($this->exactly(2))
       ->method('getId')
-      ->will($this->returnValue($session_id));
+      ->willReturn($session_id);
 
     $context1 = $cache_context->getContext();
     $context2 = $cache_context->getContext();
     $this->assertSame($context1, $context2);
-    $this->assertSame(FALSE, strpos($context1, $session_id), 'Session ID not contained in cache context');
+    $this->assertStringNotContainsString($session_id, $context1, 'Session ID not contained in cache context');
   }
 
   /**
@@ -69,22 +77,20 @@ class SessionCacheContextTest extends UnitTestCase {
     $this->request->setSession($this->session);
     $cache_context = new SessionCacheContext($this->requestStack);
 
+    // cspell:disable-next-line
     $session1_id = 'pjH_8aSoofyCDQiuVYXJcbfyr-CPtkUY';
-    $this->session->expects($this->at(0))
-      ->method('getId')
-      ->will($this->returnValue($session1_id));
-
+    // cspell:disable-next-line
     $session2_id = 'aSebeZ52bbM6SvADurQP89SFnEpxY6j8';
-    $this->session->expects($this->at(1))
+    $this->session->expects($this->exactly(2))
       ->method('getId')
-      ->will($this->returnValue($session2_id));
+      ->willReturnOnConsecutiveCalls($session1_id, $session2_id);
 
     $context1 = $cache_context->getContext();
     $context2 = $cache_context->getContext();
     $this->assertNotEquals($context1, $context2);
 
-    $this->assertSame(FALSE, strpos($context1, $session1_id), 'Session ID not contained in cache context');
-    $this->assertSame(FALSE, strpos($context2, $session2_id), 'Session ID not contained in cache context');
+    $this->assertStringNotContainsString($session1_id, $context1, 'Session ID not contained in cache context');
+    $this->assertStringNotContainsString($session2_id, $context2, 'Session ID not contained in cache context');
   }
 
   /**

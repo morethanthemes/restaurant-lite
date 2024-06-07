@@ -19,7 +19,7 @@ class ContextualLinksPlaceholder extends RenderElement {
    * {@inheritdoc}
    */
   public function getInfo() {
-    $class = get_class($this);
+    $class = static::class;
     return [
       '#pre_render' => [
         [$class, 'preRenderPlaceholder'],
@@ -49,6 +49,7 @@ class ContextualLinksPlaceholder extends RenderElement {
     $attribute = new Attribute([
       'data-contextual-id' => $element['#id'],
       'data-contextual-token' => $token,
+      'data-drupal-ajax-container' => '',
     ]);
     $element['#markup'] = new FormattableMarkup('<div@attributes></div>', ['@attributes' => $attribute]);
 

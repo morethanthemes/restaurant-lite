@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\media\FunctionalJavascript;
 
 use Drupal\media\Entity\Media;
@@ -13,9 +15,16 @@ use Drupal\media\Plugin\media\Source\File;
 class MediaSourceFileTest extends MediaSourceTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Tests the file media source.
    */
   public function testMediaFileSource() {
+    // Skipped due to frequent random test failures.
+    $this->markTestSkipped();
     $media_type_id = 'test_media_file_type';
     $source_field_id = 'field_media_file';
     $provided_fields = [
@@ -62,8 +71,10 @@ class MediaSourceFileTest extends MediaSourceTestBase {
     // Get the media entity view URL from the creation message.
     $this->drupalGet($this->assertLinkToCreatedMedia());
 
-    // Make sure the thumbnail is displayed.
-    $assert_session->elementAttributeContains('css', '.image-style-thumbnail', 'src', 'generic.png');
+    // Make sure a link to the file is displayed.
+    $assert_session->linkExists($test_filename);
+    // The thumbnail should not be displayed.
+    $assert_session->elementNotExists('css', 'img');
 
     // Make sure checkbox changes the visibility of log message field.
     $this->drupalGet("media/1/edit");
@@ -80,13 +91,13 @@ class MediaSourceFileTest extends MediaSourceTestBase {
 
     // Test the MIME type icon.
     $icon_base = \Drupal::config('media.settings')->get('icon_base_uri');
-    file_unmanaged_copy($icon_base . '/generic.png', $icon_base . '/text--plain.png');
+    \Drupal::service('file_system')->copy($icon_base . '/generic.png', $icon_base . '/text--plain.png');
     $this->drupalGet("media/add/{$media_type_id}");
     $page->attachFileToField("files[{$source_field_id}_0]", \Drupal::service('file_system')->realpath($test_filepath));
     $result = $assert_session->waitForButton('Remove');
     $this->assertNotEmpty($result);
     $page->pressButton('Save');
-    $assert_session->elementAttributeContains('css', '.image-style-thumbnail', 'src', 'text--plain.png');
+    $assert_session->elementAttributeContains('css', 'img', 'src', 'text--plain.png');
 
     // Check if the mapped name is automatically updated.
     $new_filename = $this->randomMachineName() . '.txt';
@@ -103,7 +114,7 @@ class MediaSourceFileTest extends MediaSourceTestBase {
     /** @var \Drupal\media\MediaInterface $media */
     $media = \Drupal::entityTypeManager()->getStorage('media')->loadUnchanged(1);
     $this->assertEquals($new_filename, $media->getName());
-    $assert_session->pageTextContains("$new_filename has been updated.");
+    $assert_session->statusMessageContains("$new_filename has been updated.", 'status');
   }
 
 }

@@ -7,7 +7,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\MigrateExecutableInterface;
 use Drupal\migrate\Row;
-use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -31,26 +31,32 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @code
  * process:
- *   plugin: download
- *   source:
- *     - source_url
- *     - destination_uri
+ *   path_to_file:
+ *     plugin: download
+ *     source:
+ *       - source_url
+ *       - destination_uri
  * @endcode
  *
  * This will download source_url to destination_uri.
  *
  * @code
  * process:
- *   plugin: download
- *   source:
- *     - source_url
- *     - destination_uri
- *   file_exists: rename
+ *   uri:
+ *     plugin: download
+ *     source:
+ *       - source_url
+ *       - destination_uri
+ *     file_exists: rename
+ *   # other fields ...
+ * destination:
+ *   plugin: entity:file
  * @endcode
  *
  * This will download source_url to destination_uri and ensure that the
  * destination URI is unique. If a file with the same name exists at the
  * destination, a numbered suffix like '_0' will be appended to make it unique.
+ * The destination URI is saved in a file entity.
  *
  * @MigrateProcessPlugin(
  *   id = "download"
@@ -79,14 +85,14 @@ class Download extends FileProcessBase implements ContainerFactoryPluginInterfac
    *   The plugin configuration.
    * @param string $plugin_id
    *   The plugin ID.
-   * @param mixed $plugin_definition
+   * @param array $plugin_definition
    *   The plugin definition.
    * @param \Drupal\Core\File\FileSystemInterface $file_system
    *   The file system service.
-   * @param \GuzzleHttp\Client $http_client
+   * @param \GuzzleHttp\ClientInterface $http_client
    *   The HTTP client.
    */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, FileSystemInterface $file_system, Client $http_client) {
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, FileSystemInterface $file_system, ClientInterface $http_client) {
     $configuration += [
       'guzzle_options' => [],
     ];
@@ -117,24 +123,24 @@ class Download extends FileProcessBase implements ContainerFactoryPluginInterfac
     if ($row->isStub()) {
       return NULL;
     }
-    list($source, $destination) = $value;
+    [$source, $destination] = $value;
 
     // Modify the destination filename if necessary.
-    $final_destination = file_destination($destination, $this->configuration['file_exists']);
+    $final_destination = $this->fileSystem->getDestinationFilename($destination, $this->configuration['file_exists']);
 
     // Reuse if file exists.
     if (!$final_destination) {
       return $destination;
     }
 
-    // Try opening the file first, to avoid calling file_prepare_directory()
+    // Try opening the file first, to avoid calling prepareDirectory()
     // unnecessarily. We're suppressing fopen() errors because we want to try
     // to prepare the directory before we give up and fail.
     $destination_stream = @fopen($final_destination, 'w');
     if (!$destination_stream) {
       // If fopen didn't work, make sure there's a writable directory in place.
       $dir = $this->fileSystem->dirname($final_destination);
-      if (!file_prepare_directory($dir, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+      if (!$this->fileSystem->prepareDirectory($dir, FileSystemInterface:: CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
         throw new MigrateException("Could not create or write to directory '$dir'");
       }
       // Let's try that fopen again.
@@ -153,6 +159,10 @@ class Download extends FileProcessBase implements ContainerFactoryPluginInterfac
     }
     catch (\Exception $e) {
       throw new MigrateException("{$e->getMessage()} ($source)");
+    }
+
+    if (is_resource($destination_stream)) {
+      fclose($destination_stream);
     }
 
     return $final_destination;

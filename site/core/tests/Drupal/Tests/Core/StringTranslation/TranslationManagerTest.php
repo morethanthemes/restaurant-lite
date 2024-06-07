@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\StringTranslation\TranslationManagerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\StringTranslation;
 
@@ -27,7 +24,9 @@ class TranslationManagerTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->translationManager = new TestTranslationManager();
   }
 
@@ -52,13 +51,13 @@ class TranslationManagerTest extends UnitTestCase {
    */
   public function testFormatPlural($count, $singular, $plural, array $args, array $options, $expected) {
     $langcode = empty($options['langcode']) ? 'fr' : $options['langcode'];
-    $translator = $this->getMock('\Drupal\Core\StringTranslation\Translator\TranslatorInterface');
+    $translator = $this->createMock('\Drupal\Core\StringTranslation\Translator\TranslatorInterface');
     $translator->expects($this->once())
       ->method('getStringTranslation')
       ->with($langcode, $this->anything(), $this->anything())
-      ->will($this->returnCallback(function ($langcode, $string, $context) {
+      ->willReturnCallback(function ($langcode, $string, $context) {
         return $string;
-      }));
+      });
     $this->translationManager->setDefaultLangcode('fr');
     $this->translationManager->addTranslator($translator);
     $result = $this->translationManager->formatPlural($count, $singular, $plural, $args, $options);

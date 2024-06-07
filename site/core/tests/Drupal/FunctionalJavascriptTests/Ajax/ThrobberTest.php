@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\FunctionalJavascriptTests\Ajax;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
@@ -14,25 +16,19 @@ class ThrobberTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'node',
     'views',
     'views_ui',
     'views_ui_test_field',
     'hold_test',
+    'block',
   ];
 
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
-    parent::setUp();
-
-    $admin_user = $this->drupalCreateUser([
-      'administer views',
-    ]);
-    $this->drupalLogin($admin_user);
-  }
+  protected $defaultTheme = 'stark';
 
   /**
    * Tests theming throbber element.
@@ -41,6 +37,11 @@ class ThrobberTest extends WebDriverTestBase {
     $session = $this->getSession();
     $web_assert = $this->assertSession();
     $page = $session->getPage();
+    $admin_user = $this->drupalCreateUser([
+      'administer views',
+      'administer blocks',
+    ]);
+    $this->drupalLogin($admin_user);
 
     $custom_ajax_progress_indicator_fullscreen = <<<JS
       Drupal.theme.ajaxProgressIndicatorFullscreen = function () {
@@ -59,7 +60,7 @@ JS;
 JS;
 
     $this->drupalGet('admin/structure/views/view/content');
-    $this->waitForNoElement('.ajax-progress-fullscreen');
+    $web_assert->assertNoElementAfterWait('css', '.ajax-progress-fullscreen');
 
     // Test theming fullscreen throbber.
     $session->executeScript($custom_ajax_progress_indicator_fullscreen);
@@ -67,7 +68,7 @@ JS;
     $page->clickLink('Content: Published (grouped)');
     $this->assertNotNull($web_assert->waitForElement('css', '.custom-ajax-progress-fullscreen'), 'Custom ajaxProgressIndicatorFullscreen.');
     hold_test_response(FALSE);
-    $this->waitForNoElement('.custom-ajax-progress-fullscreen');
+    $web_assert->assertNoElementAfterWait('css', '.custom-ajax-progress-fullscreen');
 
     // Test theming throbber message.
     $web_assert->waitForElementVisible('css', '[data-drupal-selector="edit-options-group-info-add-group"]');
@@ -76,7 +77,7 @@ JS;
     $page->pressButton('Add another item');
     $this->assertNotNull($web_assert->waitForElement('css', '.ajax-progress-throbber .custom-ajax-progress-message'), 'Custom ajaxProgressMessage.');
     hold_test_response(FALSE);
-    $this->waitForNoElement('.ajax-progress-throbber');
+    $web_assert->assertNoElementAfterWait('css', '.ajax-progress-throbber');
 
     // Test theming throbber.
     $web_assert->waitForElementVisible('css', '[data-drupal-selector="edit-options-group-info-group-items-3-title"]');
@@ -85,22 +86,18 @@ JS;
     $page->pressButton('Add another item');
     $this->assertNotNull($web_assert->waitForElement('css', '.custom-ajax-progress-throbber'), 'Custom ajaxProgressThrobber.');
     hold_test_response(FALSE);
-    $this->waitForNoElement('.custom-ajax-progress-throbber');
-  }
+    $web_assert->assertNoElementAfterWait('css', '.custom-ajax-progress-throbber');
 
-  /**
-   * Waits for an element to be removed from the page.
-   *
-   * @param string $selector
-   *   CSS selector.
-   * @param int $timeout
-   *   (optional) Timeout in milliseconds, defaults to 10000.
-   *
-   * @todo Remove in https://www.drupal.org/node/2892440.
-   */
-  protected function waitForNoElement($selector, $timeout = 10000) {
-    $condition = "(typeof jQuery !== 'undefined' && jQuery('$selector').length === 0)";
-    $this->assertJsCondition($condition, $timeout);
+    // Test progress throbber position on a dropbutton in a table display.
+    $this->drupalGet('/admin/structure/block');
+    $this->clickLink('Place block');
+    $web_assert->assertWaitOnAjaxRequest();
+    $this->assertNotEmpty($web_assert->waitForElementVisible('css', '#drupal-modal'));
+    hold_test_response(TRUE);
+    $this->clickLink('Place block');
+    $this->assertNotNull($web_assert->waitForElement('xpath', '//div[contains(@class, "dropbutton-wrapper")]/following-sibling::div[contains(@class, "ajax-progress-throbber")]'));
+    hold_test_response(FALSE);
+    $web_assert->assertNoElementAfterWait('css', '.ajax-progress-throbber');
   }
 
 }

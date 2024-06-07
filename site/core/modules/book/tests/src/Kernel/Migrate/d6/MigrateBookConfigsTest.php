@@ -8,7 +8,7 @@ use Drupal\Tests\migrate_drupal\Kernel\d6\MigrateDrupal6TestBase;
 /**
  * Upgrade variables to book.settings.yml.
  *
- * @group migrate_drupal_6
+ * @group book
  */
 class MigrateBookConfigsTest extends MigrateDrupal6TestBase {
 
@@ -17,7 +17,14 @@ class MigrateBookConfigsTest extends MigrateDrupal6TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['book'];
+  protected static $modules = ['book'];
+
+  /**
+   * Gets the path to the fixture file.
+   */
+  protected function getFixtureFilePath() {
+    return __DIR__ . '/../../../../fixtures/drupal6.php';
+  }
 
   /**
    * Data provider for testBookSettings().
@@ -44,9 +51,9 @@ class MigrateBookConfigsTest extends MigrateDrupal6TestBase {
     $this->executeMigration($migration_id);
 
     $config = $this->config('book.settings');
-    $this->assertIdentical('book', $config->get('child_type'));
+    $this->assertSame('book', $config->get('child_type'));
     $this->assertSame('book pages', $config->get('block.navigation.mode'));
-    $this->assertIdentical(['book'], $config->get('allowed_types'));
+    $this->assertSame(['book'], $config->get('allowed_types'));
     $this->assertConfigSchema(\Drupal::service('config.typed'), 'book.settings', $config->get());
   }
 

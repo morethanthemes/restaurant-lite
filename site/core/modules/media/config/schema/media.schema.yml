@@ -7,20 +7,29 @@ media.settings:
       label: 'Full URI to a folder where the media icons will be installed'
     iframe_domain:
       type: uri
+      nullable: true
       label: 'Domain from which to serve oEmbed content in an iframe'
     oembed_providers_url:
       type: uri
       label: 'The URL of the oEmbed providers database in JSON format'
+    standalone_url:
+      type: boolean
+      label: 'Allow media items to be viewed standalone at /media/{id}'
 
 media.type.*:
   type: config_entity
   label: 'Media type'
   mapping:
     id:
-      type: string
+      type: machine_name
       label: 'Machine name'
+      constraints:
+        Length:
+          # Media type IDs are specifically limited to 32 characters.
+          # @see \Drupal\media\MediaTypeForm::form()
+          max: 32
     label:
-      type: label
+      type: required_label
       label: 'Name'
     description:
       type: text
@@ -28,14 +37,14 @@ media.type.*:
     source:
       type: string
       label: 'Source'
-    source_configuration:
-      type: media.source.[%parent.source]
     queue_thumbnail_downloads:
       type: boolean
       label: 'Whether the thumbnail downloads should be queued'
     new_revision:
       type: boolean
       label: 'Whether a new revision should be created by default'
+    source_configuration:
+      type: media.source.[%parent.source]
     field_map:
       type: sequence
       label: 'Field map'
@@ -56,6 +65,13 @@ field.formatter.settings.oembed:
     max_height:
       type: integer
       label: 'Maximum height'
+    loading:
+      type: mapping
+      label: 'oEmbed loading settings'
+      mapping:
+        attribute:
+          type: string
+          label: 'Loading attribute'
 
 field.widget.settings.oembed_textfield:
   type: field.widget.settings.string_textfield
@@ -101,3 +117,23 @@ media.source.field_aware:
     source_field:
       type: string
       label: 'Source field'
+
+filter_settings.media_embed:
+  type: filter
+  label: 'Media Embed'
+  mapping:
+    default_view_mode:
+      type: string
+      label: 'The view mode that is used by default'
+    allowed_view_modes:
+      type: sequence
+      label: 'View modes selectable in the "Edit media" dialog'
+      sequence:
+        type: string
+        label: 'View mode'
+    allowed_media_types:
+      type: sequence
+      label: 'Media types selectable in the Media Library'
+      sequence:
+        type: string
+        label: 'Media type'

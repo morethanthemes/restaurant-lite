@@ -15,7 +15,7 @@ class ProfileFieldValuesTest extends MigrateSqlSourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['user', 'migrate_drupal'];
+  protected static $modules = ['user', 'migrate_drupal'];
 
   /**
    * {@inheritdoc}
@@ -33,7 +33,7 @@ class ProfileFieldValuesTest extends MigrateSqlSourceTestBase {
       [
         'fid' => '9',
         'uid' => '2',
-        'value' => 'Lorem ipsum dolor sit amet...',
+        'value' => 'The quick brown fox ...',
       ],
     ];
 
@@ -44,7 +44,7 @@ class ProfileFieldValuesTest extends MigrateSqlSourceTestBase {
         'name' => 'profile_color',
         'explanation' => 'List your favorite color',
         'category' => 'Personal information',
-        'page' => 'Peole whose favorite color is %value',
+        'page' => 'People whose favorite color is %value',
         'type' => 'textfield',
         'weight' => '-10',
         'required' => '0',
@@ -74,7 +74,7 @@ class ProfileFieldValuesTest extends MigrateSqlSourceTestBase {
     $tests[0]['expected_data'] = [
       [
         'profile_color' => ['red'],
-        'profile_biography' => ['Lorem ipsum dolor sit amet...'],
+        'profile_biography' => ['The quick brown fox ...'],
         'uid' => '2',
       ],
     ];

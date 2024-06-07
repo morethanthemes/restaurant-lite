@@ -64,7 +64,7 @@ class EntityConstraintViolationList extends ConstraintViolationList implements E
       foreach ($this as $offset => $violation) {
         if ($path = $violation->getPropertyPath()) {
           // An example of $path might be 'title.0.value'.
-          list($field_name) = explode('.', $path, 2);
+          [$field_name] = explode('.', $path, 2);
           if ($this->entity->hasField($field_name)) {
             $this->violationOffsetsByField[$field_name][$offset] = $offset;
           }
@@ -106,7 +106,7 @@ class EntityConstraintViolationList extends ConstraintViolationList implements E
   public function getByFields(array $field_names) {
     $this->groupViolationOffsets();
     $violations = [];
-    foreach (array_intersect_key($this->violationOffsetsByField, array_flip($field_names)) as $field_name => $offsets) {
+    foreach (array_intersect_key($this->violationOffsetsByField, array_flip($field_names)) as $offsets) {
       foreach ($offsets as $offset) {
         $violations[] = $this->get($offset);
       }
@@ -173,6 +173,20 @@ class EntityConstraintViolationList extends ConstraintViolationList implements E
   /**
    * {@inheritdoc}
    */
+  public function findByCodes(string|array $codes): static {
+    $violations = [];
+    foreach ($this as $violation) {
+      if (in_array($violation->getCode(), $codes, TRUE)) {
+        $violations[] = $violation;
+      }
+    }
+
+    return new static($this->getEntity(), $violations);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getFieldNames() {
     $this->groupViolationOffsets();
     return array_keys($this->violationOffsetsByField);
@@ -187,6 +201,9 @@ class EntityConstraintViolationList extends ConstraintViolationList implements E
 
   /**
    * {@inheritdoc}
+   *
+   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
+   * @return void
    */
   public function add(ConstraintViolationInterface $violation) {
     parent::add($violation);
@@ -196,6 +213,9 @@ class EntityConstraintViolationList extends ConstraintViolationList implements E
 
   /**
    * {@inheritdoc}
+   *
+   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
+   * @return void
    */
   public function remove($offset) {
     parent::remove($offset);
@@ -205,6 +225,9 @@ class EntityConstraintViolationList extends ConstraintViolationList implements E
 
   /**
    * {@inheritdoc}
+   *
+   * phpcs:ignore Drupal.Commenting.FunctionComment.VoidReturn
+   * @return void
    */
   public function set($offset, ConstraintViolationInterface $violation) {
     parent::set($offset, $violation);

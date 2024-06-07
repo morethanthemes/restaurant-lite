@@ -2,7 +2,6 @@
 
 namespace Drupal\Core\Session;
 
-use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -78,7 +77,7 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
    *   The session metadata bag.
    * @param \Drupal\Core\Session\SessionConfigurationInterface $session_configuration
    *   The session configuration interface.
-   * @param \Symfony\Component\HttpFoundation\Session\Storage\Proxy\AbstractProxy|Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeSessionHandler|\SessionHandlerInterface|null $handler
+   * @param \Symfony\Component\HttpFoundation\Session\Storage\Proxy\AbstractProxy|\SessionHandlerInterface|null $handler
    *   The object to register as a PHP session handler.
    *   @see \Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage::setSaveHandler()
    */
@@ -89,20 +88,12 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
     $this->connection = $connection;
 
     parent::__construct($options, $handler, $metadata_bag);
-
-    // @todo When not using the Symfony Session object, the list of bags in the
-    //   NativeSessionStorage will remain uninitialized. This will lead to
-    //   errors in NativeSessionHandler::loadSession. Remove this after
-    //   https://www.drupal.org/node/2229145, when we will be using the Symfony
-    //   session object (which registers an attribute bag with the
-    //   manager upon instantiation).
-    $this->bags = [];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function start() {
+  public function start(): bool {
     if (($this->started || $this->startedLazy) && !$this->closed) {
       return $this->started;
     }
@@ -114,22 +105,11 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
       // If a session cookie exists, initialize the session. Otherwise the
       // session is only started on demand in save(), making
       // anonymous users not use a session cookie unless something is stored in
-      // $_SESSION. This allows HTTP proxies to cache anonymous pageviews.
+      // $_SESSION. This allows HTTP proxies to cache anonymous page views.
       $result = $this->startNow();
     }
 
     if (empty($result)) {
-      // Randomly generate a session identifier for this request. This is
-      // necessary because \Drupal\Core\TempStore\SharedTempStoreFactory::get()
-      // wants to know the future session ID of a lazily started session in
-      // advance.
-      //
-      // @todo: With current versions of PHP there is little reason to generate
-      //   the session id from within application code. Consider using the
-      //   default php session id instead of generating a custom one:
-      //   https://www.drupal.org/node/2238561
-      $this->setId(Crypt::randomBytesBase64());
-
       // Initialize the session global and attach the Symfony session bags.
       $_SESSION = [];
       $this->loadSession();
@@ -204,38 +184,27 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
   /**
    * {@inheritdoc}
    */
-  public function regenerate($destroy = FALSE, $lifetime = NULL) {
+  public function regenerate($destroy = FALSE, $lifetime = NULL): bool {
     // Nothing to do if we are not allowed to change the session.
     if ($this->isCli()) {
-      return;
+      return FALSE;
     }
 
-    // We do not support the optional $destroy and $lifetime parameters as long
-    // as #2238561 remains open.
-    if ($destroy || isset($lifetime)) {
-      throw new \InvalidArgumentException('The optional parameters $destroy and $lifetime of SessionManager::regenerate() are not supported currently');
+    // Drupal will always destroy the existing session when regenerating a
+    // session. This is inline with the recommendations of @link https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#renew-the-session-id-after-any-privilege-level-change
+    // OWASP session management cheat sheet. @endlink
+    $destroy = TRUE;
+
+    // Cannot regenerate the session ID for non-active sessions.
+    if (\PHP_SESSION_ACTIVE !== session_status()) {
+      // Ensure the metadata bag has been stamped. If the parent::regenerate()
+      // is called prior to the session being started it will not refresh the
+      // metadata as expected.
+      $this->getMetadataBag()->stampNew($lifetime);
+      return FALSE;
     }
 
-    if ($this->isStarted()) {
-      $old_session_id = $this->getId();
-      // Save and close the old session. Call the parent method to avoid issue
-      // with session destruction due to the session being considered obsolete.
-      parent::save();
-      // Ensure the session is reloaded correctly.
-      $this->startedLazy = TRUE;
-    }
-    session_id(Crypt::randomBytesBase64());
-
-    $this->getMetadataBag()->clearCsrfTokenSeed();
-
-    if (isset($old_session_id)) {
-      $params = session_get_cookie_params();
-      $expire = $params['lifetime'] ? REQUEST_TIME + $params['lifetime'] : 0;
-      setcookie($this->getName(), $this->getId(), $expire, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
-      $this->migrateStoredSession($old_session_id);
-    }
-
-    $this->startNow();
+    return parent::regenerate($destroy, $lifetime);
   }
 
   /**
@@ -255,6 +224,16 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
    * {@inheritdoc}
    */
   public function destroy() {
+    if ($this->isCli()) {
+      return;
+    }
+
+    // Symfony suggests using Session::invalidate() instead of session_destroy()
+    // however the former calls session_regenerate_id(TRUE), which while
+    // destroying the current session creates a new ID; Drupal has historically
+    // decided to only set sessions when absolutely necessary (e.g., to increase
+    // anonymous user cache hit rates) and as such we cannot use the Symfony
+    // convenience method here.
     session_destroy();
 
     // Unset the session cookies.
@@ -324,20 +303,6 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
     }
 
     return array_intersect_key($mask, $_SESSION);
-  }
-
-  /**
-   * Migrates the current session to a new session id.
-   *
-   * @param string $old_session_id
-   *   The old session ID. The new session ID is $this->getId().
-   */
-  protected function migrateStoredSession($old_session_id) {
-    $fields = ['sid' => Crypt::hashBase64($this->getId())];
-    $this->connection->update('sessions')
-      ->fields($fields)
-      ->condition('sid', Crypt::hashBase64($old_session_id))
-      ->execute();
   }
 
 }

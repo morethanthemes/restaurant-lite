@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Serialization;
 
 use Drupal\Component\Serialization\Exception\InvalidDataTypeException;
@@ -52,11 +54,13 @@ class YamlPeclTest extends YamlTestBase {
    * @covers ::encode
    */
   public function testEncode() {
+    // cSpell:disable
     $this->assertEquals('---
 foo:
   bar: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus sapien ex, venenatis vitae nisi eu, posuere luctus dolor. Nullam convallis
 ...
 ', YamlPecl::encode(['foo' => ['bar' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus sapien ex, venenatis vitae nisi eu, posuere luctus dolor. Nullam convallis']]));
+    // cSpell:enable
   }
 
   /**
@@ -87,12 +91,7 @@ foo:
    * @covers ::errorHandler
    */
   public function testError() {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException(InvalidDataTypeException::class);
-    }
-    else {
-      $this->setExpectedException(InvalidDataTypeException::class);
-    }
+    $this->expectException(InvalidDataTypeException::class);
     YamlPecl::decode('foo: [ads');
   }
 

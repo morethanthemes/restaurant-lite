@@ -40,6 +40,16 @@ class QueryFactory implements QueryFactoryInterface, EventSubscriberInterface {
   protected $namespaces;
 
   /**
+   * The key value factory.
+   */
+  protected KeyValueFactoryInterface $keyValueFactory;
+
+  /**
+   * The configuration manager.
+   */
+  protected ConfigManagerInterface $configManager;
+
+  /**
    * Constructs a QueryFactory object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -136,7 +146,7 @@ class QueryFactory implements QueryFactoryInterface, EventSubscriberInterface {
    *
    * @param \Drupal\Core\Config\Config $config
    *   The configuration object.
-   *  @param string $key
+   * @param string $key
    *   The configuration key to look for.
    * @param string $get_method
    *   Which method on the config object to call to get the value. Either 'get'
@@ -226,7 +236,7 @@ class QueryFactory implements QueryFactoryInterface, EventSubscriberInterface {
     $saved_config = $event->getConfig();
     $entity_type_id = $this->configManager->getEntityTypeIdByName($saved_config->getName());
     if ($entity_type_id) {
-      $entity_type = $this->configManager->getEntityManager()->getDefinition($entity_type_id);
+      $entity_type = $this->configManager->getEntityTypeManager()->getDefinition($entity_type_id);
       $this->updateConfigKeyStore($entity_type, $saved_config);
     }
   }
@@ -241,7 +251,7 @@ class QueryFactory implements QueryFactoryInterface, EventSubscriberInterface {
     $saved_config = $event->getConfig();
     $entity_type_id = $this->configManager->getEntityTypeIdByName($saved_config->getName());
     if ($entity_type_id) {
-      $entity_type = $this->configManager->getEntityManager()->getDefinition($entity_type_id);
+      $entity_type = $this->configManager->getEntityTypeManager()->getDefinition($entity_type_id);
       $this->deleteConfigKeyStore($entity_type, $saved_config);
     }
   }
@@ -249,7 +259,7 @@ class QueryFactory implements QueryFactoryInterface, EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[ConfigEvents::SAVE][] = ['onConfigSave', 128];
     $events[ConfigEvents::DELETE][] = ['onConfigDelete', 128];
     return $events;

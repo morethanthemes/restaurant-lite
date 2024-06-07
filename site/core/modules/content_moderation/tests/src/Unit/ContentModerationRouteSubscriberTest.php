@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\content_moderation\Unit;
 
 use Drupal\content_moderation\Routing\ContentModerationRouteSubscriber;
-use Drupal\Core\Entity\Entity;
+use Drupal\Core\Entity\EntityBase;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteBuildEvent;
@@ -28,7 +30,9 @@ class ContentModerationRouteSubscriberTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     /** @var \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager */
     $entity_type_manager = $this->createMock(EntityTypeManagerInterface::class);
     $this->routeSubscriber = new ContentModerationRouteSubscriber($entity_type_manager);
@@ -36,20 +40,20 @@ class ContentModerationRouteSubscriberTest extends UnitTestCase {
   }
 
   /**
-   * Creates the entity manager mock returning entity type objects.
+   * Creates the entity type manager mock returning entity type objects.
    */
   protected function setupEntityTypes() {
     $definition = $this->createMock(EntityTypeInterface::class);
     $definition->expects($this->any())
       ->method('getClass')
-      ->will($this->returnValue(SimpleTestEntity::class));
+      ->willReturn(TestEntity::class);
     $definition->expects($this->any())
       ->method('isRevisionable')
       ->willReturn(FALSE);
     $revisionable_definition = $this->createMock(EntityTypeInterface::class);
     $revisionable_definition->expects($this->any())
       ->method('getClass')
-      ->will($this->returnValue(SimpleTestEntity::class));
+      ->willReturn(TestEntity::class);
     $revisionable_definition->expects($this->any())
       ->method('isRevisionable')
       ->willReturn(TRUE);
@@ -59,7 +63,6 @@ class ContentModerationRouteSubscriberTest extends UnitTestCase {
     ];
 
     $reflector = new \ReflectionProperty($this->routeSubscriber, 'moderatedEntityTypes');
-    $reflector->setAccessible(TRUE);
     $reflector->setValue($this->routeSubscriber, $entity_types);
   }
 
@@ -187,6 +190,28 @@ class ContentModerationRouteSubscriberTest extends UnitTestCase {
           ],
         ],
       ],
+      'Parameter without type is unchanged' => [
+        [
+          '_entity_form' => 'entity_test_rev.edit',
+        ],
+        [
+          'entity_test_rev' => [
+            'type' => 'entity:entity_test_rev',
+          ],
+          'unrelated_param' => [
+            'foo' => 'bar',
+          ],
+        ],
+        [
+          'entity_test_rev' => [
+            'type' => 'entity:entity_test_rev',
+            'load_latest_revision' => TRUE,
+          ],
+          'unrelated_param' => [
+            'foo' => 'bar',
+          ],
+        ],
+      ],
     ];
   }
 
@@ -223,5 +248,5 @@ class ContentModerationRouteSubscriberTest extends UnitTestCase {
 /**
  * A concrete entity.
  */
-class SimpleTestEntity extends Entity {
+class TestEntity extends EntityBase {
 }

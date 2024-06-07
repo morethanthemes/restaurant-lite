@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Plugin\Context;
 
+use Drupal\Component\Plugin\Context\ContextDefinitionInterface;
 use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\TypedData\TypedDataManagerInterface;
 use Drupal\Tests\UnitTestCase;
@@ -32,15 +35,7 @@ class ContextDefinitionTest extends UnitTestCase {
    */
   public function testGetDataDefinition($is_multiple) {
     $data_type = 'valid';
-    $mock_data_definition = $this->getMockBuilder('\Drupal\Core\TypedData\ListDataDefinitionInterface')
-      ->setMethods([
-        'setLabel',
-        'setDescription',
-        'setRequired',
-        'getConstraints',
-        'setConstraints',
-      ])
-      ->getMockForAbstractClass();
+    $mock_data_definition = $this->createMock(ContextDefinitionInterface::class);
     $mock_data_definition->expects($this->once())
       ->method('setLabel')
       ->willReturnSelf();
@@ -62,7 +57,7 @@ class ContextDefinitionTest extends UnitTestCase {
     if ($is_multiple) {
       $create_definition_method = 'createListDataDefinition';
     }
-    $mock_data_manager = $this->getMock(TypedDataManagerInterface::class);
+    $mock_data_manager = $this->createMock(TypedDataManagerInterface::class);
     // Our mocked data manager will return our mocked data definition for a
     // valid data type.
     $mock_data_manager->expects($this->once())
@@ -76,7 +71,7 @@ class ContextDefinitionTest extends UnitTestCase {
     // methods.
     $mock_context_definition = $this->getMockBuilder('Drupal\Core\Plugin\Context\ContextDefinition')
       ->disableOriginalConstructor()
-      ->setMethods([
+      ->onlyMethods([
         'isMultiple',
         'getTypedDataManager',
         'getDataType',
@@ -115,15 +110,14 @@ class ContextDefinitionTest extends UnitTestCase {
     // Since we're trying to make getDataDefinition() throw an exception in
     // isolation, we use a data type which is not valid.
     $data_type = 'not_valid';
-    $mock_data_definition = $this->getMockBuilder('\Drupal\Core\TypedData\ListDataDefinitionInterface')
-      ->getMockForAbstractClass();
+    $mock_data_definition = $this->createMock('\Drupal\Core\TypedData\ListDataDefinitionInterface');
 
     // Follow code paths for both multiple and non-multiple definitions.
     $create_definition_method = 'createDataDefinition';
     if ($is_multiple) {
       $create_definition_method = 'createListDataDefinition';
     }
-    $mock_data_manager = $this->getMock(TypedDataManagerInterface::class);
+    $mock_data_manager = $this->createMock(TypedDataManagerInterface::class);
     // Our mocked data manager will return NULL for a non-valid data type. This
     // will eventually cause getDataDefinition() to throw an exception.
     $mock_data_manager->expects($this->once())
@@ -137,7 +131,7 @@ class ContextDefinitionTest extends UnitTestCase {
     // that will be called before the expected exception.
     $mock_context_definition = $this->getMockBuilder('Drupal\Core\Plugin\Context\ContextDefinition')
       ->disableOriginalConstructor()
-      ->setMethods([
+      ->onlyMethods([
         'isMultiple',
         'getTypedDataManager',
         'getDataType',
@@ -153,12 +147,12 @@ class ContextDefinitionTest extends UnitTestCase {
       ->method('getDataType')
       ->willReturn($data_type);
 
-    $this->setExpectedException(\Exception::class);
+    $this->expectException(\Exception::class);
     $mock_context_definition->getDataDefinition();
   }
 
   /**
-   * Data provider for testGetConstraint
+   * Data provider for testGetConstraint.
    */
   public function providerGetConstraint() {
     return [
@@ -181,7 +175,7 @@ class ContextDefinitionTest extends UnitTestCase {
   public function testGetConstraint($expected, $constraint_array, $constraint) {
     $mock_context_definition = $this->getMockBuilder('Drupal\Core\Plugin\Context\ContextDefinition')
       ->disableOriginalConstructor()
-      ->setMethods([
+      ->onlyMethods([
         'getConstraints',
       ])
       ->getMock();

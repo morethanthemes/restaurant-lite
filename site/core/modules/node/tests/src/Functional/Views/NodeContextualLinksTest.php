@@ -16,7 +16,12 @@ class NodeContextualLinksTest extends NodeTestBase {
    *
    * @var array
    */
-  public static $modules = ['contextual'];
+  protected static $modules = ['contextual'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Tests if the node page works if Contextual Links is disabled.

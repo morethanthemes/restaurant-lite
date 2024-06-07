@@ -20,6 +20,11 @@ namespace Drupal\views\Plugin\views\join;
 class Subquery extends JoinPluginBase {
 
   /**
+   * The left join query.
+   */
+  public string $left_query;
+
+  /**
    * Constructs a Subquery object.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
@@ -52,7 +57,7 @@ class Subquery extends JoinPluginBase {
 
     // Tack on the extra.
     // This is just copied verbatim from the parent class, which itself has a
-    //   bug: https://www.drupal.org/node/1118100.
+    // bug: https://www.drupal.org/node/1118100.
     if (isset($this->extra)) {
       if (is_array($this->extra)) {
         $extras = [];

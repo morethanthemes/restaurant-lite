@@ -10,14 +10,14 @@ namespace Drupal\KernelTests\Core\Database;
 class SelectCloneTest extends DatabaseTestBase {
 
   /**
-   * Test that subqueries as value within conditions are cloned properly.
+   * Tests that subqueries as value within conditions are cloned properly.
    */
   public function testSelectConditionSubQueryCloning() {
-    $subquery = db_select('test', 't');
+    $subquery = $this->connection->select('test', 't');
     $subquery->addField('t', 'id', 'id');
     $subquery->condition('age', 28, '<');
 
-    $query = db_select('test', 't');
+    $query = $this->connection->select('test', 't');
     $query->addField('t', 'name', 'name');
     $query->condition('id', $subquery, 'IN');
 
@@ -34,8 +34,8 @@ class SelectCloneTest extends DatabaseTestBase {
     $query_result = $query->countQuery()->execute()->fetchField();
 
     // Make sure the cloned query has not been modified
-    $this->assertEqual(3, $clone_result, 'The cloned query returns the expected number of rows');
-    $this->assertEqual(2, $query_result, 'The query returns the expected number of rows');
+    $this->assertEquals(3, $clone_result, 'The cloned query returns the expected number of rows');
+    $this->assertEquals(2, $query_result, 'The query returns the expected number of rows');
   }
 
   /**

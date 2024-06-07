@@ -2,6 +2,7 @@
 
 namespace Drupal\layout_builder\Plugin\Block;
 
+use Drupal\Core\Block\Attribute\Block;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -11,6 +12,7 @@ use Drupal\Core\Plugin\ContextAwarePluginInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\layout_builder\Plugin\Derivative\ExtraFieldBlockDeriver;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -23,14 +25,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   This block plugin handles all other field entities not provided by
  *   hook_entity_extra_field_info().
  *
- * @Block(
- *   id = "extra_field_block",
- *   deriver = "\Drupal\layout_builder\Plugin\Derivative\ExtraFieldBlockDeriver",
- * )
- *
  * @internal
  *   Plugin classes are internal.
  */
+#[Block(
+  id: "extra_field_block",
+  deriver: ExtraFieldBlockDeriver::class
+)]
 class ExtraFieldBlock extends BlockBase implements ContextAwarePluginInterface, ContainerFactoryPluginInterface {
 
   /**
@@ -72,7 +73,7 @@ class ExtraFieldBlock extends BlockBase implements ContextAwarePluginInterface, 
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
     // Get field name from the plugin ID.
-    list (, , , $field_name) = explode(static::DERIVATIVE_SEPARATOR, $plugin_id, 4);
+    [, , , $field_name] = explode(static::DERIVATIVE_SEPARATOR, $plugin_id, 4);
     assert(!empty($field_name));
     $this->fieldName = $field_name;
 
@@ -85,6 +86,10 @@ class ExtraFieldBlock extends BlockBase implements ContextAwarePluginInterface, 
   public function defaultConfiguration() {
     return [
       'label_display' => FALSE,
+      'formatter' => [
+        'settings' => [],
+        'third_party_settings' => [],
+      ],
     ];
   }
 
@@ -130,7 +135,7 @@ class ExtraFieldBlock extends BlockBase implements ContextAwarePluginInterface, 
         // render array. If the hook is invoked the placeholder will be
         // replaced.
         // @see ::replaceFieldPlaceholder()
-        '#markup' => $this->getPreviewFallbackString(),
+        '#markup' => $this->t('Placeholder for the @preview_fallback', ['@preview_fallback' => $this->getPreviewFallbackString()]),
       ];
     }
     CacheableMetadata::createFromObject($this)->applyTo($build);
@@ -143,7 +148,7 @@ class ExtraFieldBlock extends BlockBase implements ContextAwarePluginInterface, 
   public function getPreviewFallbackString() {
     $entity = $this->getEntity();
     $extra_fields = $this->entityFieldManager->getExtraFields($entity->getEntityTypeId(), $entity->bundle());
-    return new TranslatableMarkup('Placeholder for the "@field" field', ['@field' => $extra_fields['display'][$this->fieldName]['label']]);
+    return new TranslatableMarkup('"@field" field', ['@field' => $extra_fields['display'][$this->fieldName]['label']]);
   }
 
   /**

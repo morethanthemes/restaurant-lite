@@ -8,7 +8,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\user\UserInterface;
+use Drupal\user\EntityOwnerTrait;
 use Drupal\workspaces\WorkspaceInterface;
 
 /**
@@ -26,7 +26,9 @@ use Drupal\workspaces\WorkspaceInterface;
  *   ),
  *   handlers = {
  *     "list_builder" = "\Drupal\workspaces\WorkspaceListBuilder",
+ *     "view_builder" = "Drupal\workspaces\WorkspaceViewBuilder",
  *     "access" = "Drupal\workspaces\WorkspaceAccessControlHandler",
+ *     "views_data" = "Drupal\views\EntityViewsData",
  *     "route_provider" = {
  *       "html" = "\Drupal\Core\Entity\Routing\AdminHtmlRouteProvider",
  *     },
@@ -36,7 +38,6 @@ use Drupal\workspaces\WorkspaceInterface;
  *       "edit" = "\Drupal\workspaces\Form\WorkspaceForm",
  *       "delete" = "\Drupal\workspaces\Form\WorkspaceDeleteForm",
  *       "activate" = "\Drupal\workspaces\Form\WorkspaceActivateForm",
- *       "deploy" = "\Drupal\workspaces\Form\WorkspaceDeployForm",
  *     },
  *   },
  *   admin_permission = "administer workspaces",
@@ -44,19 +45,21 @@ use Drupal\workspaces\WorkspaceInterface;
  *   revision_table = "workspace_revision",
  *   data_table = "workspace_field_data",
  *   revision_data_table = "workspace_field_revision",
+ *   field_ui_base_route = "entity.workspace.collection",
  *   entity_keys = {
  *     "id" = "id",
  *     "revision" = "revision_id",
  *     "uuid" = "uuid",
  *     "label" = "label",
  *     "uid" = "uid",
+ *     "owner" = "uid",
  *   },
  *   links = {
+ *     "canonical" = "/admin/config/workflow/workspaces/manage/{workspace}",
  *     "add-form" = "/admin/config/workflow/workspaces/add",
  *     "edit-form" = "/admin/config/workflow/workspaces/manage/{workspace}/edit",
  *     "delete-form" = "/admin/config/workflow/workspaces/manage/{workspace}/delete",
  *     "activate-form" = "/admin/config/workflow/workspaces/manage/{workspace}/activate",
- *     "deploy-form" = "/admin/config/workflow/workspaces/manage/{workspace}/deploy",
  *     "collection" = "/admin/config/workflow/workspaces",
  *   },
  * )
@@ -64,12 +67,14 @@ use Drupal\workspaces\WorkspaceInterface;
 class Workspace extends ContentEntityBase implements WorkspaceInterface {
 
   use EntityChangedTrait;
+  use EntityOwnerTrait;
 
   /**
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
     $fields = parent::baseFieldDefinitions($entity_type);
+    $fields += static::ownerBaseFieldDefinitions($entity_type);
 
     $fields['id'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Workspace ID'))
@@ -87,17 +92,25 @@ class Workspace extends ContentEntityBase implements WorkspaceInterface {
       ->setSetting('max_length', 128)
       ->setRequired(TRUE);
 
-    $fields['uid'] = BaseFieldDefinition::create('entity_reference')
+    $fields['uid']
       ->setLabel(new TranslatableMarkup('Owner'))
       ->setDescription(new TranslatableMarkup('The workspace owner.'))
-      ->setRevisionable(TRUE)
-      ->setSetting('target_type', 'user')
-      ->setDefaultValueCallback('Drupal\workspaces\Entity\Workspace::getCurrentUserId')
       ->setDisplayOptions('form', [
         'type' => 'entity_reference_autocomplete',
         'weight' => 5,
       ])
       ->setDisplayConfigurable('form', TRUE);
+
+    $fields['parent'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(new TranslatableMarkup('Parent'))
+      ->setDescription(new TranslatableMarkup('The parent workspace.'))
+      ->setSetting('target_type', 'workspace')
+      ->setReadOnly(TRUE)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'options_select',
+        'weight' => 10,
+      ]);
 
     $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(new TranslatableMarkup('Changed'))
@@ -106,7 +119,7 @@ class Workspace extends ContentEntityBase implements WorkspaceInterface {
 
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(new TranslatableMarkup('Created'))
-      ->setDescription(new TranslatableMarkup('The time that the workspaces was created.'));
+      ->setDescription(new TranslatableMarkup('The time that the workspace was created.'));
 
     return $fields;
   }
@@ -116,13 +129,6 @@ class Workspace extends ContentEntityBase implements WorkspaceInterface {
    */
   public function publish() {
     return \Drupal::service('workspaces.operation_factory')->getPublisher($this)->publish();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function isDefaultWorkspace() {
-    return $this->id() === static::DEFAULT_WORKSPACE;
   }
 
   /**
@@ -142,29 +148,24 @@ class Workspace extends ContentEntityBase implements WorkspaceInterface {
   /**
    * {@inheritdoc}
    */
-  public function getOwner() {
-    return $this->get('uid')->entity;
+  public function hasParent() {
+    return !$this->get('parent')->isEmpty();
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setOwner(UserInterface $account) {
-    return $this->set('uid', $account->id());
-  }
+  public static function preDelete(EntityStorageInterface $storage, array $entities) {
+    parent::preDelete($storage, $entities);
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getOwnerId() {
-    return $this->get('uid')->target_id;
-  }
+    $workspace_tree = \Drupal::service('workspaces.repository')->loadTree();
 
-  /**
-   * {@inheritdoc}
-   */
-  public function setOwnerId($uid) {
-    return $this->set('uid', $uid);
+    // Ensure that workspaces that have descendants can not be deleted.
+    foreach ($entities as $entity) {
+      if (!empty($workspace_tree[$entity->id()]['descendants'])) {
+        throw new \InvalidArgumentException("The {$entity->label()} workspace can not be deleted because it has child workspaces.");
+      }
+    }
   }
 
   /**
@@ -173,29 +174,27 @@ class Workspace extends ContentEntityBase implements WorkspaceInterface {
   public static function postDelete(EntityStorageInterface $storage, array $entities) {
     parent::postDelete($storage, $entities);
 
-    // Add the IDs of the deleted workspaces to the list of workspaces that will
-    // be purged on cron.
-    $state = \Drupal::state();
-    $deleted_workspace_ids = $state->get('workspace.deleted', []);
-    unset($entities[static::DEFAULT_WORKSPACE]);
-    $deleted_workspace_ids += array_combine(array_keys($entities), array_keys($entities));
-    $state->set('workspace.deleted', $deleted_workspace_ids);
+    /** @var \Drupal\workspaces\WorkspaceManagerInterface $workspace_manager */
+    $workspace_manager = \Drupal::service('workspaces.manager');
+    // Disable the currently active workspace if it has been deleted.
+    if ($workspace_manager->hasActiveWorkspace()
+      && in_array($workspace_manager->getActiveWorkspace()->id(), array_keys($entities), TRUE)) {
+      $workspace_manager->switchToLive();
+    }
 
-    // Trigger a batch purge to allow empty workspaces to be deleted
-    // immediately.
-    \Drupal::service('workspaces.manager')->purgeDeletedWorkspacesBatch();
-  }
+    // Ensure that workspace batch purging does not happen inside a workspace.
+    $workspace_manager->executeOutsideWorkspace(function () use ($workspace_manager, $entities) {
+      // Add the IDs of the deleted workspaces to the list of workspaces that will
+      // be purged on cron.
+      $state = \Drupal::state();
+      $deleted_workspace_ids = $state->get('workspace.deleted', []);
+      $deleted_workspace_ids += array_combine(array_keys($entities), array_keys($entities));
+      $state->set('workspace.deleted', $deleted_workspace_ids);
 
-  /**
-   * Default value callback for 'uid' base field definition.
-   *
-   * @see ::baseFieldDefinitions()
-   *
-   * @return int[]
-   *   An array containing the ID of the current user.
-   */
-  public static function getCurrentUserId() {
-    return [\Drupal::currentUser()->id()];
+      // Trigger a batch purge to allow empty workspaces to be deleted
+      // immediately.
+      $workspace_manager->purgeDeletedWorkspacesBatch();
+    });
   }
 
 }

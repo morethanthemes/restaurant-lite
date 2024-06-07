@@ -5,13 +5,13 @@ namespace Drupal\Core\Routing;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\State\StateInterface;
-use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Routing\Route;
 
 /**
- * Defines a class which preloads non-admin routes.
+ * Defines a class that can pre-load non-admin routes.
  *
  * On an actual site we want to avoid too many database queries so we build a
  * list of all routes which most likely appear on the actual site, which are all
@@ -55,6 +55,7 @@ class RoutePreloader implements EventSubscriberInterface {
    * @param \Drupal\Core\State\StateInterface $state
    *   The state key value store.
    * @param \Drupal\Core\Cache\CacheBackendInterface $cache
+   *   The cache backend.
    */
   public function __construct(RouteProviderInterface $route_provider, StateInterface $state, CacheBackendInterface $cache) {
     $this->routeProvider = $route_provider;
@@ -99,7 +100,7 @@ class RoutePreloader implements EventSubscriberInterface {
   public function onAlterRoutes(RouteBuildEvent $event) {
     $collection = $event->getRouteCollection();
     foreach ($collection->all() as $name => $route) {
-      if (strpos($route->getPath(), '/admin/') !== 0 && $route->getPath() != '/admin') {
+      if (!str_starts_with($route->getPath(), '/admin/') && $route->getPath() != '/admin' && static::isGetAndHtmlRoute($route)) {
         $this->nonAdminRoutesOnRebuild[] = $name;
       }
     }
@@ -108,11 +109,8 @@ class RoutePreloader implements EventSubscriberInterface {
 
   /**
    * Store the non admin routes in state when the route building is finished.
-   *
-   * @param \Symfony\Component\EventDispatcher\Event $event
-   *   The route finish event.
    */
-  public function onFinishedRoutes(Event $event) {
+  public function onFinishedRoutes() {
     $this->state->set('routing.non_admin_routes', $this->nonAdminRoutesOnRebuild);
     $this->nonAdminRoutesOnRebuild = [];
   }
@@ -120,7 +118,7 @@ class RoutePreloader implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     // Set a really low priority to catch as many as possible routes.
     $events[RoutingEvents::ALTER] = ['onAlterRoutes', -1024];
     $events[RoutingEvents::FINISHED] = ['onFinishedRoutes'];
@@ -128,6 +126,23 @@ class RoutePreloader implements EventSubscriberInterface {
     // the kernel request event).
     $events[KernelEvents::REQUEST][] = ['onRequest'];
     return $events;
+  }
+
+  /**
+   * Determines whether the given route is a GET and HTML route.
+   *
+   * @param \Symfony\Component\Routing\Route $route
+   *   The route to analyze.
+   *
+   * @return bool
+   *   TRUE if GET is a valid method and HTML is a valid format for this route.
+   */
+  protected static function isGetAndHtmlRoute(Route $route) {
+    $methods = $route->getMethods() ?: ['GET'];
+    // If a route has no explicit format, then HTML is valid.
+    // @see \Drupal\Core\Routing\RequestFormatRouteFilter::getAvailableFormats()
+    $format = $route->hasRequirement('_format') ? explode('|', $route->getRequirement('_format')) : ['html'];
+    return in_array('GET', $methods, TRUE) && in_array('html', $format, TRUE);
   }
 
 }

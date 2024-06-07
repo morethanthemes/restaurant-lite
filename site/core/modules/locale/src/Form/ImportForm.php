@@ -2,6 +2,7 @@
 
 namespace Drupal\locale\Form;
 
+use Drupal\Component\Utility\Environment;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -98,8 +99,8 @@ class ImportForm extends FormBase {
     }
 
     $validators = [
-      'file_validate_extensions' => ['po'],
-      'file_validate_size' => [file_upload_max_size()],
+      'FileExtension' => ['extensions' => 'po'],
+      'FileSizeLimit' => ['fileLimit' => Environment::getUploadMaxSize()],
     ];
     $form['file'] = [
       '#type' => 'file',

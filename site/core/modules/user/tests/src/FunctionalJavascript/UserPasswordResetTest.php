@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\user\FunctionalJavascript;
 
+use Drupal\Core\Database\Database;
 use Drupal\Core\Test\AssertMailTrait;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
@@ -24,17 +27,6 @@ class UserPasswordResetTest extends WebDriverTestBase {
   }
 
   /**
-   * The profile to install as a basis for testing.
-   *
-   * This test uses the standard profile to test the password reset in
-   * combination with an ajax request provided by the user picture configuration
-   * in the standard profile.
-   *
-   * @var string
-   */
-  protected $profile = 'standard';
-
-  /**
    * The user object to test password resetting.
    *
    * @var \Drupal\user\UserInterface
@@ -44,16 +36,21 @@ class UserPasswordResetTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block'];
+  protected static $modules = ['block', 'test_user_config'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a user.
-    $account = $this->drupalCreateUser();
+    $account = $this->drupalCreateUser(['access content']);
 
     // Activate user by logging in.
     $this->drupalLogin($account);
@@ -64,8 +61,8 @@ class UserPasswordResetTest extends WebDriverTestBase {
 
     // Set the last login time that is used to generate the one-time link so
     // that it is definitely over a second ago.
-    $account->login = REQUEST_TIME - mt_rand(10, 100000);
-    db_update('users_field_data')
+    $account->login = \Drupal::time()->getRequestTime() - mt_rand(10, 100000);
+    Database::getConnection()->update('users_field_data')
       ->fields(['login' => $account->getLastLoginTime()])
       ->condition('uid', $account->id())
       ->execute();
@@ -84,14 +81,14 @@ class UserPasswordResetTest extends WebDriverTestBase {
     $this->drupalGet('user/password');
 
     // Reset the password by username via the password reset page.
-    $edit['name'] = $this->account->getUsername();
-    $this->drupalPostForm(NULL, $edit, t('Submit'));
+    $edit['name'] = $this->account->getAccountName();
+    $this->submitForm($edit, 'Submit');
 
     $resetURL = $this->getResetURL();
     $this->drupalGet($resetURL);
 
     // Login
-    $this->drupalPostForm(NULL, NULL, t('Log in'));
+    $this->submitForm([], 'Log in');
 
     // Generate file.
     $image_file = current($this->drupalGetTestFiles('image'));
@@ -102,12 +99,12 @@ class UserPasswordResetTest extends WebDriverTestBase {
     $this->assertSession()->waitForButton('Remove');
 
     // Change the forgotten password.
-    $password = user_password();
+    $password = \Drupal::service('password_generator')->generate();
     $edit = ['pass[pass1]' => $password, 'pass[pass2]' => $password];
-    $this->drupalPostForm(NULL, $edit, t('Save'));
+    $this->submitForm($edit, 'Save');
 
     // Verify that the password reset session has been destroyed.
-    $this->drupalPostForm(NULL, $edit, t('Save'));
+    $this->submitForm($edit, 'Save');
     // Password needed to make profile changes.
     $this->assertSession()->pageTextContains("Your current password is missing or incorrect; it's required to change the Password.");
   }

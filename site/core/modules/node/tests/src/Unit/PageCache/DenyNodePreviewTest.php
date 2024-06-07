@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\node\Unit\PageCache;
 
 use Drupal\Core\PageCache\ResponsePolicyInterface;
@@ -38,12 +40,17 @@ class DenyNodePreviewTest extends UnitTestCase {
   /**
    * The current route match.
    *
-   * @var \Drupal\Core\Routing\RouteMatch|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Routing\RouteMatch|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $routeMatch;
 
-  protected function setUp() {
-    $this->routeMatch = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
+    $this->routeMatch = $this->createMock('Drupal\Core\Routing\RouteMatchInterface');
     $this->policy = new DenyNodePreview($this->routeMatch);
     $this->response = new Response();
     $this->request = new Request();
@@ -58,7 +65,7 @@ class DenyNodePreviewTest extends UnitTestCase {
   public function testPrivateImageStyleDownloadPolicy($expected_result, $route_name) {
     $this->routeMatch->expects($this->once())
       ->method('getRouteName')
-      ->will($this->returnValue($route_name));
+      ->willReturn($route_name);
 
     $actual_result = $this->policy->check($this->response, $this->request);
     $this->assertSame($expected_result, $actual_result);

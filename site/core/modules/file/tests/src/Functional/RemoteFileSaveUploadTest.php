@@ -6,6 +6,7 @@ namespace Drupal\Tests\file\Functional;
  * Tests the file uploading functions.
  *
  * @group file
+ * @group #slow
  */
 class RemoteFileSaveUploadTest extends SaveUploadTest {
 
@@ -14,9 +15,17 @@ class RemoteFileSaveUploadTest extends SaveUploadTest {
    *
    * @var array
    */
-  public static $modules = ['file_test'];
+  protected static $modules = ['file_test'];
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->config('system.file')->set('default_scheme', 'dummy-remote')->save();
   }

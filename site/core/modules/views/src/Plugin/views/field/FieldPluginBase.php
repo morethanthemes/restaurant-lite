@@ -13,6 +13,8 @@ use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\views\ResultRow;
 use Drupal\views\ViewExecutable;
+use Twig\Environment;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * @defgroup views_field_handlers Views field handler plugins
@@ -52,12 +54,14 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
 
   /**
    * Indicator of the renderText() method for rendering a single item.
+   *
    * (If no render_item() is present).
    */
   const RENDER_TEXT_PHASE_SINGLE_ITEM = 0;
 
   /**
    * Indicator of the renderText() method for rendering the whole element.
+   *
    * (if no render_item() method is available).
    */
   const RENDER_TEXT_PHASE_COMPLETELY = 1;
@@ -102,6 +106,21 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    * @var \Drupal\Core\Render\RendererInterface
    */
   protected $renderer;
+
+  /**
+   * The last rendered value.
+   */
+  public string|MarkupInterface|NULL $last_render;
+
+  /**
+   * The last rendered text.
+   */
+  public string|MarkupInterface|NULL $last_render_text;
+
+  /**
+   * The last rendered tokens.
+   */
+  public array $last_tokens;
 
   /**
    * Keeps track of the last render index.
@@ -186,7 +205,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
 
           if (empty($table_alias)) {
             trigger_error(sprintf(
-              "Handler % tried to add additional_field %s but % could not be added!",
+              "Handler %s tried to add additional_field %s but %s could not be added!",
               $this->definition['id'],
               $identifier,
               $info['table']
@@ -227,7 +246,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    * {@inheritdoc}
    */
   public function clickSortable() {
-    return isset($this->definition['click sortable']) ? $this->definition['click sortable'] : TRUE;
+    return $this->definition['click sortable'] ?? TRUE;
   }
 
   /**
@@ -341,7 +360,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    * {@inheritdoc}
    */
   public function tokenizeValue($value, $row_index = NULL) {
-    if (strpos($value, '{{') !== FALSE) {
+    if (str_contains($value, '{{')) {
       $fake_item = [
         'alter_text' => TRUE,
         'text' => $value,
@@ -401,12 +420,35 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    */
   public function getEntity(ResultRow $values) {
     $relationship_id = $this->options['relationship'];
+    $entity = NULL;
     if ($relationship_id == 'none') {
-      return $values->_entity;
+      $entity = $values->_entity;
     }
     elseif (isset($values->_relationship_entities[$relationship_id])) {
-      return $values->_relationship_entities[$relationship_id];
+      $entity = $values->_relationship_entities[$relationship_id];
     }
+
+    if ($entity === NULL) {
+      // Don't log an error if we're getting an entity for an optional
+      // relationship.
+      if ($relationship_id !== 'none') {
+        $relationship = $this->view->relationship[$relationship_id] ?? NULL;
+        if ($relationship && !$relationship->options['required']) {
+          return NULL;
+        }
+      }
+      \Drupal::logger('views')->error(
+        'The view %id failed to load an entity of type %entity_type at row %index for field %field',
+        [
+          '%id' => $this->view->id(),
+          '%entity_type' => $this->configuration['entity_type'],
+          '%index' => $values->index,
+          '%field' => $this->label() ?: $this->realField,
+        ]
+      );
+      return NULL;
+    }
+    return $entity;
   }
 
   /**
@@ -514,8 +556,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
   }
 
   /**
-   * Default options form that provides the label widget that all fields
-   * should have.
+   * Default option form that provides label widget that all fields should have.
    */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
@@ -586,7 +627,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
 
     $form['element_class_enable'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Create a CSS class'),
+      '#title' => $this->t('Add HTML class'),
       '#states' => [
         'visible' => [
           ':input[name="options[element_type_enable]"]' => ['checked' => TRUE],
@@ -617,7 +658,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     ];
     $form['element_label_type'] = [
       '#title' => $this->t('Label HTML element'),
-      '#options' => $this->getElements(FALSE),
+      '#options' => $this->getElements(),
       '#type' => 'select',
       '#default_value' => $this->options['element_label_type'],
       '#description' => $this->t('Choose the HTML element to wrap around this label, e.g. H1, H2, etc.'),
@@ -630,7 +671,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     ];
     $form['element_label_class_enable'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Create a CSS class'),
+      '#title' => $this->t('Add HTML class'),
       '#states' => [
         'visible' => [
           ':input[name="options[element_label_type_enable]"]' => ['checked' => TRUE],
@@ -661,7 +702,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     ];
     $form['element_wrapper_type'] = [
       '#title' => $this->t('Wrapper HTML element'),
-      '#options' => $this->getElements(FALSE),
+      '#options' => $this->getElements(),
       '#type' => 'select',
       '#default_value' => $this->options['element_wrapper_type'],
       '#description' => $this->t('Choose the HTML element to wrap around this field and label, e.g. H1, H2, etc. This may not be used if the field and label are not rendered together, such as with a table.'),
@@ -675,7 +716,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
 
     $form['element_wrapper_class_enable'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Create a CSS class'),
+      '#title' => $this->t('Add HTML class'),
       '#states' => [
         'visible' => [
           ':input[name="options[element_wrapper_type_enable]"]' => ['checked' => TRUE],
@@ -724,7 +765,11 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
         '#title' => $this->t('Text'),
         '#type' => 'textarea',
         '#default_value' => $this->options['alter']['text'],
-        '#description' => $this->t('The text to display for this field. You may include HTML or <a href=":url">Twig</a>. You may enter data from this view as per the "Replacement patterns" below.', [':url' => CoreUrl::fromUri('http://twig.sensiolabs.org/documentation')->toString()]),
+        // The tag list will be escaped.
+        '#description' => $this->t('The text to display for this field. You may enter data from this view as per the "Replacement patterns" below. You may include <a href="@twig_docs">Twig</a> or the following allowed HTML tags: <code>@tags</code>', [
+          '@twig_docs' => 'https://twig.symfony.com/doc/' . Environment::MAJOR_VERSION . '.x',
+          '@tags' => '<' . implode('> <', Xss::getAdminTagList()) . '>',
+        ]),
         '#states' => [
           'visible' => [
             ':input[name="options[alter][alter_text]"]' => ['checked' => TRUE],
@@ -869,8 +914,8 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
 
       // Setup the tokens for fields.
       $previous = $this->getPreviousFieldLabels();
-      $optgroup_arguments = (string) t('Arguments');
-      $optgroup_fields = (string) t('Fields');
+      $optgroup_arguments = (string) $this->t('Arguments');
+      $optgroup_fields = (string) $this->t('Fields');
       foreach ($previous as $id => $label) {
         $options[$optgroup_fields]["{{ $id }}"] = substr(strrchr($label, ":"), 2);
       }
@@ -1103,7 +1148,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
   }
 
   /**
-   * Provide extra data to the administration form
+   * Provide extra data to the administration form.
    */
   public function adminSummary() {
     return $this->label();
@@ -1157,7 +1202,6 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
     }
 
     if ($this->allowAdvancedRender()) {
-      $tokens = NULL;
       if ($this instanceof MultiItemsFieldHandlerInterface) {
         $items = [];
         foreach ($raw_items as $count => $item) {
@@ -1292,7 +1336,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
         // well.
         $base_path = base_path();
         // Checks whether the path starts with the base_path.
-        if (strpos($more_link_path, $base_path) === 0) {
+        if (str_starts_with($more_link_path, $base_path)) {
           $more_link_path = mb_substr($more_link_path, mb_strlen($base_path));
         }
 
@@ -1361,7 +1405,6 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    *     - word_boundary: Trim only on a word boundary.
    *     - ellipsis: Show an ellipsis (…) at the end of the trimmed string.
    *     - html: Make sure that the html is correct.
-   *
    * @param string $value
    *   The string which should be trimmed.
    *
@@ -1378,8 +1421,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
   }
 
   /**
-   * Render this field as a link, with the info from a fieldset set by
-   * the user.
+   * Render this field as a link, with the info from a fieldset set by the user.
    */
   protected function renderAsLink($alter, $text, $tokens) {
     $options = [
@@ -1413,7 +1455,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       // Tokens might have resolved URL's, as is the case for tokens provided by
       // Link fields, so all internal paths will be prefixed by base_path(). For
       // proper further handling reset this to internal:/.
-      if (strpos($path, base_path()) === 0) {
+      if (str_starts_with($path, base_path())) {
         $path = 'internal:/' . substr($path, strlen(base_path()));
       }
 
@@ -1424,11 +1466,11 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       }
 
       // If no scheme is provided in the $path, assign the default 'http://'.
-      // This allows a url of 'www.example.com' to be converted to
+      // This allows a URL of 'www.example.com' to be converted to
       // 'http://www.example.com'.
       // Only do this when flag for external has been set, $path doesn't contain
       // a scheme and $path doesn't have a leading /.
-      if ($alter['external'] && !parse_url($path, PHP_URL_SCHEME) && strpos($path, '/') !== 0) {
+      if ($alter['external'] && !parse_url($path, PHP_URL_SCHEME) && !str_starts_with($path, '/')) {
         // There is no scheme, add the default 'http://' to the $path.
         $path = "http://" . $path;
       }
@@ -1472,7 +1514,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       return $text;
     }
 
-    // If we get to here we have a path from the url parsing. So assign that to
+    // If we get to here we have a path from the URL parsing. So assign that to
     // $path now so we don't get query strings or fragments in the path.
     $path = $url['path'];
 
@@ -1556,7 +1598,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       $options['language'] = $alter['language'];
     }
 
-    // If the url came from entity_uri(), pass along the required options.
+    // If the URL came from entity_uri(), pass along the required options.
     if (isset($alter['entity'])) {
       $options['entity'] = $alter['entity'];
     }
@@ -1658,36 +1700,41 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    *     'foo' => array(
    *       'a' => 'value',
    *       'b' => 'value',
+   *       'c.d' => 'invalid value',
+   *       '&invalid' => 'invalid value',
    *     ),
    *     'bar' => array(
    *       'a' => 'value',
    *       'b' => array(
-   *         'c' => value,
+   *         'c' => 'value',
    *       ),
    *     ),
    *   );
    *
    * Would yield the following array of tokens:
    *   array(
-   *     '%foo_a' => 'value'
-   *     '%foo_b' => 'value'
-   *     '%bar_a' => 'value'
-   *     '%bar_b_c' => 'value'
+   *     '{{ arguments.foo.a }}' => 'value',
+   *     '{{ arguments.foo.b }}' => 'value',
+   *     '{{ arguments.bar.a }}' => 'value',
+   *     '{{ arguments.bar.b.c }}' => 'value',
    *   );
    *
    * @param $array
    *   An array of values.
-   *
    * @param $parent_keys
    *   An array of parent keys. This will represent the array depth.
    *
-   * @return
+   * @return array
    *   An array of available tokens, with nested keys representative of the array structure.
    */
   protected function getTokenValuesRecursive(array $array, array $parent_keys = []) {
     $tokens = [];
 
     foreach ($array as $param => $val) {
+      if (!is_numeric($param) && preg_match('/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/', $param) === 0) {
+        // Skip as the parameter is not a valid Twig variable name.
+        continue;
+      }
       if (is_array($val)) {
         // Copy parent_keys array, so we don't affect other elements of this
         // iteration.
@@ -1789,7 +1836,6 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
    *     - word_boundary: Trim only on a word boundary.
    *     - ellipsis: Show an ellipsis (…) at the end of the trimmed string.
    *     - html: Make sure that the html is correct.
-   *
    * @param string $value
    *   The string which should be trimmed.
    *
@@ -1816,7 +1862,7 @@ abstract class FieldPluginBase extends HandlerBase implements FieldHandlerInterf
       $value = rtrim(preg_replace('/(?:<(?!.+>)|&(?!.+;)).*$/us', '', $value));
 
       if (!empty($alter['ellipsis'])) {
-        $value .= t('…');
+        $value .= new TranslatableMarkup('…');
       }
     }
     if (!empty($alter['html'])) {

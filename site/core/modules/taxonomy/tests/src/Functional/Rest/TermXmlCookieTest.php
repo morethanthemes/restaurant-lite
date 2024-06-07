@@ -7,6 +7,7 @@ use Drupal\Tests\rest\Functional\EntityResource\XmlEntityNormalizationQuirksTrai
 
 /**
  * @group rest
+ * @group #slow
  */
 class TermXmlCookieTest extends TermResourceTestBase {
 
@@ -17,6 +18,11 @@ class TermXmlCookieTest extends TermResourceTestBase {
    * {@inheritdoc}
    */
   protected static $format = 'xml';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * {@inheritdoc}

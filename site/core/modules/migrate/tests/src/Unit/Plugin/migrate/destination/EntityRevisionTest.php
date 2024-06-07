@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\migrate\Unit\Plugin\migrate\destination;
 
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
+use Drupal\Core\Session\AccountSwitcherInterface;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\Plugin\migrate\destination\EntityRevision;
@@ -22,7 +24,7 @@ class EntityRevisionTest extends EntityTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->migration = $this->prophesize(MigrationInterface::class);
@@ -33,8 +35,6 @@ class EntityRevisionTest extends EntityTestBase {
     $this->entityType->getPluralLabel()->willReturn('bar');
     $this->storage->getEntityType()->willReturn($this->entityType->reveal());
     $this->storage->getEntityTypeId()->willReturn('foo');
-
-    $this->entityManager = $this->prophesize(EntityManagerInterface::class);
   }
 
   /**
@@ -43,7 +43,7 @@ class EntityRevisionTest extends EntityTestBase {
   public function testUnrevisionable() {
     $this->entityType->getKey('id')->willReturn('id');
     $this->entityType->getKey('revision')->willReturn('');
-    $this->entityManager->getBaseFieldDefinitions('foo')
+    $this->entityFieldManager->getBaseFieldDefinitions('foo')
       ->willReturn([
         'id' => BaseFieldDefinitionTest::create('integer'),
       ]);
@@ -55,10 +55,12 @@ class EntityRevisionTest extends EntityTestBase {
       $this->migration->reveal(),
       $this->storage->reveal(),
       [],
-      $this->entityManager->reveal(),
-      $this->prophesize(FieldTypePluginManagerInterface::class)->reveal()
+      $this->entityFieldManager->reveal(),
+      $this->prophesize(FieldTypePluginManagerInterface::class)->reveal(),
+      $this->prophesize(AccountSwitcherInterface::class)->reveal()
     );
-    $this->setExpectedException(MigrateException::class, 'The "foo" entity type does not support revisions.');
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage('The "foo" entity type does not support revisions.');
     $destination->getIds();
   }
 
@@ -69,7 +71,7 @@ class EntityRevisionTest extends EntityTestBase {
     $this->entityType->getKey('id')->willReturn('id');
     $this->entityType->getKey('revision')->willReturn('vid');
     $this->entityType->getKey('langcode')->willReturn('');
-    $this->entityManager->getBaseFieldDefinitions('foo')
+    $this->entityFieldManager->getBaseFieldDefinitions('foo')
       ->willReturn([
         'id' => BaseFieldDefinitionTest::create('integer'),
         'vid' => BaseFieldDefinitionTest::create('integer'),
@@ -82,10 +84,12 @@ class EntityRevisionTest extends EntityTestBase {
       $this->migration->reveal(),
       $this->storage->reveal(),
       [],
-      $this->entityManager->reveal(),
-      $this->prophesize(FieldTypePluginManagerInterface::class)->reveal()
+      $this->entityFieldManager->reveal(),
+      $this->prophesize(FieldTypePluginManagerInterface::class)->reveal(),
+      $this->prophesize(AccountSwitcherInterface::class)->reveal()
     );
-    $this->setExpectedException(MigrateException::class, 'The "foo" entity type does not support translations.');
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage('The "foo" entity type does not support translations.');
     $destination->getIds();
   }
 

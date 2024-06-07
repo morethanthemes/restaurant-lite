@@ -17,7 +17,7 @@ class MigrationTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['migrate'];
+  protected static $modules = ['migrate', 'migrate_expected_migrations_test'];
 
   /**
    * Tests Migration::getProcessPlugins()
@@ -36,8 +36,68 @@ class MigrationTest extends KernelTestBase {
    */
   public function testGetProcessPluginsException() {
     $migration = \Drupal::service('plugin.manager.migration')->createStubMigration([]);
-    $this->setExpectedException(MigrateException::class, 'Invalid process configuration for foobar');
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage('Invalid process configuration for foobar');
     $migration->getProcessPlugins(['foobar' => ['plugin' => 'get']]);
+  }
+
+  /**
+   * Tests Migration::getProcessPlugins()
+   *
+   * @param array $process
+   *   The migration process pipeline.
+   *
+   * @covers ::getProcessPlugins
+   *
+   * @dataProvider getProcessPluginsExceptionMessageProvider
+   */
+  public function testGetProcessPluginsExceptionMessage(array $process) {
+    // Test with an invalid process pipeline.
+    $plugin_definition = [
+      'id' => 'foo',
+      'process' => $process,
+    ];
+
+    reset($process);
+    $destination = key(($process));
+
+    $migration = \Drupal::service('plugin.manager.migration')
+      ->createStubMigration($plugin_definition);
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage("Invalid process for destination '$destination' in migration 'foo'");
+    $migration->getProcessPlugins();
+  }
+
+  /**
+   * Provides data for testing invalid process pipeline.
+   */
+  public function getProcessPluginsExceptionMessageProvider() {
+    return [
+      [
+        'Null' =>
+          [
+            'dest' => NULL,
+          ],
+      ],
+      [
+        'boolean' =>
+          [
+            'dest' => TRUE,
+          ],
+      ],
+      [
+        'integer' =>
+          [
+            'dest' => 2370,
+          ],
+      ],
+      [
+        'float' =>
+          [
+            'dest' => 1.61,
+          ],
+      ],
+    ];
   }
 
   /**
@@ -48,6 +108,8 @@ class MigrationTest extends KernelTestBase {
   public function testGetMigrationDependencies() {
     $plugin_manager = \Drupal::service('plugin.manager.migration');
     $plugin_definition = [
+      'id' => 'foo',
+      'deriver' => 'fooDeriver',
       'process' => [
         'f1' => 'bar',
         'f2' => [
@@ -85,10 +147,14 @@ class MigrationTest extends KernelTestBase {
             ],
           ],
         ],
+        'f7' => [
+          'plugin' => 'migration_lookup',
+          'migration' => 'foo',
+        ],
       ],
     ];
     $migration = $plugin_manager->createStubMigration($plugin_definition);
-    $this->assertSame(['required' => [], 'optional' => ['m1', 'm2', 'm3', 'm4', 'm5']], $migration->getMigrationDependencies());
+    $this->assertSame(['required' => [], 'optional' => ['m1', 'm2', 'm3', 'm4', 'm5']], $migration->getMigrationDependencies(TRUE));
   }
 
   /**
@@ -108,8 +174,13 @@ class MigrationTest extends KernelTestBase {
    *
    * @covers ::getTrackLastImported
    * @covers ::isTrackLastImported
+   *
+   * @group legacy
    */
   public function testGetTrackLastImported() {
+    $this->expectDeprecation('Drupal\migrate\Plugin\Migration::setTrackLastImported() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. There is no replacement. See https://www.drupal.org/node/3282894');
+    $this->expectDeprecation('Drupal\migrate\Plugin\Migration::getTrackLastImported() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. There is no replacement. See https://www.drupal.org/node/3282894');
+    $this->expectDeprecation('Drupal\migrate\Plugin\Migration::isTrackLastImported() is deprecated in drupal:10.1.0 and is removed from drupal:11.0.0. There is no replacement. See https://www.drupal.org/node/3282894');
     $migration = \Drupal::service('plugin.manager.migration')->createStubMigration([]);
     $migration->setTrackLastImported(TRUE);
     $this->assertEquals(TRUE, $migration->getTrackLastImported());
@@ -123,7 +194,8 @@ class MigrationTest extends KernelTestBase {
    */
   public function testGetDestinationPlugin() {
     $migration = \Drupal::service('plugin.manager.migration')->createStubMigration(['destination' => ['no_stub' => TRUE]]);
-    $this->setExpectedException(MigrateSkipRowException::class, "Stub requested but not made because no_stub configuration is set.");
+    $this->expectException(MigrateSkipRowException::class);
+    $this->expectExceptionMessage("Stub requested but not made because no_stub configuration is set.");
     $migration->getDestinationPlugin(TRUE);
   }
 

@@ -8,7 +8,7 @@ use Drupal\Tests\SchemaCheckTestTrait;
 /**
  * Tests the migration of Book settings.
  *
- * @group migrate_drupal_7
+ * @group book
  */
 class MigrateBookConfigsTest extends MigrateDrupal7TestBase {
 
@@ -17,14 +17,21 @@ class MigrateBookConfigsTest extends MigrateDrupal7TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['book', 'node'];
+  protected static $modules = ['book', 'node'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->executeMigration('book_settings');
+  }
+
+  /**
+   * Gets the path to the fixture file.
+   */
+  protected function getFixtureFilePath() {
+    return __DIR__ . '/../../../../fixtures/drupal7.php';
   }
 
   /**

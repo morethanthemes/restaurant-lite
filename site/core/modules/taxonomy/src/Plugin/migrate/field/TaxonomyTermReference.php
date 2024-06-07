@@ -5,6 +5,8 @@ namespace Drupal\taxonomy\Plugin\migrate\field;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate_drupal\Plugin\migrate\field\FieldPluginBase;
 
+// cspeLL:ignore entityreference
+
 /**
  * @MigrateField(
  *   id = "taxonomy_term_reference",
@@ -24,6 +26,11 @@ class TaxonomyTermReference extends FieldPluginBase {
   public function getFieldFormatterMap() {
     return [
       'taxonomy_term_reference_link' => 'entity_reference_label',
+      'taxonomy_term_reference_plain' => 'entity_reference_label',
+      'taxonomy_term_reference_rss_category' => 'entity_reference_label',
+      'i18n_taxonomy_term_reference_link' => 'entity_reference_label',
+      'i18n_taxonomy_term_reference_plain' => 'entity_reference_label',
+      'entityreference_entity_view' => 'entity_reference_entity_view',
     ];
   }
 

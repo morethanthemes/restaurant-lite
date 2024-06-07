@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Routing;
 
 use Drupal\Core\Routing\MethodFilter;
@@ -56,7 +58,7 @@ class MethodFilterTest extends UnitTestCase {
     $collection = new RouteCollection();
     $collection->add('test_route.get', new Route('/test', [], [], [], '', [], ['GET']));
 
-    $this->setExpectedException(MethodNotAllowedException::class);
+    $this->expectException(MethodNotAllowedException::class);
 
     $method_filter = new MethodFilter();
     $method_filter->filter($collection, $request);
@@ -72,7 +74,7 @@ class MethodFilterTest extends UnitTestCase {
     $collection->add('test_route2.get', new Route('/test', [], [], [], '', [], ['GET']));
     $collection->add('test_route3.get', new Route('/test', [], [], [], '', [], ['GET']));
 
-    $this->setExpectedException(MethodNotAllowedException::class);
+    $this->expectException(MethodNotAllowedException::class);
 
     $method_filter = new MethodFilter();
     $method_filter->filter($collection, $request);

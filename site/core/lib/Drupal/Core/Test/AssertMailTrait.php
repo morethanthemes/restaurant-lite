@@ -2,6 +2,8 @@
 
 namespace Drupal\Core\Test;
 
+use Drupal\Component\Render\FormattableMarkup;
+
 /**
  * Provides methods for testing emails sent during test runs.
  */
@@ -48,19 +50,17 @@ trait AssertMailTrait {
    *   messages: use \Drupal\Component\Render\FormattableMarkup to embed
    *   variables in the message text, not t(). If left blank, a default message
    *   will be displayed.
-   * @param string $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Email'; most tests do not override
-   *   this default.
    *
    * @return bool
-   *   TRUE on pass, FALSE on fail.
+   *   TRUE on pass.
    */
-  protected function assertMail($name, $value = '', $message = '', $group = 'Email') {
+  protected function assertMail($name, $value = '', $message = '') {
     $captured_emails = $this->container->get('state')->get('system.test_mail_collector') ?: [];
     $email = end($captured_emails);
-    return $this->assertTrue($email && isset($email[$name]) && $email[$name] == $value, $message, $group);
+    $this->assertIsArray($email, $message);
+    $this->assertArrayHasKey($name, $email, $message);
+    $this->assertEquals($value, $email[$name], $message);
+    return TRUE;
   }
 
   /**
@@ -77,16 +77,8 @@ trait AssertMailTrait {
    *   messages: use \Drupal\Component\Render\FormattableMarkup to embed
    *   variables in the message text, not t(). If left blank, a default message
    *   will be displayed.
-   * @param string $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
    */
-  protected function assertMailString($field_name, $string, $email_depth, $message = '', $group = 'Other') {
+  protected function assertMailString($field_name, $string, $email_depth, $message = '') {
     $mails = $this->getMails();
     $string_found = FALSE;
     // Cast MarkupInterface objects to string.
@@ -97,15 +89,15 @@ trait AssertMailTrait {
       // done. Any run of whitespace becomes a single space.
       $normalized_mail = preg_replace('/\s+/', ' ', $mail[$field_name]);
       $normalized_string = preg_replace('/\s+/', ' ', $string);
-      $string_found = (FALSE !== strpos($normalized_mail, $normalized_string));
+      $string_found = str_contains($normalized_mail, $normalized_string);
       if ($string_found) {
         break;
       }
     }
     if (!$message) {
-      $message = format_string('Expected text found in @field of email message: "@expected".', ['@field' => $field_name, '@expected' => $string]);
+      $message = new FormattableMarkup('Expected text found in @field of email message: "@expected".', ['@field' => $field_name, '@expected' => $string]);
     }
-    return $this->assertTrue($string_found, $message, $group);
+    $this->assertTrue($string_found, $message);
   }
 
   /**
@@ -120,37 +112,15 @@ trait AssertMailTrait {
    *   messages: use \Drupal\Component\Render\FormattableMarkup to embed
    *   variables in the message text, not t(). If left blank, a default message
    *   will be displayed.
-   * @param string $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return bool
-   *   TRUE on pass, FALSE on fail.
    */
-  protected function assertMailPattern($field_name, $regex, $message = '', $group = 'Other') {
+  protected function assertMailPattern($field_name, $regex, $message = '') {
     $mails = $this->getMails();
     $mail = end($mails);
     $regex_found = preg_match("/$regex/", $mail[$field_name]);
     if (!$message) {
-      $message = format_string('Expected text found in @field of email message: "@expected".', ['@field' => $field_name, '@expected' => $regex]);
+      $message = new FormattableMarkup('Expected text found in @field of email message: "@expected".', ['@field' => $field_name, '@expected' => $regex]);
     }
-    return $this->assertTrue($regex_found, $message, $group);
-  }
-
-  /**
-   * Outputs to verbose the most recent $count emails sent.
-   *
-   * @param int $count
-   *   Optional number of emails to output.
-   */
-  protected function verboseEmail($count = 1) {
-    $mails = $this->getMails();
-    for ($i = count($mails) - 1; $i >= count($mails) - $count && $i >= 0; $i--) {
-      $mail = $mails[$i];
-      $this->verbose('Email:<pre>' . print_r($mail, TRUE) . '</pre>');
-    }
+    $this->assertTrue((bool) $regex_found, $message);
   }
 
 }

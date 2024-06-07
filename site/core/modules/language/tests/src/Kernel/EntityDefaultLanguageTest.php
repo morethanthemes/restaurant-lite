@@ -18,26 +18,34 @@ class EntityDefaultLanguageTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['language', 'node', 'field', 'text', 'user', 'system'];
+  protected static $modules = [
+    'language',
+    'node',
+    'field',
+    'text',
+    'user',
+    'system',
+  ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installEntitySchema('user');
 
     // Activate Spanish language, so there are two languages activated.
-    $language = $this->container->get('entity.manager')->getStorage('configurable_language')->create([
+    $language = $this->container->get('entity_type.manager')->getStorage('configurable_language')->create([
       'id' => 'es',
+      'label' => 'Spanish',
     ]);
     $language->save();
 
     // Create a new content type which has Undefined language by default.
-    $this->createContentType('ctund', LanguageInterface::LANGCODE_NOT_SPECIFIED);
+    $this->createContentType('content_und', LanguageInterface::LANGCODE_NOT_SPECIFIED);
     // Create a new content type which has Spanish language by default.
-    $this->createContentType('ctes', 'es');
+    $this->createContentType('content_es', 'es');
   }
 
   /**
@@ -47,24 +55,24 @@ class EntityDefaultLanguageTest extends KernelTestBase {
     // With language module activated, and a content type that is configured to
     // have no language by default, a new node of this content type will have
     // "und" language code when language is not specified.
-    $node = $this->createNode('ctund');
-    $this->assertEqual($node->langcode->value, LanguageInterface::LANGCODE_NOT_SPECIFIED);
+    $node = $this->createNode('content_und');
+    $this->assertEquals(LanguageInterface::LANGCODE_NOT_SPECIFIED, $node->langcode->value);
     // With language module activated, and a content type that is configured to
     // have no language by default, a new node of this content type will have
     // "es" language code when language is specified as "es".
-    $node = $this->createNode('ctund', 'es');
-    $this->assertEqual($node->langcode->value, 'es');
+    $node = $this->createNode('content_und', 'es');
+    $this->assertEquals('es', $node->langcode->value);
 
     // With language module activated, and a content type that is configured to
     // have language "es" by default, a new node of this content type will have
     // "es" language code when language is not specified.
-    $node = $this->createNode('ctes');
-    $this->assertEqual($node->langcode->value, 'es');
+    $node = $this->createNode('content_es');
+    $this->assertEquals('es', $node->langcode->value);
     // With language module activated, and a content type that is configured to
     // have language "es" by default, a new node of this content type will have
     // "en" language code when language "en" is specified.
-    $node = $this->createNode('ctes', 'en');
-    $this->assertEqual($node->langcode->value, 'en');
+    $node = $this->createNode('content_es', 'en');
+    $this->assertEquals('en', $node->langcode->value);
 
     // Disable language module.
     $this->disableModules(['language']);
@@ -72,24 +80,24 @@ class EntityDefaultLanguageTest extends KernelTestBase {
     // With language module disabled, and a content type that is configured to
     // have no language specified by default, a new node of this content type
     // will have site's default language code when language is not specified.
-    $node = $this->createNode('ctund');
-    $this->assertEqual($node->langcode->value, 'en');
+    $node = $this->createNode('content_und');
+    $this->assertEquals('en', $node->langcode->value);
     // With language module disabled, and a content type that is configured to
     // have no language specified by default, a new node of this type will have
     // "es" language code when language "es" is specified.
-    $node = $this->createNode('ctund', 'es');
-    $this->assertEqual($node->langcode->value, 'es');
+    $node = $this->createNode('content_und', 'es');
+    $this->assertEquals('es', $node->langcode->value);
 
     // With language module disabled, and a content type that is configured to
     // have language "es" by default, a new node of this type will have site's
     // default language code when language is not specified.
-    $node = $this->createNode('ctes');
-    $this->assertEqual($node->langcode->value, 'en');
+    $node = $this->createNode('content_es');
+    $this->assertEquals('en', $node->langcode->value);
     // With language module disabled, and a content type that is configured to
     // have language "es" by default, a new node of this type will have "en"
     // language code when language "en" is specified.
-    $node = $this->createNode('ctes', 'en');
-    $this->assertEqual($node->langcode->value, 'en');
+    $node = $this->createNode('content_es', 'en');
+    $this->assertEquals('en', $node->langcode->value);
   }
 
   /**
@@ -101,7 +109,7 @@ class EntityDefaultLanguageTest extends KernelTestBase {
    *   Default language code of the nodes of this type.
    */
   protected function createContentType($name, $langcode) {
-    $content_type = $this->container->get('entity.manager')->getStorage('node_type')->create([
+    $content_type = $this->container->get('entity_type.manager')->getStorage('node_type')->create([
       'name' => 'Test ' . $name,
       'title_label' => 'Title',
       'type' => $name,
@@ -134,7 +142,7 @@ class EntityDefaultLanguageTest extends KernelTestBase {
     if (!empty($langcode)) {
       $values['langcode'] = $langcode;
     }
-    $node = $this->container->get('entity.manager')->getStorage('node')->create($values);
+    $node = $this->container->get('entity_type.manager')->getStorage('node')->create($values);
     return $node;
   }
 

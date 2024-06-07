@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\ban\Unit;
 
 use Drupal\ban\BanMiddleware;
@@ -17,14 +19,14 @@ class BanMiddlewareTest extends UnitTestCase {
   /**
    * The mocked wrapped kernel.
    *
-   * @var \Symfony\Component\HttpKernel\HttpKernelInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpKernel\HttpKernelInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $kernel;
 
   /**
    * The mocked ban IP manager.
    *
-   * @var \Drupal\ban\BanIpManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\ban\BanIpManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $banManager;
 
@@ -38,11 +40,11 @@ class BanMiddlewareTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
-    $this->kernel = $this->getMock('Symfony\Component\HttpKernel\HttpKernelInterface');
-    $this->banManager = $this->getMock('Drupal\ban\BanIpManagerInterface');
+    $this->kernel = $this->createMock('Symfony\Component\HttpKernel\HttpKernelInterface');
+    $this->banManager = $this->createMock('Drupal\ban\BanIpManagerInterface');
     $this->banMiddleware = new BanMiddleware($this->kernel, $this->banManager);
   }
 
@@ -78,10 +80,10 @@ class BanMiddlewareTest extends UnitTestCase {
 
     $request = Request::create('/test-path');
     $request->server->set('REMOTE_ADDR', $unbanned_ip);
-    $expected_response = new Response(200);
+    $expected_response = new Response(status: 200);
     $this->kernel->expects($this->once())
       ->method('handle')
-      ->with($request, HttpKernelInterface::MASTER_REQUEST, TRUE)
+      ->with($request, HttpKernelInterface::MAIN_REQUEST, TRUE)
       ->willReturn($expected_response);
 
     $response = $this->banMiddleware->handle($request);

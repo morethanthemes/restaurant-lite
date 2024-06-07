@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Annotation;
 
 use Drupal\Core\Annotation\Translation;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Tests\UnitTestCase;
+use Drupal\TestTools\Random;
 
 /**
  * @coversDefaultClass \Drupal\Core\Annotation\Translation
@@ -15,14 +18,16 @@ class TranslationTest extends UnitTestCase {
   /**
    * The translation manager used for testing.
    *
-   * @var \Drupal\Core\StringTranslation\TranslationInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\StringTranslation\TranslationInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $translationManager;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->translationManager = $this->getStringTranslationStub();
   }
 
@@ -36,11 +41,6 @@ class TranslationTest extends UnitTestCase {
     $container->set('string_translation', $this->translationManager);
     \Drupal::setContainer($container);
 
-    $arguments = isset($values['arguments']) ? $values['arguments'] : [];
-    $options = isset($values['context']) ? [
-      'context' => $values['context'],
-    ] : [];
-
     $annotation = new Translation($values);
 
     $this->assertSame($expected, (string) $annotation->get());
@@ -49,7 +49,7 @@ class TranslationTest extends UnitTestCase {
   /**
    * Provides data to self::testGet().
    */
-  public function providerTestGet() {
+  public static function providerTestGet() {
     $data = [];
     $data[] = [
       [
@@ -57,7 +57,7 @@ class TranslationTest extends UnitTestCase {
       ],
       'Foo',
     ];
-    $random = $this->randomMachineName();
+    $random = Random::machineName();
     $random_html_entity = '&' . $random;
     $data[] = [
       [
@@ -67,7 +67,7 @@ class TranslationTest extends UnitTestCase {
           '@baz' => $random_html_entity,
           '%qux' => $random_html_entity,
         ],
-        'context' => $this->randomMachineName(),
+        'context' => Random::machineName(),
       ],
       'Foo ' . $random . ' &amp;' . $random . ' <em class="placeholder">&amp;' . $random . '</em>',
     ];

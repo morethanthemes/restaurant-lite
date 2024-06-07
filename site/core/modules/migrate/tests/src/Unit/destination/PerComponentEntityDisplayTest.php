@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\migrate\Unit\destination\PerComponentEntityDisplayTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\migrate\Unit\destination;
 
@@ -53,6 +50,7 @@ class PerComponentEntityDisplayTest extends MigrateTestCase {
 class TestPerComponentEntityDisplay extends ComponentEntityDisplayBase {
   const MODE_NAME = 'view_mode';
   protected $testValues;
+  protected $entity;
 
   public function __construct($entity) {
     $this->entity = $entity;

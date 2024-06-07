@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Render\Element;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
@@ -33,7 +35,7 @@ class RenderElementTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->requestStack = new RequestStack();

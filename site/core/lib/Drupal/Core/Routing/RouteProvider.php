@@ -10,8 +10,6 @@ use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
 use Drupal\Core\State\StateInterface;
-use Symfony\Cmf\Component\Routing\PagedRouteCollection;
-use Symfony\Cmf\Component\Routing\PagedRouteProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
@@ -21,7 +19,7 @@ use Drupal\Core\Database\Connection;
 /**
  * A Route Provider front-end for all Drupal-stored routes.
  */
-class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProviderInterface, EventSubscriberInterface {
+class RouteProvider implements CacheableRouteProviderInterface, PreloadableRouteProviderInterface, EventSubscriberInterface {
 
   /**
    * The database connection from which to read route information.
@@ -99,6 +97,13 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
   const ROUTE_LOAD_CID_PREFIX = 'route_provider.route_load:';
 
   /**
+   * An array of cache key parts to be used for the route match cache.
+   *
+   * @var string[]
+   */
+  protected $extraCacheKeyParts = [];
+
+  /**
    * Constructs a new PathMatcher.
    *
    * @param \Drupal\Core\Database\Connection $connection
@@ -137,7 +142,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
    * RouteObjectInterface to link to a content document.
    *
    * This method may not throw an exception based on implementation specific
-   * restrictions on the url. That case is considered a not found - returning
+   * restrictions on the URL. That case is considered a not found - returning
    * an empty array. Exceptions are only used to abort the whole request in
    * case something is seriously broken, like the storage backend being down.
    *
@@ -150,7 +155,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
    *   A request against which to match.
    *
    * @return \Symfony\Component\Routing\RouteCollection
-   *   RouteCollection with all urls that could potentially match $request.
+   *   RouteCollection with all URLs that could potentially match $request.
    *   Empty collection if nothing can match. The collection will be sorted from
    *   highest to lowest fit (match of path parts) and then in ascending order
    *   by route name for routes with the same fit.
@@ -184,7 +189,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
   }
 
   /**
-   * Find the route using the provided route name (and parameters).
+   * Find the route using the provided route name.
    *
    * @param string $name
    *   The route name to fetch
@@ -221,7 +226,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
       }
       else {
         try {
-          $result = $this->connection->query('SELECT name, route FROM {' . $this->connection->escapeTable($this->tableName) . '} WHERE name IN ( :names[] )', [':names[]' => $routes_to_load]);
+          $result = $this->connection->query('SELECT [name], [route] FROM {' . $this->connection->escapeTable($this->tableName) . '} WHERE [name] IN ( :names[] )', [':names[]' => $routes_to_load]);
           $routes = $result->fetchAllKeyed();
 
           $this->cache->set($cid, $routes, Cache::PERMANENT, ['routes']);
@@ -305,7 +310,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
           $current .= $parts[$length - $j];
         }
         else {
-          // Bit zero means means wildcard.
+          // Bit zero means wildcard.
           $current .= '%';
         }
         // Unless we are at offset 0, add a slash.
@@ -344,7 +349,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
     // have a case-insensitive match from the incoming path to the lower case
     // pattern outlines from \Drupal\Core\Routing\RouteCompiler::compile().
     // @see \Drupal\Core\Routing\CompiledRoute::__construct()
-    $parts = preg_split('@/+@', mb_strtolower($path), NULL, PREG_SPLIT_NO_EMPTY);
+    $parts = preg_split('@/+@', mb_strtolower($path), -1, PREG_SPLIT_NO_EMPTY);
 
     $collection = new RouteCollection();
 
@@ -357,7 +362,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
     // trailing wildcard parts as long as the pattern matches, since we
     // dump the route pattern without those optional parts.
     try {
-      $routes = $this->connection->query("SELECT name, route, fit FROM {" . $this->connection->escapeTable($this->tableName) . "} WHERE pattern_outline IN ( :patterns[] ) AND number_parts >= :count_parts", [
+      $routes = $this->connection->query("SELECT [name], [route], [fit] FROM {" . $this->connection->escapeTable($this->tableName) . "} WHERE [pattern_outline] IN ( :patterns[] ) AND [number_parts] >= :count_parts", [
         ':patterns[]' => $ancestors,
         ':count_parts' => count($parts),
       ])
@@ -387,14 +392,24 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
     }
     // Reverse sort from highest to lowest fit. PHP should cast to int, but
     // the explicit cast makes this sort more robust against unexpected input.
-    return (int) $a['fit'] < (int) $b['fit'] ? 1 : -1;
+    return (int) $b['fit'] <=> (int) $a['fit'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getAllRoutes() {
-    return new PagedRouteCollection($this);
+    $select = $this->connection->select($this->tableName, 'router')
+      ->fields('router', ['name', 'route']);
+    $routes = $select->execute()->fetchAllKeyed();
+
+    $result = [];
+    foreach ($routes as $name => $route) {
+      $result[$name] = unserialize($route);
+    }
+
+    $array_object = new \ArrayObject($result);
+    return $array_object->getIterator();
   }
 
   /**
@@ -409,7 +424,7 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     $events[RoutingEvents::FINISHED][] = ['reset'];
     return $events;
   }
@@ -417,29 +432,8 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
   /**
    * {@inheritdoc}
    */
-  public function getRoutesPaged($offset, $length = NULL) {
-    $select = $this->connection->select($this->tableName, 'router')
-      ->fields('router', ['name', 'route']);
-
-    if (isset($length)) {
-      $select->range($offset, $length);
-    }
-
-    $routes = $select->execute()->fetchAllKeyed();
-
-    $result = [];
-    foreach ($routes as $name => $route) {
-      $result[$name] = unserialize($route);
-    }
-
-    return $result;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getRoutesCount() {
-    return $this->connection->query("SELECT COUNT(*) FROM {" . $this->connection->escapeTable($this->tableName) . "}")->fetchField();
+  public function addExtraCacheKeyPart($cache_key_provider, $cache_key_part) {
+    $this->extraCacheKeyParts[$cache_key_provider] = $cache_key_part;
   }
 
   /**
@@ -455,8 +449,17 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
     // Include the current language code in the cache identifier as
     // the language information can be elsewhere than in the path, for example
     // based on the domain.
-    $language_part = $this->getCurrentLanguageCacheIdPart();
-    return 'route:' . $language_part . ':' . $request->getPathInfo() . ':' . $request->getQueryString();
+    $this->addExtraCacheKeyPart('language', $this->getCurrentLanguageCacheIdPart());
+
+    // Sort the cache key parts by their provider in order to have predictable
+    // cache keys.
+    ksort($this->extraCacheKeyParts);
+    $key_parts = [];
+    foreach ($this->extraCacheKeyParts as $provider => $key_part) {
+      $key_parts[] = '[' . $provider . ']=' . $key_part;
+    }
+
+    return 'route:' . implode(':', $key_parts) . ':' . $request->getPathInfo() . ':' . $request->getQueryString();
   }
 
   /**
@@ -467,8 +470,8 @@ class RouteProvider implements PreloadableRouteProviderInterface, PagedRouteProv
    */
   protected function getCurrentLanguageCacheIdPart() {
     // This must be in sync with the language logic in
-    // \Drupal\Core\PathProcessor\PathProcessorAlias::processInbound() and
-    // \Drupal\Core\Path\AliasManager::getPathByAlias().
+    // \Drupal\path_alias\PathProcessor\AliasPathProcessor::processInbound() and
+    // \Drupal\path_alias\AliasManager::getPathByAlias().
     // @todo Update this if necessary in https://www.drupal.org/node/1125428.
     return $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_URL)->getId();
   }

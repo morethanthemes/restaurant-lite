@@ -27,7 +27,8 @@ use Drupal\Core\Url;
  * particular element are documented on that element's class.
  *
  * Here is a list of properties that are used during the rendering and form
- * processing of form elements:
+ * processing of form elements, besides those properties documented in
+ * \Drupal\Core\Render\Element\RenderElement (for example: #prefix, #suffix):
  * - #after_build: (array) Array of callables or function names, which are
  *   called after the element is built. Arguments: $element, $form_state.
  * - #ajax: (array) Array of elements to specify Ajax behavior. See
@@ -46,10 +47,19 @@ use Drupal\Core\Url;
  *   are called to validate the input. Arguments: $element, $form_state, $form.
  * - #field_prefix: (string) Prefix to display before the HTML input element.
  *   Should be translated, normally. If it is not already wrapped in a safe
- *   markup object, will be filtered for XSS safety.
+ *   markup object, will be filtered for XSS safety. Note that the contents of
+ *   this prefix are wrapped in a <span> element, so the value should not
+ *   contain block level HTML. Any HTML added must be valid, i.e. any tags
+ *   introduced inside this prefix must also be terminated within the prefix.
  * - #field_suffix: (string) Suffix to display after the HTML input element.
  *   Should be translated, normally. If it is not already wrapped in a safe
- *   markup object, will be filtered for XSS safety.
+ *   markup object, will be filtered for XSS safety. Note that the contents of
+ *   this suffix are wrapped in a <span> element, so the value should not
+ *   contain block level HTML. Any HTML must also be valid, i.e. any tags
+ *   introduce inside this suffix must also be terminated within the suffix.
+ * - #value: (mixed) A value that cannot be edited by the user.
+ * - #has_garbage_value: (bool) Internal only. Set to TRUE to indicate that the
+ *   #value property of an element should not be used or processed.
  * - #input: (bool, internal) Whether or not the element accepts input.
  * - #parents: (string[], read-only) Array of names of the element's parents
  *   for purposes of getting values out of $form_state. See also
@@ -60,7 +70,7 @@ use Drupal\Core\Url;
  * - #required: (bool) Whether or not input is required on the element.
  * - #states: (array) Information about JavaScript states, such as when to
  *   hide or show the element based on input on other elements.
- *   See drupal_process_states() for documentation.
+ *   See \Drupal\Core\Form\FormHelper::processStates() for documentation.
  * - #title: (string) Title of the form element. Should be translated.
  * - #title_display: (string) Where and how to display the #title. Possible
  *   values:
@@ -78,6 +88,7 @@ use Drupal\Core\Url;
  * @see \Drupal\Core\Render\Annotation\FormElement
  * @see \Drupal\Core\Render\Element\FormElementInterface
  * @see \Drupal\Core\Render\ElementInfoManager
+ * @see \Drupal\Core\Render\Element\RenderElement
  * @see plugin_api
  *
  * @ingroup theme_render
@@ -108,7 +119,7 @@ abstract class FormElement extends RenderElement implements FormElementInterface
   public static function processPattern(&$element, FormStateInterface $form_state, &$complete_form) {
     if (isset($element['#pattern']) && !isset($element['#attributes']['pattern'])) {
       $element['#attributes']['pattern'] = $element['#pattern'];
-      $element['#element_validate'][] = [get_called_class(), 'validatePattern'];
+      $element['#element_validate'][] = [static::class, 'validatePattern'];
     }
 
     return $element;
@@ -146,7 +157,7 @@ abstract class FormElement extends RenderElement implements FormElementInterface
    *
    * This sets up autocomplete functionality for elements with an
    * #autocomplete_route_name property, using the #autocomplete_route_parameters
-   * property if present.
+   * and #autocomplete_query_parameters properties if present.
    *
    * For example, suppose your autocomplete route name is
    * 'mymodule.autocomplete' and its path is
@@ -165,6 +176,8 @@ abstract class FormElement extends RenderElement implements FormElementInterface
    *     autocomplete JavaScript library.
    *   - #autocomplete_route_parameters: The parameters to be used in
    *     conjunction with the route name.
+   *   - #autocomplete_query_parameters: The parameters to be used in
+   *     query string
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
    * @param array $complete_form
@@ -178,8 +191,12 @@ abstract class FormElement extends RenderElement implements FormElementInterface
     $access = FALSE;
 
     if (!empty($element['#autocomplete_route_name'])) {
-      $parameters = isset($element['#autocomplete_route_parameters']) ? $element['#autocomplete_route_parameters'] : [];
-      $url = Url::fromRoute($element['#autocomplete_route_name'], $parameters)->toString(TRUE);
+      $parameters = $element['#autocomplete_route_parameters'] ?? [];
+      $options = [];
+      if (!empty($element['#autocomplete_query_parameters'])) {
+        $options['query'] = $element['#autocomplete_query_parameters'];
+      }
+      $url = Url::fromRoute($element['#autocomplete_route_name'], $parameters, $options)->toString(TRUE);
       /** @var \Drupal\Core\Access\AccessManagerInterface $access_manager */
       $access_manager = \Drupal::service('access_manager');
       $access = $access_manager->checkNamedRoute($element['#autocomplete_route_name'], $parameters, \Drupal::currentUser(), TRUE);

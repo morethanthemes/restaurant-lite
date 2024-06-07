@@ -69,7 +69,7 @@ class Endpoint {
    */
   public function __construct($url, Provider $provider, array $schemes = [], array $formats = [], $supports_discovery = FALSE) {
     $this->provider = $provider;
-    $this->schemes = array_map('mb_strtolower', $schemes);
+    $this->schemes = $schemes;
 
     $this->formats = $formats = array_map('mb_strtolower', $formats);
     // Assert that only the supported formats are present.
@@ -151,7 +151,7 @@ class Endpoint {
   public function matchUrl($url) {
     foreach ($this->getSchemes() as $scheme) {
       // Convert scheme into a valid regular expression.
-      $regexp = str_replace(['.', '*'], ['\.', '.*'], $scheme);
+      $regexp = str_replace(['.', '*', '?'], ['\.', '.*', '\?'], $scheme);
       if (preg_match("|^$regexp$|", $url)) {
         return TRUE;
       }
@@ -162,11 +162,17 @@ class Endpoint {
   /**
    * Builds and returns the endpoint URL.
    *
+   * In most situations this function should not be used. Your are probably
+   * looking for \Drupal\media\OEmbed\UrlResolver::getResourceUrl(), because it
+   * is alterable and also cached.
+   *
    * @param string $url
    *   The canonical media URL.
    *
    * @return string
    *   URL of the oEmbed endpoint.
+   *
+   * @see \Drupal\media\OEmbed\UrlResolver::getResourceUrl()
    */
   public function buildResourceUrl($url) {
     $query = ['url' => $url];

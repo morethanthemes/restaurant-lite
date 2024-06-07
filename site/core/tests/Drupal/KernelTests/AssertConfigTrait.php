@@ -30,6 +30,7 @@ trait AssertConfigTrait {
         case 'Drupal\Component\Diff\Engine\DiffOpCopy':
           // Nothing to do, a copy is what we expect.
           break;
+
         case 'Drupal\Component\Diff\Engine\DiffOpDelete':
         case 'Drupal\Component\Diff\Engine\DiffOpChange':
           // It is not part of the skipped config, so we can directly throw the
@@ -55,7 +56,7 @@ trait AssertConfigTrait {
             $found = FALSE;
             if (!empty($skipped_config[$config_name])) {
               foreach ($skipped_config[$config_name] as $line) {
-                if (strpos($closing, $line) !== FALSE) {
+                if (str_contains($closing, $line)) {
                   $found = TRUE;
                   break;
                 }
@@ -68,6 +69,7 @@ trait AssertConfigTrait {
             throw new \Exception($config_name . ': ' . var_export($op, TRUE));
           }
           break;
+
         case 'Drupal\Component\Diff\Engine\DiffOpAdd':
           // The _core property does not exist in the default config.
           if ($op->closing[0] === '_core:') {
@@ -75,12 +77,13 @@ trait AssertConfigTrait {
           }
           foreach ($op->closing as $closing) {
             // The UUIDs don't exist in the default config.
-            if (strpos($closing, 'uuid: ') === 0) {
+            if (str_starts_with($closing, 'uuid: ')) {
               break;
             }
             throw new \Exception($config_name . ': ' . var_export($op, TRUE));
           }
           break;
+
         default:
           throw new \Exception($config_name . ': ' . var_export($op, TRUE));
       }

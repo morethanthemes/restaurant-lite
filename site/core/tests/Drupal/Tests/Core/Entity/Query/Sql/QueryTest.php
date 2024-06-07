@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Entity\Query\Sql;
 
 use Drupal\Core\Entity\EntityType;
@@ -23,7 +25,7 @@ class QueryTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $entity_type = new EntityType(['id' => 'example_entity_query']);
     $conjunction = 'AND';
@@ -39,7 +41,8 @@ class QueryTest extends UnitTestCase {
    * @covers ::prepare
    */
   public function testNoBaseTable() {
-    $this->setExpectedException(QueryException::class, 'No base table for example_entity_query, invalid query.');
+    $this->expectException(QueryException::class);
+    $this->expectExceptionMessage('No base table for example_entity_query, invalid query.');
     $this->query->execute();
   }
 
@@ -49,7 +52,8 @@ class QueryTest extends UnitTestCase {
    * @covers ::prepare
    */
   public function testNoRevisionTable() {
-    $this->setExpectedException(QueryException::class, 'No revision table for example_entity_query, invalid query.');
+    $this->expectException(QueryException::class);
+    $this->expectExceptionMessage('No revision table for example_entity_query, invalid query.');
     $this->query->allRevisions()->execute();
   }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\text\Unit\Plugin\migrate\field\d6;
 
 use Drupal\migrate\Plugin\MigrationInterface;
@@ -7,6 +9,8 @@ use Drupal\migrate\Row;
 use Drupal\Tests\UnitTestCase;
 use Drupal\text\Plugin\migrate\field\d6\TextField;
 use Prophecy\Argument;
+
+// cspell:ignore optionwidgets
 
 /**
  * @coversDefaultClass \Drupal\text\Plugin\migrate\field\d6\TextField
@@ -27,7 +31,9 @@ class TextFieldTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->plugin = new TextField([], 'text', []);
 
     $migration = $this->prophesize(MigrationInterface::class);
@@ -47,11 +53,11 @@ class TextFieldTest extends UnitTestCase {
   /**
    * @covers ::defineValueProcessPipeline
    */
-  public function testProcessFilteredTextFieldValues($method = 'defineValueProcessPipeline') {
+  public function testFilteredTextValueProcessPipeline() {
     $field_info = [
       'widget_type' => 'text_textfield',
     ];
-    $this->plugin->$method($this->migration, 'body', $field_info);
+    $this->plugin->defineValueProcessPipeline($this->migration, 'body', $field_info);
 
     $process = $this->migration->getProcess();
     $this->assertSame('sub_process', $process['plugin']);
@@ -61,7 +67,7 @@ class TextFieldTest extends UnitTestCase {
     // Ensure that filter format IDs will be looked up in the filter format
     // migrations.
     $lookup = $process['process']['format'][2];
-    $this->assertSame('migration', $lookup['plugin']);
+    $this->assertSame('migration_lookup', $lookup['plugin']);
     $this->assertContains('d6_filter_format', $lookup['migration']);
     $this->assertContains('d7_filter_format', $lookup['migration']);
     $this->assertSame('format', $lookup['source']);
@@ -70,14 +76,14 @@ class TextFieldTest extends UnitTestCase {
   /**
    * @covers ::defineValueProcessPipeline
    */
-  public function testProcessBooleanTextImplicitValues($method = 'defineValueProcessPipeline') {
+  public function testBooleanTextImplicitValueProcessPipeline() {
     $info = [
       'widget_type' => 'optionwidgets_onoff',
       'global_settings' => [
         'allowed_values' => "foo\nbar",
       ],
     ];
-    $this->plugin->$method($this->migration, 'field', $info);
+    $this->plugin->defineValueProcessPipeline($this->migration, 'field', $info);
 
     $expected = [
       'value' => [
@@ -95,14 +101,14 @@ class TextFieldTest extends UnitTestCase {
   /**
    * @covers ::defineValueProcessPipeline
    */
-  public function testProcessBooleanTextExplicitValues($method = 'defineValueProcessPipeline') {
+  public function testBooleanTextExplicitValueProcessPipeline() {
     $info = [
       'widget_type' => 'optionwidgets_onoff',
       'global_settings' => [
-        'allowed_values' => "foo|Foo\nbaz|Baz",
+        'allowed_values' => "foo|Foo\nBaz|Baz",
       ],
     ];
-    $this->plugin->$method($this->migration, 'field', $info);
+    $this->plugin->defineValueProcessPipeline($this->migration, 'field', $info);
 
     $expected = [
       'value' => [
@@ -110,7 +116,7 @@ class TextFieldTest extends UnitTestCase {
         'source' => 'value',
         'default_value' => 0,
         'map' => [
-          'baz' => 1,
+          'Baz' => 1,
         ],
       ],
     ];
@@ -124,25 +130,25 @@ class TextFieldTest extends UnitTestCase {
     return [
       ['string_long', 'text_textfield', ['text_processing' => FALSE]],
       ['string', 'text_textfield', [
-          'text_processing' => FALSE,
-          'max_length' => 128,
-        ],
+        'text_processing' => FALSE,
+        'max_length' => 128,
+      ],
       ],
       ['string_long', 'text_textfield', [
-          'text_processing' => FALSE,
-          'max_length' => 4096,
-        ],
+        'text_processing' => FALSE,
+        'max_length' => 4096,
+      ],
       ],
       ['text_long', 'text_textfield', ['text_processing' => TRUE]],
       ['text', 'text_textfield', [
-          'text_processing' => TRUE,
-          'max_length' => 128,
-        ],
+        'text_processing' => TRUE,
+        'max_length' => 128,
+      ],
       ],
       ['text_long', 'text_textfield', [
-          'text_processing' => TRUE,
-          'max_length' => 4096,
-        ],
+        'text_processing' => TRUE,
+        'max_length' => 4096,
+      ],
       ],
       ['list_string', 'optionwidgets_buttons'],
       ['list_string', 'optionwidgets_select'],

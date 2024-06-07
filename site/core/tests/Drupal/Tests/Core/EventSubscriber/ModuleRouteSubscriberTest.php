@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\EventSubscriber;
 
 use Drupal\Core\Routing\RouteBuildEvent;
@@ -17,12 +19,17 @@ class ModuleRouteSubscriberTest extends UnitTestCase {
   /**
    * The mock module handler.
    *
-   * @var Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $moduleHandler;
 
-  protected function setUp() {
-    $this->moduleHandler = $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface');
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
+    $this->moduleHandler = $this->createMock('Drupal\Core\Extension\ModuleHandlerInterface');
 
     $value_map = [
       ['enabled', TRUE],
@@ -31,7 +38,7 @@ class ModuleRouteSubscriberTest extends UnitTestCase {
 
     $this->moduleHandler->expects($this->any())
       ->method('moduleExists')
-      ->will($this->returnValueMap($value_map));
+      ->willReturnMap($value_map);
   }
 
   /**
@@ -52,7 +59,7 @@ class ModuleRouteSubscriberTest extends UnitTestCase {
     $route = new Route('', [], $requirements);
     $collection->add($route_name, $route);
 
-    $event = new RouteBuildEvent($collection, 'test');
+    $event = new RouteBuildEvent($collection);
     $route_subscriber = new ModuleRouteSubscriber($this->moduleHandler);
     $route_subscriber->onAlterRoutes($event);
 

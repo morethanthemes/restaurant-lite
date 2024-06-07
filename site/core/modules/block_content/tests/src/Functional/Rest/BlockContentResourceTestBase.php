@@ -5,7 +5,6 @@ namespace Drupal\Tests\block_content\Functional\Rest;
 use Drupal\block_content\Entity\BlockContent;
 use Drupal\block_content\Entity\BlockContentType;
 use Drupal\Core\Cache\Cache;
-use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
 use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
 
 /**
@@ -13,12 +12,10 @@ use Drupal\Tests\rest\Functional\EntityResource\EntityResourceTestBase;
  */
 abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
 
-  use BcTimestampNormalizerUnixTestTrait;
-
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block_content'];
+  protected static $modules = ['block_content'];
 
   /**
    * {@inheritdoc}
@@ -41,7 +38,24 @@ abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function setUpAuthorization($method) {
-    $this->grantPermissionsToTestedRole(['administer blocks']);
+    switch ($method) {
+      case 'GET':
+      case 'PATCH':
+        $this->grantPermissionsToTestedRole(['access block library', 'edit any basic block content']);
+        break;
+
+      case 'POST':
+        $this->grantPermissionsToTestedRole(['access block library', 'create basic block content']);
+        break;
+
+      case 'DELETE':
+        $this->grantPermissionsToTestedRole(['delete any basic block content']);
+        break;
+
+      default:
+        $this->grantPermissionsToTestedRole(['administer block content']);
+        break;
+    }
   }
 
   /**
@@ -58,7 +72,7 @@ abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
       block_content_add_body_field($block_content_type->id());
     }
 
-    // Create a "Llama" custom block.
+    // Create a "Llama" content block.
     $block_content = BlockContent::create([
       'info' => 'Llama',
       'type' => 'basic',
@@ -111,7 +125,12 @@ abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
       ],
       'revision_log' => [],
       'changed' => [
-        $this->formatExpectedTimestampItemValues($this->entity->getChangedTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp((int) $this->entity->getChangedTime())
+            ->setTimezone(new \DateTimeZone('UTC'))
+            ->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'revision_id' => [
         [
@@ -119,7 +138,12 @@ abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'revision_created' => [
-        $this->formatExpectedTimestampItemValues((int) $this->entity->getRevisionCreationTime()),
+        [
+          'value' => (new \DateTime())->setTimestamp((int) $this->entity->getRevisionCreationTime())
+            ->setTimezone(new \DateTimeZone('UTC'))
+            ->format(\DateTime::RFC3339),
+          'format' => \DateTime::RFC3339,
+        ],
       ],
       'revision_user' => [],
       'revision_translation_affected' => [
@@ -160,7 +184,7 @@ abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
       ],
       'info' => [
         [
-          'value' => 'Dramallama',
+          'value' => 'Drama llama',
         ],
       ],
     ];
@@ -170,19 +194,29 @@ abstract class BlockContentResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected function getExpectedUnauthorizedAccessMessage($method) {
-    if ($this->config('rest.settings')->get('bc_entity_resource_permissions')) {
-      return parent::getExpectedUnauthorizedAccessMessage($method);
+    if (!$this->resourceConfigStorage->load(static::$resourceConfigId)) {
+      return match ($method) {
+        'GET', 'PATCH' => "The 'edit any basic block content' permission is required.",
+        'POST' => "The following permissions are required: 'create basic block content' AND 'access block library'.",
+        'DELETE' => "The 'delete any basic block content' permission is required.",
+        default => parent::getExpectedUnauthorizedAccessMessage($method),
+      };
     }
-
-    return parent::getExpectedUnauthorizedAccessMessage($method);
+    return match ($method) {
+      'GET' => "The 'access block library' permission is required.",
+      'PATCH' => "The 'edit any basic block content' permission is required.",
+      'POST' => "The following permissions are required: 'create basic block content' AND 'access block library'.",
+      'DELETE' => "The 'delete any basic block content' permission is required.",
+      default => parent::getExpectedUnauthorizedAccessMessage($method),
+    };
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function getExpectedUnauthorizedAccessCacheability() {
+  protected function getExpectedUnauthorizedEntityAccessCacheability($is_authenticated) {
     // @see \Drupal\block_content\BlockContentAccessControlHandler()
-    return parent::getExpectedUnauthorizedAccessCacheability()
+    return parent::getExpectedUnauthorizedEntityAccessCacheability($is_authenticated)
       ->addCacheTags(['block_content:1']);
   }
 

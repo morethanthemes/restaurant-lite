@@ -24,13 +24,14 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
  *     (\Drupal\Core\Field\FieldDefinitionInterface).
  *   - entity: The entity object the field is attached to
  *     (\Drupal\Core\Entity\EntityInterface).
+ *   - widget: The widget object (\Drupal\Core\Field\WidgetInterface).
  *
  * @ingroup hooks
  * @see hook_options_list()
  */
 function hook_options_list_alter(array &$options, array $context) {
   // Check if this is the field we want to change.
-  if ($context['fieldDefinition']->id() == 'field_option') {
+  if ($context['fieldDefinition']->getName() == 'field_option') {
     // Change the label of the empty option.
     $options['_none'] = t('== Empty ==');
   }

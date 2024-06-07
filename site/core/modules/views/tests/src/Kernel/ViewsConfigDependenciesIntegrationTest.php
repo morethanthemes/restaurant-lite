@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\views\Kernel;
 
+use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\image\Entity\ImageStyle;
@@ -18,7 +19,14 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['field', 'file', 'image', 'entity_test', 'user', 'text'];
+  protected static $modules = [
+    'field',
+    'file',
+    'image',
+    'entity_test',
+    'user',
+    'text',
+  ];
 
   /**
    * {@inheritdoc}
@@ -28,9 +36,10 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp($import_test_views = TRUE) {
+  protected function setUp($import_test_views = TRUE): void {
     parent::setUp($import_test_views);
 
+    $this->installEntitySchema('entity_test');
     $this->installEntitySchema('user');
     $this->installSchema('user', ['users_data']);
   }
@@ -40,7 +49,7 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
    */
   public function testImage() {
     /** @var \Drupal\image\ImageStyleInterface $style */
-    $style = ImageStyle::create(['name' => 'foo']);
+    $style = ImageStyle::create(['name' => 'foo', 'label' => 'Foo']);
     $style->save();
 
     // Create a new image field 'bar' to be used in 'entity_test_fields' view.
@@ -75,7 +84,7 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
     $dependencies = $view->getDependencies() + ['config' => []];
 
     // Checks that style 'foo' is a dependency of view 'entity_test_fields'.
-    $this->assertTrue(in_array('image.style.foo', $dependencies['config']));
+    $this->assertContains('image.style.foo', $dependencies['config']);
 
     // Delete the 'foo' image style.
     $style->delete();
@@ -94,7 +103,7 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
 
     $dependencies = $view->getDependencies() + ['config' => []];
     // Checks that the dependency on style 'foo' has been removed.
-    $this->assertFalse(in_array('image.style.foo', $dependencies['config']));
+    $this->assertNotContains('image.style.foo', $dependencies['config']);
   }
 
   /**
@@ -126,7 +135,7 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
 
     // Check that the View now has a dependency on the Role.
     $dependencies = $view->getDependencies() + ['config' => []];
-    $this->assertTrue(in_array('user.role.dummy', $dependencies['config']));
+    $this->assertContains('user.role.dummy', $dependencies['config']);
 
     // Delete the role.
     $role->delete();
@@ -145,9 +154,9 @@ class ViewsConfigDependenciesIntegrationTest extends ViewsKernelTestBase {
     // the schema for them so we can uninstall them.
     $entities = \Drupal::entityTypeManager()->getDefinitions();
     foreach ($entities as $entity_type_id => $definition) {
-      if ($definition->getProvider() == 'entity_test') {
+      if ($definition instanceof ContentEntityTypeInterface && $definition->getProvider() == 'entity_test') {
         $this->installEntitySchema($entity_type_id);
-      };
+      }
     }
 
     // Check that removing the module that provides the base table for a View,

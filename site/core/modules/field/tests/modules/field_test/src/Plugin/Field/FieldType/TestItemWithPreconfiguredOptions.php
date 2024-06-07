@@ -4,6 +4,7 @@ namespace Drupal\field_test\Plugin\Field\FieldType;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\PreconfiguredFieldUiOptionsInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Defines the 'test_field_with_preconfigured_options' entity field item.
@@ -24,8 +25,7 @@ class TestItemWithPreconfiguredOptions extends TestItem implements Preconfigured
   public static function getPreconfiguredOptions() {
     return [
       'custom_options' => [
-        'label' => t('All custom options'),
-        'category' => t('Custom category'),
+        'label' => new TranslatableMarkup('All custom options'),
         'field_storage_config' => [
           'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
           'settings' => [

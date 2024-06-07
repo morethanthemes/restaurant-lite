@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\tour\Unit\Entity;
 
 use Drupal\Tests\UnitTestCase;
@@ -29,12 +31,12 @@ class TourTest extends UnitTestCase {
   public function testHasMatchingRoute($routes, $route_name, $route_params, $result) {
     $tour = $this->getMockBuilder('\Drupal\tour\Entity\Tour')
       ->disableOriginalConstructor()
-      ->setMethods(['getRoutes'])
+      ->onlyMethods(['getRoutes'])
       ->getMock();
 
     $tour->expects($this->any())
       ->method('getRoutes')
-      ->will($this->returnValue($routes));
+      ->willReturn($routes);
 
     $this->assertSame($result, $tour->hasMatchingRoute($route_name, $route_params));
 

@@ -6,55 +6,66 @@
  */
 
 use Drupal\Core\Config\Entity\ConfigEntityUpdater;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Field\Plugin\Field\FieldFormatter\TimestampFormatter;
 use Drupal\layout_builder\Entity\LayoutEntityDisplayInterface;
 
 /**
- * Rebuild plugin dependencies for all entity view displays.
+ * Implements hook_removed_post_updates().
  */
-function layout_builder_post_update_rebuild_plugin_dependencies(&$sandbox = NULL) {
-  $storage = \Drupal::entityTypeManager()->getStorage('entity_view_display');
-  if (!isset($sandbox['ids'])) {
-    $sandbox['ids'] = $storage->getQuery()->accessCheck(FALSE)->execute();
-    $sandbox['count'] = count($sandbox['ids']);
-  }
-
-  for ($i = 0; $i < 10 && count($sandbox['ids']); $i++) {
-    $id = array_shift($sandbox['ids']);
-    if ($display = $storage->load($id)) {
-      $display->save();
-    }
-  }
-
-  $sandbox['#finished'] = empty($sandbox['ids']) ? 1 : ($sandbox['count'] - count($sandbox['ids'])) / $sandbox['count'];
+function layout_builder_removed_post_updates() {
+  return [
+    'layout_builder_post_update_rebuild_plugin_dependencies' => '9.0.0',
+    'layout_builder_post_update_add_extra_fields' => '9.0.0',
+    'layout_builder_post_update_section_storage_context_definitions' => '9.0.0',
+    'layout_builder_post_update_overrides_view_mode_annotation' => '9.0.0',
+    'layout_builder_post_update_cancel_link_to_discard_changes_form' => '9.0.0',
+    'layout_builder_post_update_remove_layout_is_rebuilding' => '9.0.0',
+    'layout_builder_post_update_routing_entity_form' => '9.0.0',
+    'layout_builder_post_update_discover_blank_layout_plugin' => '9.0.0',
+    'layout_builder_post_update_routing_defaults' => '9.0.0',
+    'layout_builder_post_update_discover_new_contextual_links' => '9.0.0',
+    'layout_builder_post_update_fix_tempstore_keys' => '9.0.0',
+    'layout_builder_post_update_section_third_party_settings_schema' => '9.0.0',
+    'layout_builder_post_update_layout_builder_dependency_change' => '9.0.0',
+    'layout_builder_post_update_update_permissions' => '9.0.0',
+    'layout_builder_post_update_make_layout_untranslatable' => '9.0.0',
+    'layout_builder_post_update_override_entity_form_controller' => '10.0.0',
+    'layout_builder_post_update_section_storage_context_mapping' => '10.0.0',
+    'layout_builder_post_update_tempstore_route_enhancer' => '10.0.0',
+  ];
 }
 
 /**
- * Ensure all extra fields are properly stored on entity view displays.
- *
- * Previously
- * \Drupal\layout_builder\Entity\LayoutBuilderEntityViewDisplay::setComponent()
- * was not correctly setting the configuration for extra fields. This function
- * calls setComponent() for all extra field components to ensure the updated
- * logic is invoked on all extra fields to correct the settings.
+ * Update timestamp formatter settings for Layout Builder fields.
  */
-function layout_builder_post_update_add_extra_fields(&$sandbox = NULL) {
-  $entity_field_manager = \Drupal::service('entity_field.manager');
-  \Drupal::classResolver(ConfigEntityUpdater::class)->update($sandbox, 'entity_view_display', function (LayoutEntityDisplayInterface $display) use ($entity_field_manager) {
-    if (!$display->isLayoutBuilderEnabled()) {
-      return FALSE;
-    }
+function layout_builder_post_update_timestamp_formatter(array &$sandbox = NULL): void {
+  /** @var \Drupal\Core\Field\FormatterPluginManager $field_formatter_manager */
+  $field_formatter_manager = \Drupal::service('plugin.manager.field.formatter');
 
-    $extra_fields = $entity_field_manager->getExtraFields($display->getTargetEntityTypeId(), $display->getTargetBundle());
-    $components = $display->getComponents();
-    // Sort the components to avoid them being reordered by setComponent().
-    uasort($components, 'Drupal\Component\Utility\SortArray::sortByWeightElement');
-    $result = FALSE;
-    foreach ($components as $name => $component) {
-      if (isset($extra_fields['display'][$name])) {
-        $display->setComponent($name, $component);
-        $result = TRUE;
+  \Drupal::classResolver(ConfigEntityUpdater::class)->update($sandbox, 'entity_view_display', function (EntityViewDisplayInterface $entity_view_display) use ($field_formatter_manager): bool {
+    $update = FALSE;
+    if ($entity_view_display instanceof LayoutEntityDisplayInterface && $entity_view_display->isLayoutBuilderEnabled()) {
+      foreach ($entity_view_display->getSections() as $section) {
+        foreach ($section->getComponents() as $component) {
+          if (str_starts_with($component->getPluginId(), 'field_block:')) {
+            $configuration = $component->get('configuration');
+            $formatter =& $configuration['formatter'];
+            if ($formatter && isset($formatter['type'])) {
+              $plugin_definition = $field_formatter_manager->getDefinition($formatter['type'], FALSE);
+              // Check also potential plugins extending TimestampFormatter.
+              if ($plugin_definition && is_a($plugin_definition['class'], TimestampFormatter::class, TRUE)) {
+                if (!isset($formatter['settings']['tooltip']) || !isset($formatter['settings']['time_diff'])) {
+                  $update = TRUE;
+                  // No need to check the rest of components.
+                  break 2;
+                }
+              }
+            }
+          }
+        }
       }
     }
-    return $result;
+    return $update;
   });
 }

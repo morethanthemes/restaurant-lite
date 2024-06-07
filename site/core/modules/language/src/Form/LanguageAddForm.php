@@ -5,6 +5,7 @@ namespace Drupal\language\Form;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageManager;
+use Drupal\Core\Url;
 use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
@@ -18,7 +19,7 @@ class LanguageAddForm extends LanguageFormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    // @todo Remove in favour of base method.
+    // @todo Remove in favor of base method.
     return 'language_admin_add_form';
   }
 
@@ -93,9 +94,9 @@ class LanguageAddForm extends LanguageFormBase {
     if ($this->moduleHandler->moduleExists('block')) {
       // Tell the user they have the option to add a language switcher block
       // to their theme so they can switch between the languages.
-      $this->messenger()->addStatus($this->t('Use one of the language switcher blocks to allow site visitors to switch between languages. You can enable these blocks on the <a href=":block-admin">block administration page</a>.', [':block-admin' => $this->url('block.admin_display')]));
+      $this->messenger()->addStatus($this->t('Use one of the language switcher blocks to allow site visitors to switch between languages. You can enable these blocks on the <a href=":block-admin">block administration page</a>.', [':block-admin' => Url::fromRoute('block.admin_display')->toString()]));
     }
-    $form_state->setRedirectUrl($this->entity->urlInfo('collection'));
+    $form_state->setRedirectUrl($this->entity->toUrl('collection'));
   }
 
   /**
@@ -152,7 +153,7 @@ class LanguageAddForm extends LanguageFormBase {
     else {
       $standard_languages = LanguageManager::getStandardLanguageList();
       $label = $standard_languages[$langcode][0];
-      $direction = isset($standard_languages[$langcode][2]) ? $standard_languages[$langcode][2] : ConfigurableLanguage::DIRECTION_LTR;
+      $direction = $standard_languages[$langcode][2] ?? ConfigurableLanguage::DIRECTION_LTR;
     }
     $entity->set('id', $langcode);
     $entity->set('label', $label);

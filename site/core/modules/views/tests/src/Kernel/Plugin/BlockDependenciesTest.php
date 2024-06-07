@@ -24,7 +24,15 @@ class BlockDependenciesTest extends ViewsKernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['node', 'block', 'user', 'field'];
+  protected static $modules = ['node', 'block', 'user', 'field'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp($import_test_views = TRUE): void {
+    parent::setUp($import_test_views);
+    $this->container->get('theme_installer')->install(['stark']);
+  }
 
   /**
    * Tests that exposed filter blocks have the correct dependencies.
@@ -39,7 +47,7 @@ class BlockDependenciesTest extends ViewsKernelTestBase {
       'module' => ['views'],
       'theme' => ['stark'],
     ];
-    $this->assertIdentical($expected, $dependencies);
+    $this->assertSame($expected, $dependencies);
   }
 
   /**
@@ -55,7 +63,7 @@ class BlockDependenciesTest extends ViewsKernelTestBase {
       'module' => ['views'],
       'theme' => ['stark'],
     ];
-    $this->assertIdentical($expected, $dependencies);
+    $this->assertSame($expected, $dependencies);
   }
 
   /**
@@ -69,7 +77,7 @@ class BlockDependenciesTest extends ViewsKernelTestBase {
    *   example:
    *   @code
    *     $this->createBlock('system_powered_by_block', array(
-   *       'label' => t('Hello, world!'),
+   *       'label' => 'Hello, world!',
    *     ));
    *   @endcode
    *   The following defaults are provided:
@@ -86,7 +94,7 @@ class BlockDependenciesTest extends ViewsKernelTestBase {
     $settings += [
       'plugin' => $plugin_id,
       'region' => 'sidebar_first',
-      'id' => strtolower($this->randomMachineName(8)),
+      'id' => $this->randomMachineName(8),
       'theme' => $this->config('system.theme')->get('default'),
       'label' => $this->randomMachineName(8),
       'visibility' => [],

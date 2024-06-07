@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Render\Element;
 
 use Drupal\Core\Access\CsrfTokenGenerator;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
@@ -85,9 +88,12 @@ class MachineNameTest extends UnitTestCase {
     $csrf_token = $this->prophesize(CsrfTokenGenerator::class);
     $csrf_token->get('[^a-z0-9_]+')->willReturn('tis-a-fine-token');
 
+    $moduleHandler = $this->prophesize(ModuleHandlerInterface::class);
+
     $container = $this->prophesize(ContainerInterface::class);
     $container->get('language_manager')->willReturn($language_manager->reveal());
     $container->get('csrf_token')->willReturn($csrf_token->reveal());
+    $container->get('module_handler')->willReturn($moduleHandler->reveal());
     \Drupal::setContainer($container->reveal());
 
     $element = MachineName::processMachineName($element, $form_state, $complete_form);
@@ -108,16 +114,6 @@ class MachineNameTest extends UnitTestCase {
     foreach ($allowed_options as $key) {
       $this->assertArrayHasKey($key, $settings);
     }
-  }
-
-}
-
-namespace Drupal\Core\Render\Element;
-
-if (!function_exists('t')) {
-
-  function t($string, array $args = []) {
-    return strtr($string, $args);
   }
 
 }

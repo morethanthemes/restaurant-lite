@@ -5,6 +5,7 @@ namespace Drupal\media;
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Entity\EntityDisplayRepositoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -36,16 +37,26 @@ class MediaTypeForm extends EntityForm {
   protected $entityFieldManager;
 
   /**
+   * Entity display repository service.
+   *
+   * @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface
+   */
+  protected $entityDisplayRepository;
+
+  /**
    * Constructs a new class instance.
    *
    * @param \Drupal\Component\Plugin\PluginManagerInterface $source_manager
    *   Media source plugin manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
    *   Entity field manager service.
+   * @param \Drupal\Core\Entity\EntityDisplayRepositoryInterface $entityDisplayRepository
+   *   Entity display repository service.
    */
-  public function __construct(PluginManagerInterface $source_manager, EntityFieldManagerInterface $entity_field_manager) {
+  public function __construct(PluginManagerInterface $source_manager, EntityFieldManagerInterface $entity_field_manager, EntityDisplayRepositoryInterface $entityDisplayRepository) {
     $this->sourceManager = $source_manager;
     $this->entityFieldManager = $entity_field_manager;
+    $this->entityDisplayRepository = $entityDisplayRepository;
   }
 
   /**
@@ -54,7 +65,8 @@ class MediaTypeForm extends EntityForm {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('plugin.manager.media.source'),
-      $container->get('entity_field.manager')
+      $container->get('entity_field.manager'),
+      $container->get('entity_display.repository')
     );
   }
 
@@ -85,7 +97,7 @@ class MediaTypeForm extends EntityForm {
       '#title' => $this->t('Name'),
       '#type' => 'textfield',
       '#default_value' => $this->entity->label(),
-      '#description' => $this->t('The human-readable name of this media type.'),
+      '#description' => $this->t('The human-readable name for this media type, displayed on the <em>Media types</em> page.'),
       '#required' => TRUE,
       '#size' => 30,
     ];
@@ -98,14 +110,14 @@ class MediaTypeForm extends EntityForm {
       '#machine_name' => [
         'exists' => [MediaType::class, 'load'],
       ],
-      '#description' => $this->t('A unique machine-readable name for this media type.'),
+      '#description' => $this->t('Unique machine-readable name: lowercase letters, numbers, and underscores only.'),
     ];
 
     $form['description'] = [
       '#title' => $this->t('Description'),
       '#type' => 'textarea',
       '#default_value' => $this->entity->getDescription(),
-      '#description' => $this->t('Describe this media type. The text will be displayed on the <em>Add new media</em> page.'),
+      '#description' => $this->t('Displays on the <em>Media types</em> page.'),
     ];
 
     $plugins = $this->sourceManager->getDefinitions();
@@ -170,13 +182,15 @@ class MediaTypeForm extends EntityForm {
         }
       }
 
+      natcasesort($options);
+
       $field_map = $this->entity->getFieldMap();
       foreach ($source->getMetadataAttributes() as $metadata_attribute_name => $metadata_attribute_label) {
         $form['source_dependent']['field_map'][$metadata_attribute_name] = [
           '#type' => 'select',
           '#title' => $metadata_attribute_label,
           '#options' => $options,
-          '#default_value' => isset($field_map[$metadata_attribute_name]) ? $field_map[$metadata_attribute_name] : MediaSourceInterface::METADATA_FIELD_EMPTY,
+          '#default_value' => $field_map[$metadata_attribute_name] ?? MediaSourceInterface::METADATA_FIELD_EMPTY,
         ];
       }
     }
@@ -304,6 +318,17 @@ class MediaTypeForm extends EntityForm {
    */
   protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
+
+    // If the media source has not been chosen yet, turn the submit button into
+    // a button. This rebuilds the form with the media source's configuration
+    // form visible, instead of saving the media type. This allows users to
+    // create a media type without JavaScript enabled. With JavaScript enabled,
+    // this rebuild occurs during an AJAX request.
+    // @see \Drupal\media\MediaTypeForm::ajaxHandlerData()
+    if (empty($this->getEntity()->get('source'))) {
+      $actions['submit']['#type'] = 'button';
+    }
+
     $actions['submit']['#value'] = $this->t('Save');
     $actions['delete']['#value'] = $this->t('Delete');
     $actions['delete']['#access'] = $this->entity->access('delete');
@@ -334,16 +359,17 @@ class MediaTypeForm extends EntityForm {
       // Add the new field to the default form and view displays for this
       // media type.
       if ($source_field->isDisplayConfigurable('form')) {
-        // @todo Replace entity_get_form_display() when #2367933 is done.
-        // https://www.drupal.org/node/2872159.
-        $display = entity_get_form_display('media', $media_type->id(), 'default');
+        $display = $this->entityDisplayRepository->getFormDisplay('media', $media_type->id());
         $source->prepareFormDisplay($media_type, $display);
         $display->save();
       }
       if ($source_field->isDisplayConfigurable('view')) {
-        // @todo Replace entity_get_display() when #2367933 is done.
-        // https://www.drupal.org/node/2872159.
-        $display = entity_get_display('media', $media_type->id(), 'default');
+        $display = $this->entityDisplayRepository->getViewDisplay('media', $media_type->id());
+
+        // Remove all default components.
+        foreach (array_keys($display->getComponents()) as $name) {
+          $display->removeComponent($name);
+        }
         $source->prepareViewDisplay($media_type, $display);
         $display->save();
       }

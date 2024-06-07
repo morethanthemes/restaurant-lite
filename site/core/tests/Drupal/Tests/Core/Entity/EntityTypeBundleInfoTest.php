@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Entity;
 
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfo;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -76,11 +77,10 @@ class EntityTypeBundleInfoTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->moduleHandler = $this->prophesize(ModuleHandlerInterface::class);
-    $this->moduleHandler->getImplementations('entity_type_build')->willReturn([]);
     $this->moduleHandler->alter('entity_type', Argument::type('array'))->willReturn(NULL);
 
     $this->cacheBackend = $this->prophesize(CacheBackendInterface::class);
@@ -113,15 +113,11 @@ class EntityTypeBundleInfoTest extends UnitTestCase {
    *   (optional) An array of entity type definitions.
    */
   protected function setUpEntityTypeDefinitions($definitions = []) {
-    $class = $this->getMockClass(EntityInterface::class);
     foreach ($definitions as $key => $entity_type) {
       // \Drupal\Core\Entity\EntityTypeInterface::getLinkTemplates() is called
-      // by \Drupal\Core\Entity\EntityManager::processDefinition() so it must
-      // always be mocked.
+      // by \Drupal\Core\Entity\EntityTypeManager::processDefinition() so it
+      // must always be mocked.
       $entity_type->getLinkTemplates()->willReturn([]);
-
-      // Give the entity type a legitimate class to return.
-      $entity_type->getClass()->willReturn($class);
 
       $definitions[$key] = $entity_type->reveal();
     }
@@ -195,11 +191,15 @@ class EntityTypeBundleInfoTest extends UnitTestCase {
    */
   public function providerTestGetBundleInfo() {
     return [
-      ['apple', [
+      [
+        'apple',
+        [
           'apple' => ['label' => 'Apple'],
         ],
       ],
-      ['banana', [
+      [
+        'banana',
+        [
           'banana' => ['label' => 'Banana'],
         ],
       ],
@@ -229,10 +229,11 @@ class EntityTypeBundleInfoTest extends UnitTestCase {
       'banana' => $banana,
     ]);
 
+    $cacheBackend = $this->cacheBackend;
     $this->cacheBackend->get('entity_bundle_info:en')->willReturn(FALSE);
     $this->cacheBackend->set('entity_bundle_info:en', Argument::any(), Cache::PERMANENT, ['entity_types', 'entity_bundles'])
-      ->will(function () {
-        $this->get('entity_bundle_info:en')
+      ->will(function () use ($cacheBackend) {
+        $cacheBackend->get('entity_bundle_info:en')
           ->willReturn((object) ['data' => 'cached data'])
           ->shouldBeCalled();
       })

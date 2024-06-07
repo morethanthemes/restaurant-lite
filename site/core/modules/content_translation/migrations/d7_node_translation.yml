@@ -1,3 +1,4 @@
+# cspell:ignore tnid
 id: d7_node_translation
 label: Node translations
 migration_tags:
@@ -33,8 +34,6 @@ process:
 destination:
   plugin: entity:node
   translations: true
-  content_translation_update_definitions:
-    - node
   destination_module: content_translation
 migration_dependencies:
   required:

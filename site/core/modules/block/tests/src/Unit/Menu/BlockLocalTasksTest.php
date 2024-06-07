@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\block\Unit\Menu;
 
 use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
@@ -12,7 +14,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 class BlockLocalTasksTest extends LocalTaskIntegrationTestBase {
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     $this->directoryList = ['block' => 'core/modules/block'];
     parent::setUp();
 
@@ -40,10 +45,10 @@ class BlockLocalTasksTest extends LocalTaskIntegrationTestBase {
         'name' => 'test_c',
       ],
     ];
-    $theme_handler = $this->getMock('Drupal\Core\Extension\ThemeHandlerInterface');
+    $theme_handler = $this->createMock('Drupal\Core\Extension\ThemeHandlerInterface');
     $theme_handler->expects($this->any())
       ->method('listInfo')
-      ->will($this->returnValue($themes));
+      ->willReturn($themes);
     $theme_handler->expects($this->any())
       ->method('hasUi')
       ->willReturnMap([
@@ -55,7 +60,7 @@ class BlockLocalTasksTest extends LocalTaskIntegrationTestBase {
     $container = new ContainerBuilder();
     $container->set('config.factory', $config_factory);
     $container->set('theme_handler', $theme_handler);
-    $container->set('app.root', $this->root);
+    $container->setParameter('app.root', $this->root);
     \Drupal::setContainer($container);
   }
 

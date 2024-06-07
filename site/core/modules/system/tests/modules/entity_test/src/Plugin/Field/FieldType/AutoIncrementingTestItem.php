@@ -11,7 +11,6 @@ use Drupal\Core\Field\Plugin\Field\FieldType\IntegerItem;
  *   id = "auto_incrementing_test",
  *   label = @Translation("Auto incrementing test field item"),
  *   description = @Translation("An entity field designed to test the field method invocation order."),
- *   category = @Translation("Number"),
  *   no_ui = TRUE,
  * )
  */
@@ -32,8 +31,8 @@ class AutoIncrementingTestItem extends IntegerItem {
    *   The incremented field value.
    */
   private static function getIncrementedFieldValue() {
-    $current_value = &drupal_static(__METHOD__, 0);
-    return ++$current_value;
+    static $cache = 0;
+    return ++$cache;
   }
 
 }

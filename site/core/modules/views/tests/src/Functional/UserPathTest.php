@@ -12,7 +12,12 @@ class UserPathTest extends ViewTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['views', 'user'];
+  protected static $modules = ['views', 'user'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * The test views to use.

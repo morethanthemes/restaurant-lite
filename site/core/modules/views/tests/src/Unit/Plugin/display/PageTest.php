@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Plugin\display;
 
 use Drupal\Tests\UnitTestCase;
@@ -32,7 +34,7 @@ class PageTest extends UnitTestCase {
    * @covers ::buildBasicRenderable
    */
   public function testBuildBasicRenderableWithMissingRoute() {
-    $this->setExpectedException(\BadFunctionCallException::class);
+    $this->expectException(\BadFunctionCallException::class);
     Page::buildBasicRenderable('test_view', 'page_1', []);
   }
 

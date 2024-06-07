@@ -9,13 +9,14 @@ use Drupal\KernelTests\KernelTestBase;
  * Tests Layout functionality.
  *
  * @group Layout
+ * @group #slow
  */
 class LayoutTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system', 'layout_discovery', 'layout_test'];
+  protected static $modules = ['system', 'layout_discovery', 'layout_test'];
 
   /**
    * The layout plugin manager.
@@ -27,7 +28,7 @@ class LayoutTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->layoutPluginManager = $this->container->get('plugin.manager.core.layout');
@@ -41,11 +42,11 @@ class LayoutTest extends KernelTestBase {
     $this->config('system.theme')->set('default', 'test_layout_theme')->save();
 
     $theme_definitions = $this->container->get('theme.registry')->get();
-    $this->assertTrue(in_array('template_preprocess_layout', $theme_definitions['test_layout_theme']['preprocess functions']));
+    $this->assertContains('template_preprocess_layout', $theme_definitions['test_layout_theme']['preprocess functions']);
   }
 
   /**
-   * Test rendering a layout.
+   * Tests rendering a layout.
    *
    * @dataProvider renderLayoutData
    */
@@ -71,7 +72,7 @@ class LayoutTest extends KernelTestBase {
     $build_id_input = $this->cssSelect('input[name="form_build_id"]')[0]->asXML();
     $form_id_input = '<input data-drupal-selector="edit-the-form-id" type="hidden" name="form_id" value="the_form_id"/>';
     $html[] = 'Test suffix';
-    $html[] = $build_id_input . $form_id_input . '</form>';
+    $html[] = $build_id_input . "\n" . $form_id_input . "\n" . '</form>';
 
     // Match the HTML to the full form element.
     $this->assertSame(implode("\n", $html), $this->cssSelect('#the-form-id')[0]->asXML());

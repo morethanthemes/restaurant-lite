@@ -7,6 +7,7 @@ use Drupal\Tests\rest\Functional\EntityResource\XmlEntityNormalizationQuirksTrai
 
 /**
  * @group rest
+ * @group #slow
  */
 class TermXmlBasicAuthTest extends TermResourceTestBase {
 
@@ -16,7 +17,12 @@ class TermXmlBasicAuthTest extends TermResourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['basic_auth'];
+  protected static $modules = ['basic_auth'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * {@inheritdoc}

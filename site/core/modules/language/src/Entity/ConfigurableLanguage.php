@@ -39,6 +39,13 @@ use Drupal\language\ConfigurableLanguageInterface;
  *     "label" = "label",
  *     "weight" = "weight"
  *   },
+ *   config_export = {
+ *     "id",
+ *     "label",
+ *     "direction",
+ *     "weight",
+ *     "locked"
+ *   },
  *   links = {
  *     "delete-form" = "/admin/config/regional/language/delete/{configurable_language}",
  *     "edit-form" = "/admin/config/regional/language/edit/{configurable_language}",
@@ -152,14 +159,14 @@ class ConfigurableLanguage extends ConfigEntityBase implements ConfigurableLangu
       $config = \Drupal::configFactory()->getEditable('language.negotiation');
       $domains = $config->get('url.domains');
       $domains[$this->id()] = '';
-      $config->set('url.domains', $domains)->save();
+      $config->set('url.domains', $domains)->save(TRUE);
     }
   }
 
   /**
    * {@inheritdoc}
    *
-   * @throws \DeleteDefaultLanguageException
+   * @throws \Drupal\language\Exception\DeleteDefaultLanguageException
    *   Exception thrown if we're trying to delete the default language entity.
    *   This is not allowed as a site must have a default language.
    */
@@ -193,7 +200,7 @@ class ConfigurableLanguage extends ConfigEntityBase implements ConfigurableLangu
     $config = \Drupal::configFactory()->getEditable('language.negotiation');
     $config->clear('url.prefixes.' . $entity->id());
     $config->clear('url.domains.' . $entity->id());
-    $config->save();
+    $config->save(TRUE);
   }
 
   /**
@@ -277,7 +284,7 @@ class ConfigurableLanguage extends ConfigEntityBase implements ConfigurableLangu
       return static::create([
         'id' => $langcode,
         'label' => $standard_languages[$langcode][0],
-        'direction' => isset($standard_languages[$langcode][2]) ? $standard_languages[$langcode][2] : static::DIRECTION_LTR,
+        'direction' => $standard_languages[$langcode][2] ?? static::DIRECTION_LTR,
       ]);
     }
   }

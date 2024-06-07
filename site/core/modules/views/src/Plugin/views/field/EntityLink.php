@@ -26,7 +26,8 @@ class EntityLink extends LinkBase {
    */
   protected function renderLink(ResultRow $row) {
     if ($this->options['output_url_as_text']) {
-      return $this->getUrlInfo($row)->toString();
+      $url_info = $this->getUrlInfo($row);
+      return $url_info ? $url_info->toString() : '';
     }
     return parent::renderLink($row);
   }
@@ -36,13 +37,20 @@ class EntityLink extends LinkBase {
    */
   protected function getUrlInfo(ResultRow $row) {
     $template = $this->getEntityLinkTemplate();
-    return $this->getEntity($row)->toUrl($template)->setAbsolute($this->options['absolute']);
+    $entity = $this->getEntity($row);
+    if ($entity === NULL) {
+      return NULL;
+    }
+    if ($this->languageManager->isMultilingual()) {
+      $entity = $this->getEntityTranslationByRelationship($entity, $row);
+    }
+    return $entity->toUrl($template)->setAbsolute($this->options['absolute']);
   }
 
   /**
    * Returns the entity link template name identifying the link route.
    *
-   * @returns string
+   * @return string
    *   The link template name.
    */
   protected function getEntityLinkTemplate() {

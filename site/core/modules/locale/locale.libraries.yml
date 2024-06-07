@@ -9,16 +9,7 @@ drupal.locale.admin:
     - core/jquery
     - core/drupal
     - core/drupal.form
-    - core/jquery.once
-
-drupal.locale.datepicker:
-  version: VERSION
-  js:
-    locale.datepicker.js: {}
-  dependencies:
-    - core/jquery
-    - core/drupal
-    - core/drupalSettings
+    - core/once
 
 translations:
   # No sensible version can be specified, since the translations may change at

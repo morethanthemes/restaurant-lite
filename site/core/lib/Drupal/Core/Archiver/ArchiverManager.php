@@ -5,6 +5,7 @@ namespace Drupal\Core\Archiver;
 use Drupal\Component\Plugin\Factory\DefaultFactory;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
 /**
@@ -17,7 +18,14 @@ use Drupal\Core\Plugin\DefaultPluginManager;
 class ArchiverManager extends DefaultPluginManager {
 
   /**
-   * Constructs a ArchiverManager object.
+   * The file system service.
+   *
+   * @var \Drupal\Core\File\FileSystemInterface
+   */
+  protected $fileSystem;
+
+  /**
+   * Constructs an ArchiverManager object.
    *
    * @param \Traversable $namespaces
    *   An object that implements \Traversable which contains the root paths
@@ -26,11 +34,14 @@ class ArchiverManager extends DefaultPluginManager {
    *   Cache backend instance to use.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler to invoke the alter hook with.
+   * @param \Drupal\Core\File\FileSystemInterface $file_system
+   *   The file handler.
    */
-  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
+  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler, FileSystemInterface $file_system) {
     parent::__construct('Plugin/Archiver', $namespaces, $module_handler, 'Drupal\Core\Archiver\ArchiverInterface', 'Drupal\Core\Archiver\Annotation\Archiver');
     $this->alterInfo('archiver_info');
     $this->setCacheBackend($cache_backend, 'archiver_info_plugins');
+    $this->fileSystem = $file_system;
   }
 
   /**
@@ -39,7 +50,7 @@ class ArchiverManager extends DefaultPluginManager {
   public function createInstance($plugin_id, array $configuration = []) {
     $plugin_definition = $this->getDefinition($plugin_id);
     $plugin_class = DefaultFactory::getPluginClass($plugin_id, $plugin_definition, 'Drupal\Core\Archiver\ArchiverInterface');
-    return new $plugin_class($configuration['filepath']);
+    return new $plugin_class($this->fileSystem->realpath($configuration['filepath']), $configuration);
   }
 
   /**
@@ -59,6 +70,27 @@ class ArchiverManager extends DefaultPluginManager {
         }
       }
     }
+  }
+
+  /**
+   * Returns a string of supported archive extensions.
+   *
+   * @return string
+   *   A space-separated string of extensions suitable for use by the file
+   *   validation system.
+   */
+  public function getExtensions() {
+    $valid_extensions = [];
+    foreach ($this->getDefinitions() as $archive) {
+      foreach ($archive['extensions'] as $extension) {
+        foreach (explode('.', $extension) as $part) {
+          if (!in_array($part, $valid_extensions)) {
+            $valid_extensions[] = $part;
+          }
+        }
+      }
+    }
+    return implode(' ', $valid_extensions);
   }
 
 }

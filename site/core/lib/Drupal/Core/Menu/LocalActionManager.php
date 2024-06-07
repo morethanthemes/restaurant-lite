@@ -5,7 +5,6 @@ namespace Drupal\Core\Menu;
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Cache\CacheBackendInterface;
-use Drupal\Core\Controller\ControllerResolverInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
@@ -56,21 +55,6 @@ class LocalActionManager extends DefaultPluginManager implements LocalActionMana
   protected $argumentResolver;
 
   /**
-   * A controller resolver object.
-   *
-   * @var \Symfony\Component\HttpKernel\Controller\ControllerResolverInterface
-   *
-   * @deprecated
-   *   Using the 'controller_resolver' service as the first argument is
-   *   deprecated, use the 'http_kernel.controller.argument_resolver' instead.
-   *   If your subclass requires the 'controller_resolver' service add it as an
-   *   additional argument.
-   *
-   * @see https://www.drupal.org/node/2959408
-   */
-  protected $controllerResolver;
-
-  /**
    * The request stack.
    *
    * @var \Symfony\Component\HttpFoundation\RequestStack
@@ -106,6 +90,13 @@ class LocalActionManager extends DefaultPluginManager implements LocalActionMana
   protected $account;
 
   /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected LanguageManagerInterface $languageManager;
+
+  /**
    * The plugin instances.
    *
    * @var \Drupal\Core\Menu\LocalActionInterface[]
@@ -139,18 +130,15 @@ class LocalActionManager extends DefaultPluginManager implements LocalActionMana
     // discovery.
     $this->factory = new ContainerFactory($this, 'Drupal\Core\Menu\LocalActionInterface');
     $this->argumentResolver = $argument_resolver;
-    if ($argument_resolver instanceof ControllerResolverInterface) {
-      @trigger_error("Using the 'controller_resolver' service as the first argument is deprecated, use the 'http_kernel.controller.argument_resolver' instead. If your subclass requires the 'controller_resolver' service add it as an additional argument. See https://www.drupal.org/node/2959408.", E_USER_DEPRECATED);
-      $this->controllerResolver = $argument_resolver;
-    }
     $this->requestStack = $request_stack;
     $this->routeMatch = $route_match;
     $this->routeProvider = $route_provider;
     $this->accessManager = $access_manager;
     $this->moduleHandler = $module_handler;
     $this->account = $account;
+    $this->languageManager = $language_manager;
     $this->alterInfo('menu_local_actions');
-    $this->setCacheBackend($cache_backend, 'local_action_plugins:' . $language_manager->getCurrentLanguage()->getId(), ['local_action']);
+    $this->setCacheBackend($cache_backend, 'local_action_plugins:' . $language_manager->getCurrentLanguage()->getId());
   }
 
   /**
@@ -198,7 +186,7 @@ class LocalActionManager extends DefaultPluginManager implements LocalActionMana
     $links = [];
     $cacheability = new CacheableMetadata();
     $cacheability->addCacheContexts(['route']);
-    /** @var $plugin \Drupal\Core\Menu\LocalActionInterface */
+    /** @var \Drupal\Core\Menu\LocalActionInterface $plugin */
     foreach ($this->instances[$route_appears] as $plugin_id => $plugin) {
       $route_name = $plugin->getRouteName();
       $route_parameters = $plugin->getRouteParameters($this->routeMatch);
@@ -218,6 +206,18 @@ class LocalActionManager extends DefaultPluginManager implements LocalActionMana
     $cacheability->applyTo($links);
 
     return $links;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function clearCachedDefinitions() {
+    $cids = [];
+    foreach ($this->languageManager->getLanguages() as $language) {
+      $cids[] = 'local_action_plugins:' . $language->getId();
+    }
+    $this->cacheBackend->deleteMultiple($cids);
+    $this->definitions = NULL;
   }
 
 }

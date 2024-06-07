@@ -3,7 +3,8 @@
 namespace Drupal\filter\Plugin;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Component\Plugin\ConfigurablePluginInterface;
+use Drupal\Component\Plugin\ConfigurableInterface;
+use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
@@ -49,16 +50,16 @@ use Drupal\Core\Form\FormStateInterface;
  * Filters are discovered through annotations, which may contain the following
  * definition properties:
  * - title: (required) An administrative summary of what the filter does.
- *   - type: (required) A classification of the filter's purpose. This is one
- *     of the following:
- *     - FilterInterface::TYPE_HTML_RESTRICTOR: HTML tag and attribute
- *       restricting filters.
- *     - FilterInterface::TYPE_MARKUP_LANGUAGE: Non-HTML markup language filters
- *       that generate HTML.
- *     - FilterInterface::TYPE_TRANSFORM_IRREVERSIBLE: Irreversible
- *       transformation filters.
- *     - FilterInterface::TYPE_TRANSFORM_REVERSIBLE: Reversible transformation
- *       filters.
+ * - type: (required) A classification of the filter's purpose. This is one of
+ *   the following:
+ *   - FilterInterface::TYPE_HTML_RESTRICTOR: HTML tag and attribute restricting
+ *     filters.
+ *   - FilterInterface::TYPE_MARKUP_LANGUAGE: Non-HTML markup language filters
+ *     that generate HTML.
+ *   - FilterInterface::TYPE_TRANSFORM_IRREVERSIBLE: Irreversible transformation
+ *     filters.
+ *   - FilterInterface::TYPE_TRANSFORM_REVERSIBLE: Reversible transformation
+ *     filters.
  * - description: Additional administrative information about the filter's
  *   behavior, if needed for clarification.
  * - status: The default status for new instances of the filter. Defaults to
@@ -75,7 +76,7 @@ use Drupal\Core\Form\FormStateInterface;
  * @see \Drupal\filter\Plugin\FilterBase
  * @see plugin_api
  */
-interface FilterInterface extends ConfigurablePluginInterface, PluginInspectionInterface {
+interface FilterInterface extends ConfigurableInterface, DependentPluginInterface, PluginInspectionInterface {
 
   /**
    * Non-HTML markup language filters that generate HTML.
@@ -183,9 +184,9 @@ interface FilterInterface extends ConfigurablePluginInterface, PluginInspectionI
    * format.
    *
    * @return array|false
-   *   A nested array with *either* of the following keys:
-   *     - 'allowed': (optional) the allowed tags as keys, and for each of those
-   *       tags (keys) either of the following values:
+   *   A nested array with the following structure:
+   *     - 'allowed': the allowed tags as keys, and for each of those tags
+   *       (keys) either of the following values:
    *       - TRUE to indicate any attribute is allowed
    *       - FALSE to indicate no attributes are allowed
    *       - an array to convey attribute restrictions: the keys must be
@@ -197,7 +198,6 @@ interface FilterInterface extends ConfigurablePluginInterface, PluginInspectionI
    *             be attribute values (which may use a wildcard, e.g. "xsd:*"),
    *             the possible values are TRUE or FALSE: to mark the attribute
    *             value as allowed or forbidden, respectively
-   *     -  'forbidden_tags': (optional) the forbidden tags
    *
    *   There is one special case: the "wildcard tag", "*": any attribute
    *   restrictions on that pseudotag apply to all tags.
@@ -225,13 +225,6 @@ interface FilterInterface extends ConfigurablePluginInterface, PluginInspectionI
    *           'src' => TRUE,
    *           'alt' => TRUE,
    *         ),
-   *         // Allow RDFa on <span> tags, using only the dc, foaf, xsd and sioc
-   *         // vocabularies/namespaces.
-   *         'span' => array(
-   *           'property' => array('dc:*' => TRUE, 'foaf:*' => TRUE),
-   *           'datatype' => array('xsd:*' => TRUE),
-   *           'rel' => array('sioc:*' => TRUE),
-   *         ),
    *         // Forbid the 'style' and 'on*' ('onClick' etc.) attributes on any
    *         // tag.
    *         '*' => array(
@@ -239,13 +232,6 @@ interface FilterInterface extends ConfigurablePluginInterface, PluginInspectionI
    *           'on*' => FALSE,
    *         ),
    *       )
-   *     )
-   *     @endcode
-   *
-   *   A simpler example, for a very coarse filter:
-   *     @code
-   *     array(
-   *       'forbidden_tags' => array('iframe', 'script')
    *     )
    *     @endcode
    *

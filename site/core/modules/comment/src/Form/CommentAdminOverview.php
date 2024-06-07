@@ -58,7 +58,7 @@ class CommentAdminOverview extends FormBase {
    * Creates a CommentAdminOverview form.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   *   The entity manager service.
+   *   The entity type manager service.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter service.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
@@ -161,12 +161,13 @@ class CommentAdminOverview extends FormBase {
       'operations' => $this->t('Operations'),
     ];
     $cids = $this->commentStorage->getQuery()
+      ->accessCheck(TRUE)
       ->condition('status', $status)
       ->tableSort($header)
       ->pager(50)
       ->execute();
 
-    /** @var $comments \Drupal\comment\CommentInterface[] */
+    /** @var \Drupal\comment\CommentInterface[] $comments */
     $comments = $this->commentStorage->loadMultiple($cids);
 
     // Build a table listing the appropriate comments.
@@ -187,7 +188,7 @@ class CommentAdminOverview extends FormBase {
     }
 
     foreach ($comments as $comment) {
-      /** @var $commented_entity \Drupal\Core\Entity\EntityInterface */
+      /** @var \Drupal\Core\Entity\EntityInterface $commented_entity */
       $commented_entity = $commented_entities[$comment->getCommentedEntityTypeId()][$comment->getCommentedEntityId()];
       $comment_permalink = $comment->permalink();
       if ($comment->hasField('comment_body') && ($body = $comment->get('comment_body')->value)) {
@@ -215,21 +216,21 @@ class CommentAdminOverview extends FormBase {
             '#type' => 'link',
             '#title' => $commented_entity->label(),
             '#access' => $commented_entity->access('view'),
-            '#url' => $commented_entity->urlInfo(),
+            '#url' => $commented_entity->toUrl(),
           ],
         ],
         'changed' => $this->dateFormatter->format($comment->getChangedTimeAcrossTranslations(), 'short'),
       ];
-      $comment_uri_options = $comment->urlInfo()->getOptions() + ['query' => $destination];
+      $comment_uri_options = $comment->toUrl()->getOptions() + ['query' => $destination];
       $links = [];
       $links['edit'] = [
         'title' => $this->t('Edit'),
-        'url' => $comment->urlInfo('edit-form', $comment_uri_options),
+        'url' => $comment->toUrl('edit-form', $comment_uri_options),
       ];
       if ($this->moduleHandler->moduleExists('content_translation') && $this->moduleHandler->invoke('content_translation', 'translate_access', [$comment])->isAllowed()) {
         $links['translate'] = [
           'title' => $this->t('Translate'),
-          'url' => $comment->urlInfo('drupal:content-translation-overview', $comment_uri_options),
+          'url' => $comment->toUrl('drupal:content-translation-overview', $comment_uri_options),
         ];
       }
       $options[$comment->id()]['operations']['data'] = [

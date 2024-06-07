@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Language;
 
 use Drupal\Core\Language\Language;
@@ -59,11 +61,11 @@ class LanguageUnitTest extends UnitTestCase {
    */
   public function testIsDefault() {
     $language_default = $this->getMockBuilder('Drupal\Core\Language\LanguageDefault')->disableOriginalConstructor()->getMock();
-    $container = $this->getMock('Symfony\Component\DependencyInjection\ContainerInterface');
+    $container = $this->createMock('Symfony\Component\DependencyInjection\ContainerInterface');
     $container->expects($this->any())
       ->method('get')
       ->with('language.default')
-      ->will($this->returnValue($language_default));
+      ->willReturn($language_default);
     \Drupal::setContainer($container);
 
     $language = new Language(['id' => $this->randomMachineName(2)]);

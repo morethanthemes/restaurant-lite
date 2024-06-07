@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\book\Unit\Menu;
 
 use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
@@ -11,7 +13,10 @@ use Drupal\Tests\Core\Menu\LocalTaskIntegrationTestBase;
  */
 class BookLocalTasksTest extends LocalTaskIntegrationTestBase {
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     $this->directoryList = [
       'book' => 'core/modules/book',
       'node' => 'core/modules/node',

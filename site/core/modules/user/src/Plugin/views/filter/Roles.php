@@ -48,13 +48,15 @@ class Roles extends ManyToOne {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity.manager')->getStorage('user_role')
+      $container->get('entity_type.manager')->getStorage('user_role')
     );
   }
 
   public function getValueOptions() {
-    $this->valueOptions = user_role_names(TRUE);
-    unset($this->valueOptions[RoleInterface::AUTHENTICATED_ID]);
+    $roles = $this->roleStorage->loadMultiple();
+    unset($roles[RoleInterface::ANONYMOUS_ID]);
+    unset($roles[RoleInterface::AUTHENTICATED_ID]);
+    $this->valueOptions = array_map(fn(RoleInterface $role) => $role->label(), $roles);
     return $this->valueOptions;
 
   }
@@ -88,8 +90,12 @@ class Roles extends ManyToOne {
     }
 
     foreach ((array) $this->value as $role_id) {
-      $role = $this->roleStorage->load($role_id);
-      $dependencies[$role->getConfigDependencyKey()][] = $role->getConfigDependencyName();
+      if ($role = $this->roleStorage->load($role_id)) {
+        $dependencies[$role->getConfigDependencyKey()][] = $role->getConfigDependencyName();
+      }
+      else {
+        trigger_error("The {$role_id} role does not exist. You should review and fix the configuration of the {$this->view->id()} view.", E_USER_WARNING);
+      }
     }
     return $dependencies;
   }

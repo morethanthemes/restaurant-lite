@@ -6,14 +6,14 @@ use Drupal\comment\Tests\CommentTestTrait;
 use Drupal\Core\Extension\ExtensionDiscovery;
 use Drupal\comment\CommentInterface;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
+use Drupal\Core\Extension\ExtensionLifecycle;
 use Drupal\node\NodeInterface;
 use Drupal\comment\Entity\Comment;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Tests themed output for each entity type in all available themes to ensure
- * entity labels are filtered for XSS.
+ * Tests XSS filtering for themed output for each entity type in all themes.
  *
  * @group Theme
  */
@@ -22,14 +22,14 @@ class EntityFilteringThemeTest extends BrowserTestBase {
   use CommentTestTrait;
 
   /**
-   * Use the standard profile.
-   *
-   * We test entity theming with the default node, user, comment, and taxonomy
-   * configurations at several paths in the standard profile.
-   *
-   * @var string
+   * {@inheritdoc}
    */
-  protected $profile = 'standard';
+  protected static $modules = ['block', 'taxonomy', 'comment', 'node', 'views'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * A list of all available themes.
@@ -41,7 +41,7 @@ class EntityFilteringThemeTest extends BrowserTestBase {
   /**
    * A test user.
    *
-   * @var \Drupal\user\User
+   * @var \Drupal\user\Entity\User
    */
   protected $user;
 
@@ -49,7 +49,7 @@ class EntityFilteringThemeTest extends BrowserTestBase {
   /**
    * A test node.
    *
-   * @var \Drupal\node\Node
+   * @var \Drupal\node\Entity\Node
    */
   protected $node;
 
@@ -57,7 +57,7 @@ class EntityFilteringThemeTest extends BrowserTestBase {
   /**
    * A test taxonomy term.
    *
-   * @var \Drupal\taxonomy\Term
+   * @var \Drupal\taxonomy\Entity\Term
    */
   protected $term;
 
@@ -65,7 +65,7 @@ class EntityFilteringThemeTest extends BrowserTestBase {
   /**
    * A test comment.
    *
-   * @var \Drupal\comment\Comment
+   * @var \Drupal\comment\Entity\Comment
    */
   protected $comment;
 
@@ -76,16 +76,31 @@ class EntityFilteringThemeTest extends BrowserTestBase {
    */
   protected $xssLabel = "string with <em>HTML</em> and <script>alert('JS');</script>";
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     // Install all available non-testing themes.
     $listing = new ExtensionDiscovery(\Drupal::root());
     $this->themes = $listing->scan('theme', FALSE);
-    \Drupal::service('theme_handler')->install(array_keys($this->themes));
+    /** @var \Drupal\Core\Extension\ThemeHandlerInterface $theme_handler */
+    $theme_data = \Drupal::service('theme_handler')->rebuildThemeData();
+    foreach (array_keys($this->themes) as $theme) {
+      // Skip obsolete and deprecated themes.
+      $info = $theme_data[$theme]->info;
+      if ($info[ExtensionLifecycle::LIFECYCLE_IDENTIFIER] === ExtensionLifecycle::OBSOLETE || $info[ExtensionLifecycle::LIFECYCLE_IDENTIFIER] === ExtensionLifecycle::DEPRECATED) {
+        unset($this->themes[$theme]);
+      }
+    }
+    \Drupal::service('theme_installer')->install(array_keys($this->themes));
 
     // Create a test user.
-    $this->user = $this->drupalCreateUser(['access content', 'access user profiles']);
+    $this->user = $this->drupalCreateUser([
+      'access content',
+      'access user profiles',
+    ]);
     $this->user->name = $this->xssLabel;
     $this->user->save();
     $this->drupalLogin($this->user);
@@ -97,6 +112,7 @@ class EntityFilteringThemeTest extends BrowserTestBase {
     ]);
     $this->term->save();
 
+    $this->createContentType(['type' => 'article']);
     // Add a comment field.
     $this->addDefaultCommentField('node', 'article', 'comment', CommentItemInterface::OPEN);
     // Create a test node tagged with the test term.
@@ -138,8 +154,8 @@ class EntityFilteringThemeTest extends BrowserTestBase {
         ->save();
       foreach ($paths as $path) {
         $this->drupalGet($path);
-        $this->assertResponse(200);
-        $this->assertNoRaw($this->xssLabel);
+        $this->assertSession()->statusCodeEquals(200);
+        $this->assertSession()->responseNotContains($this->xssLabel);
       }
     }
   }

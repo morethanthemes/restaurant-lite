@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Plugin\Discovery;
 
 use Drupal\Component\Discovery\YamlDirectoryDiscovery as ComponentYamlDirectoryDiscovery;
@@ -51,7 +53,7 @@ class YamlDirectoryDiscoveryTest extends UnitTestCase {
 
     $definitions = $discovery->getDefinitions();
 
-    $this->assertInternalType('array', $definitions);
+    $this->assertIsArray($definitions);
     $this->assertCount(4, $definitions);
 
     foreach ($definitions as $id => $definition) {

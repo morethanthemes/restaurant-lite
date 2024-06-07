@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Plugin\area;
 
 use Drupal\Core\Routing\RouteProviderInterface;
@@ -32,7 +34,10 @@ class ResultTest extends UnitTestCase {
    */
   protected $resultHandler;
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $storage = $this->prophesize(View::class);

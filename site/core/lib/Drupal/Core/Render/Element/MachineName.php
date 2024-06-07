@@ -44,7 +44,8 @@ use Drupal\Core\Language\LanguageInterface;
  *   - error: (optional) A custom form error message string to show, if the
  *     machine name contains disallowed characters.
  *   - standalone: (optional) Whether the live preview should stay in its own
- *     form element rather than in the suffix of the source element. Defaults
+ *     form element rather than in the suffix of the source element. The source
+ *     element must appear in the form structure before this element. Defaults
  *     to FALSE.
  * - #maxlength: (optional) Maximum allowed length of the machine name. Defaults
  *   to 64.
@@ -75,7 +76,7 @@ class MachineName extends Textfield {
    * {@inheritdoc}
    */
   public function getInfo() {
-    $class = get_class($this);
+    $class = static::class;
     return [
       '#input' => TRUE,
       '#default_value' => NULL,
@@ -183,6 +184,13 @@ class MachineName extends Textfield {
       return $element;
     }
 
+    // The source element must be defined before the machine name element.
+    if (!isset($source['#id'])) {
+      $element_parents = implode('][', $element['#array_parents']);
+      $source_parents = implode('][', $element['#machine_name']['source']);
+      throw new \LogicException(sprintf('The machine name element "%s" is defined before the source element "%s", it must be defined after or the source element must specify an id.', $element_parents, $source_parents));
+    }
+
     $suffix_id = $source['#id'] . '-machine-name-suffix';
     $element['#machine_name']['suffix'] = '#' . $suffix_id;
 
@@ -218,6 +226,7 @@ class MachineName extends Textfield {
 
     $element['#attached']['drupalSettings']['machineName']['#' . $source['#id']] = array_intersect_key($element['#machine_name'], array_flip($options));
     $element['#attached']['drupalSettings']['langcode'] = $language->getId();
+    $element['#attached']['drupalSettings']['transliteration_language_overrides'] = static::getTransliterationLanguageOverrides($language);
 
     return $element;
   }
@@ -268,6 +277,34 @@ class MachineName extends Textfield {
         $form_state->setError($element, t('The machine-readable name is already in use. It must be unique.'));
       }
     }
+  }
+
+  /**
+   * Gets transliteration language overrides for a language.
+   *
+   * This is duplicating
+   * \Drupal\Core\Transliteration\PhpTransliteration::readLanguageOverrides().
+   *
+   * @see \Drupal\Core\Transliteration\PhpTransliteration::readLanguageOverrides()
+   */
+  private static function getTransliterationLanguageOverrides(LanguageInterface $language) {
+    $overrides = &drupal_static(__CLASS__ . '_' . __METHOD__, []);
+    $langcode = $language->getId();
+
+    if (isset($overrides[$langcode])) {
+      return $overrides[$langcode];
+    }
+
+    $file = dirname(__DIR__, 3) . '/Component/Transliteration/data' . '/' . preg_replace('/[^a-zA-Z\-]/', '', $langcode) . '.php';
+
+    $overrides[$langcode] = [];
+    if (is_file($file)) {
+      include $file;
+    }
+
+    \Drupal::moduleHandler()->alter('transliteration_overrides', $overrides[$langcode], $langcode);
+
+    return [$langcode => $overrides[$langcode]];
   }
 
 }

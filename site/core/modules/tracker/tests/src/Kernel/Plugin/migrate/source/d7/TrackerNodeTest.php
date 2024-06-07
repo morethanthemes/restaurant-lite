@@ -10,17 +10,18 @@ use Drupal\Tests\migrate\Kernel\MigrateSqlSourceTestBase;
  * @covers Drupal\tracker\Plugin\migrate\source\d7\TrackerNode
  *
  * @group tracker
+ * @group legacy
  */
 class TrackerNodeTest extends MigrateSqlSourceTestBase {
 
   /**
-  * {@inheritdoc}
-  */
-  public static $modules = ['tracker', 'migrate_drupal'];
+   * {@inheritdoc}
+   */
+  protected static $modules = ['tracker', 'migrate_drupal'];
 
   /**
-  * {@inheritdoc}
-  */
+   * {@inheritdoc}
+   */
   public function providerSource() {
     $tests = [];
 

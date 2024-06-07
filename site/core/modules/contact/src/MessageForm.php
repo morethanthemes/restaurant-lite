@@ -101,7 +101,7 @@ class MessageForm extends ContentEntityForm {
   public function form(array $form, FormStateInterface $form_state) {
     $user = $this->currentUser();
     $message = $this->entity;
-    $form = parent::form($form, $form_state, $message);
+    $form = parent::form($form, $form_state);
     $form['#attributes']['class'][] = 'contact-form';
 
     if (!empty($message->preview)) {
@@ -174,6 +174,7 @@ class MessageForm extends ContentEntityForm {
       '#type' => 'submit',
       '#value' => $this->t('Preview'),
       '#submit' => ['::submitForm', '::preview'],
+      '#access' => !empty($form_state->getStorage()['form_display']->getComponent('preview')),
     ];
     return $elements;
   }
@@ -230,7 +231,7 @@ class MessageForm extends ContentEntityForm {
     // To avoid false error messages caused by flood control, redirect away from
     // the contact form; either to the contacted user account or the front page.
     if ($message->isPersonal() && $user->hasPermission('access user profiles')) {
-      $form_state->setRedirectUrl($message->getPersonalRecipient()->urlInfo());
+      $form_state->setRedirectUrl($message->getPersonalRecipient()->toUrl());
     }
     else {
       $form_state->setRedirectUrl($contact_form->getRedirectUrl());

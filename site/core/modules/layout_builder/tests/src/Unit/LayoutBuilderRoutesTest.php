@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\layout_builder\Unit;
 
 use Drupal\Core\Routing\RouteBuildEvent;
@@ -36,7 +38,7 @@ class LayoutBuilderRoutesTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->sectionStorageManager = $this->prophesize(SectionStorageManagerInterface::class);

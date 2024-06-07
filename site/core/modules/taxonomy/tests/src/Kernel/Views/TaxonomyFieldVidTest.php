@@ -3,7 +3,7 @@
 namespace Drupal\Tests\taxonomy\Kernel\Views;
 
 use Drupal\Core\Render\RenderContext;
-use Drupal\Tests\taxonomy\Functional\TaxonomyTestTrait;
+use Drupal\Tests\taxonomy\Traits\TaxonomyTestTrait;
 use Drupal\Tests\views\Kernel\ViewsKernelTestBase;
 use Drupal\user\Entity\User;
 use Drupal\views\Tests\ViewTestData;
@@ -24,7 +24,12 @@ class TaxonomyFieldVidTest extends ViewsKernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['taxonomy', 'taxonomy_test_views', 'text', 'filter'];
+  protected static $modules = [
+    'taxonomy',
+    'taxonomy_test_views',
+    'text',
+    'filter',
+  ];
 
   /**
    * Views used by this test.
@@ -34,23 +39,23 @@ class TaxonomyFieldVidTest extends ViewsKernelTestBase {
   public static $testViews = ['test_taxonomy_vid_field'];
 
   /**
-   * A taxonomy term to use in this test.
+   * An array of taxonomy term used in this test.
    *
-   * @var \Drupal\taxonomy\Entity\Term
+   * @var \Drupal\taxonomy\Entity\Term[]
    */
-  protected $term1;
+  protected $terms;
 
   /**
    * An admin user.
    *
-   * @var \Drupal\user\Entity\User;
+   * @var \Drupal\user\Entity\User
    */
   protected $adminUser;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp($import_test_views = TRUE) {
+  protected function setUp($import_test_views = TRUE): void {
     parent::setUp($import_test_views);
 
     $this->installEntitySchema('taxonomy_term');
@@ -58,8 +63,14 @@ class TaxonomyFieldVidTest extends ViewsKernelTestBase {
     $this->installConfig(['filter']);
 
     /** @var \Drupal\taxonomy\Entity\Vocabulary $vocabulary */
-    $vocabulary = $this->createVocabulary();
-    $this->term1 = $this->createTerm($vocabulary);
+    $vocabulary = $this->createVocabulary(['vid' => 'aaa']);
+    $term = $this->createTerm($vocabulary);
+    $this->terms[$term->id()] = $term;
+
+    /** @var \Drupal\taxonomy\Entity\Vocabulary $vocabulary2 */
+    $vocabulary2 = $this->createVocabulary(['vid' => 'bbb']);
+    $term = $this->createTerm($vocabulary2);
+    $this->terms[$term->id()] = $term;
 
     // Create user 1 and set is as the logged in user, so that the logged in
     // user has the correct permissions to view the vocabulary name.
@@ -67,7 +78,7 @@ class TaxonomyFieldVidTest extends ViewsKernelTestBase {
     $this->adminUser->save();
     $this->container->get('current_user')->setAccount($this->adminUser);
 
-    ViewTestData::createTestViews(get_class($this), ['taxonomy_test_views']);
+    ViewTestData::createTestViews(static::class, ['taxonomy_test_views']);
   }
 
   /**
@@ -83,10 +94,28 @@ class TaxonomyFieldVidTest extends ViewsKernelTestBase {
     $actual = $renderer->executeInRenderContext(new RenderContext(), function () use ($view) {
       return $view->field['vid']->advancedRender($view->result[0]);
     });
-    $vocabulary = Vocabulary::load($this->term1->bundle());
+    $tid = $view->result[0]->_entity->id();
+    $vocabulary = Vocabulary::load($this->terms[$tid]->bundle());
     $expected = $vocabulary->get('name');
 
-    $this->assertEquals($expected, $actual);
+    $this->assertEquals($expected, $actual, 'Displayed vocabulary name should match that loaded from the term.');
+    $this->assertEquals('aaa', $vocabulary->id(), 'First result should be vocabulary "aaa", due to ASC sorting.');
+
+    // Reverse sorting.
+
+    $view = Views::getView('test_taxonomy_vid_field');
+    $view->setHandlerOption('default', 'sort', 'vid', 'order', 'DESC');
+    $this->executeView($view);
+
+    $actual = $renderer->executeInRenderContext(new RenderContext(), function () use ($view) {
+      return $view->field['vid']->advancedRender($view->result[0]);
+    });
+    $tid = $view->result[0]->_entity->id();
+    $vocabulary = Vocabulary::load($this->terms[$tid]->bundle());
+    $expected = $vocabulary->get('name');
+
+    $this->assertEquals($expected, $actual, 'Displayed vocabulary name should match that loaded from the term.');
+    $this->assertEquals('bbb', $vocabulary->id(), 'First result should be vocabulary "bbb", due to DESC sorting.');
   }
 
 }

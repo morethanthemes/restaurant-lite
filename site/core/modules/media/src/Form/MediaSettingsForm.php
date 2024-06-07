@@ -3,6 +3,9 @@
 namespace Drupal\media\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Form\ConfigTarget;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\media\IFrameUrlHelper;
@@ -23,16 +26,28 @@ class MediaSettingsForm extends ConfigFormBase {
   protected $iFrameUrlHelper;
 
   /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * MediaSettingsForm constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory service.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typedConfigManager
+   *   The typed config manager.
    * @param \Drupal\media\IFrameUrlHelper $iframe_url_helper
    *   The iFrame URL helper service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, IFrameUrlHelper $iframe_url_helper) {
-    parent::__construct($config_factory);
+  public function __construct(ConfigFactoryInterface $config_factory, TypedConfigManagerInterface $typedConfigManager, IFrameUrlHelper $iframe_url_helper, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($config_factory, $typedConfigManager);
     $this->iFrameUrlHelper = $iframe_url_helper;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -41,7 +56,9 @@ class MediaSettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
-      $container->get('media.oembed.iframe_url_helper')
+      $container->get('config.typed'),
+      $container->get('media.oembed.iframe_url_helper'),
+      $container->get('entity_type.manager')
     );
   }
 
@@ -66,7 +83,7 @@ class MediaSettingsForm extends ConfigFormBase {
     $domain = $this->config('media.settings')->get('iframe_domain');
 
     if (!$this->iFrameUrlHelper->isSecure($domain)) {
-      $message = $this->t('It is potentially insecure to display oEmbed content in a frame that is served from the same domain as your main Drupal site, as this may allow execution of third-party code. <a href="https://oembed.com/#section3" target="_blank">Take a look here for more information</a>.');
+      $message = $this->t('It is potentially insecure to display oEmbed content in a frame that is served from the same domain as your main Drupal site, as this may allow execution of third-party code. Refer to <a href="https://oembed.com/#section3">oEmbed Security Considerations</a>.');
       $this->messenger()->addWarning($message);
     }
 
@@ -87,22 +104,18 @@ class MediaSettingsForm extends ConfigFormBase {
       '#title' => $this->t('iFrame domain'),
       '#size' => 40,
       '#maxlength' => 255,
-      '#default_value' => $domain,
+      '#config_target' => new ConfigTarget('media.settings', 'iframe_domain', toConfig: fn(?string $value) => $value ?: NULL),
       '#description' => $this->t('Enter a different domain from which to serve oEmbed content, including the <em>http://</em> or <em>https://</em> prefix. This domain needs to point back to this site, or existing oEmbed content may not display correctly, or at all.'),
     ];
 
+    $form['security']['standalone_url'] = [
+      '#prefix' => '<hr>',
+      '#type' => 'checkbox',
+      '#title' => $this->t('Standalone media URL'),
+      '#config_target' => 'media.settings:standalone_url',
+      '#description' => $this->t("Allow users to access @media-entities at /media/{id}.", ['@media-entities' => $this->entityTypeManager->getDefinition('media')->getPluralLabel()]),
+    ];
     return parent::buildForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->config('media.settings')
-      ->set('iframe_domain', $form_state->getValue('iframe_domain'))
-      ->save();
-
-    parent::submitForm($form, $form_state);
   }
 
 }

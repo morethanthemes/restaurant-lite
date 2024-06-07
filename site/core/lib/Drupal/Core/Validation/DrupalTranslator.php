@@ -43,7 +43,7 @@ class DrupalTranslator implements TranslatorInterface {
     }
 
     // Normally, calls to formatPlural() need to use literal strings, like
-    //   formatPlural($count, '1 item', '@count items')
+    // formatPlural($count, '1 item', '@count items')
     // so that the Drupal project POTX string extractor will correctly
     // extract the strings for translation and save them in a format that
     // formatPlural() can work with. However, this is a special case, because
@@ -86,7 +86,7 @@ class DrupalTranslator implements TranslatorInterface {
         // replacement strings.
       }
       // Check for symfony replacement patterns in the form "{{ name }}".
-      elseif (strpos($key, '{{ ') === 0 && strrpos($key, ' }}') == strlen($key) - 3) {
+      elseif (str_starts_with($key, '{{ ') && strrpos($key, ' }}') == strlen($key) - 3) {
         // Transform it into a Drupal pattern using the format %name.
         $key = '%' . substr($key, 3, strlen($key) - 6);
         $return[$key] = $value;
@@ -105,7 +105,7 @@ class DrupalTranslator implements TranslatorInterface {
     // We do not support domains, so we ignore this parameter.
     // If locale is left NULL, TranslatableMarkup will default to the interface
     // language.
-    $locale = isset($locale) ? $locale : $this->locale;
+    $locale = $locale ?? $this->locale;
     return ['langcode' => $locale];
   }
 

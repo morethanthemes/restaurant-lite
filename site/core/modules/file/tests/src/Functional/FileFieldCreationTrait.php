@@ -14,7 +14,8 @@ trait FileFieldCreationTrait {
    * Creates a new file field.
    *
    * @param string $name
-   *   The name of the new field (all lowercase), exclude the "field_" prefix.
+   *   The name of the new field (all lowercase). The Field UI 'field_' prefix
+   *   is not added to the field name.
    * @param string $entity_type
    *   The entity type.
    * @param string $bundle
@@ -47,7 +48,8 @@ trait FileFieldCreationTrait {
    * Attaches a file field to an entity.
    *
    * @param string $name
-   *   The name of the new field (all lowercase), exclude the "field_" prefix.
+   *   The name of the new field (all lowercase). The Field UI 'field_' prefix
+   *   is not added to the field name.
    * @param string $entity_type
    *   The entity type this field will be added to.
    * @param string $bundle
@@ -68,14 +70,14 @@ trait FileFieldCreationTrait {
     ];
     FieldConfig::create($field)->save();
 
-    entity_get_form_display($entity_type, $bundle, 'default')
+    \Drupal::service('entity_display.repository')->getFormDisplay($entity_type, $bundle)
       ->setComponent($name, [
         'type' => 'file_generic',
         'settings' => $widget_settings,
       ])
       ->save();
     // Assign display settings.
-    entity_get_display($entity_type, $bundle, 'default')
+    \Drupal::service('entity_display.repository')->getViewDisplay($entity_type, $bundle)
       ->setComponent($name, [
         'label' => 'hidden',
         'type' => 'file_default',

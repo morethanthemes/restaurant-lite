@@ -13,7 +13,7 @@ process:
       source: name
     -
       plugin: substr
-      length: 32
+      length: 30
   langcode: language
   property:
     plugin: static_map
@@ -25,6 +25,8 @@ process:
 destination:
   plugin: entity:taxonomy_vocabulary
   destination_module: config_translation
+  translations: true
 migration_dependencies:
   required:
     - d6_taxonomy_vocabulary
+    - language

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Utility;
 
 use Drupal\Component\Utility\Crypt;
@@ -13,23 +15,6 @@ use PHPUnit\Framework\TestCase;
  * @coversDefaultClass \Drupal\Component\Utility\Crypt
  */
 class CryptTest extends TestCase {
-
-  /**
-   * Tests random byte generation.
-   *
-   * @covers ::randomBytes
-   *
-   * @see \Drupal\Tests\Component\Utility\CryptRandomFallbackTest::testRandomBytesFallback
-   */
-  public function testRandomBytes() {
-    for ($i = 1; $i < 10; $i++) {
-      $count = rand(10, 10000);
-      // Check that different values are being generated.
-      $this->assertNotEquals(Crypt::randomBytes($count), Crypt::randomBytes($count));
-      // Check the length.
-      $this->assertEquals(strlen(Crypt::randomBytes($count)), $count);
-    }
-  }
 
   /**
    * Tests hash generation.
@@ -77,12 +62,7 @@ class CryptTest extends TestCase {
    *   Key to use in hashing process.
    */
   public function testHmacBase64Invalid($data, $key) {
-    if (method_exists($this, 'expectException')) {
-      $this->expectException('InvalidArgumentException');
-    }
-    else {
-      $this->setExpectedException('InvalidArgumentException');
-    }
+    $this->expectException('InvalidArgumentException');
     Crypt::hmacBase64($data, $key);
   }
 
@@ -95,10 +75,12 @@ class CryptTest extends TestCase {
     return [
       [
         'data' => 'The SHA (Secure Hash Algorithm) is one of a number of cryptographic hash functions. A cryptographic hash is like a signature for a text or a data file. SHA-256 algorithm generates an almost-unique, fixed size 256-bit (32-byte) hash. Hash is a one way function – it cannot be decrypted back. This makes it suitable for password validation, challenge hash authentication, anti-tamper, digital signatures.',
+        // cspell:disable-next-line
         'expectedHash' => '034rT6smZAVRxpq8O98cFFNLIVx_Ph1EwLZQKcmRR_s',
       ],
       [
         'data' => 'SHA-256 is one of the successor hash functions to SHA-1, and is one of the strongest hash functions available.',
+        // cspell:disable-next-line
         'expected_hash' => 'yuqkDDYqprL71k4xIb6K6D7n76xldO4jseRhEkEE6SI',
       ],
     ];
@@ -114,6 +96,7 @@ class CryptTest extends TestCase {
       [
         'data' => 'Calculates a base-64 encoded, URL-safe sha-256 hmac.',
         'key' => 'secret-key',
+        // cspell:disable-next-line
         'expected_hmac' => '2AaH63zwjhekWZlEpAiufyfhAHIzbQhl9Hd9oCi3_c8',
       ],
     ];

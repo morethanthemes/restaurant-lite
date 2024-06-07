@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\node\FunctionalJavascript;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
@@ -31,7 +33,12 @@ class ContextualLinksTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->drupalCreateContentType([
@@ -111,7 +118,7 @@ class ContextualLinksTest extends WebDriverTestBase {
 
     $this->toggleContextualTriggerVisibility('main');
     $contextual_button = $page->find('css', 'main .contextual button');
-    $this->assertEmpty(0, $contextual_button);
+    $this->assertEmpty(0, $contextual_button ?: '');
   }
 
 }

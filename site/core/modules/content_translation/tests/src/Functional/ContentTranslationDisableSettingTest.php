@@ -7,6 +7,8 @@ use Drupal\Tests\BrowserTestBase;
 /**
  * Test disabling content translation module.
  *
+ * @covers \Drupal\language\Form\ContentLanguageSettingsForm
+ * @covers ::_content_translation_form_language_content_settings_form_alter
  * @group content_translation
  */
 class ContentTranslationDisableSettingTest extends BrowserTestBase {
@@ -14,11 +16,16 @@ class ContentTranslationDisableSettingTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'content_translation',
     'menu_link_content',
     'language',
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Tests that entity schemas are up-to-date after enabling translation.
@@ -48,9 +55,9 @@ class ContentTranslationDisableSettingTest extends BrowserTestBase {
       $translatable_checkbox => TRUE,
       $language_alterable => TRUE,
     ];
-    $this->submitForm($edit, t('Save configuration'));
+    $this->submitForm($edit, 'Save configuration');
 
-    $assert->pageTextContains(t('Settings successfully updated.'));
+    $assert->statusMessageContains('Settings successfully updated.', 'status');
 
     $assert->checkboxChecked($group_checkbox);
 
@@ -59,9 +66,9 @@ class ContentTranslationDisableSettingTest extends BrowserTestBase {
       $translatable_checkbox => TRUE,
       $language_alterable => TRUE,
     ];
-    $this->submitForm($edit, t('Save configuration'));
+    $this->submitForm($edit, 'Save configuration');
 
-    $assert->pageTextContains(t('Settings successfully updated.'));
+    $assert->statusMessageContains('Settings successfully updated.', 'status');
 
     $assert->checkboxNotChecked($group_checkbox);
   }

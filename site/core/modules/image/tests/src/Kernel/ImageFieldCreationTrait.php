@@ -14,7 +14,8 @@ trait ImageFieldCreationTrait {
    * Create a new image field.
    *
    * @param string $name
-   *   The name of the new field (all lowercase), exclude the "field_" prefix.
+   *   The name of the new field (all lowercase). The Field UI 'field_' prefix
+   *   is not added to the field name.
    * @param string $type_name
    *   The node type that this field will be added to.
    * @param array $storage_settings
@@ -50,14 +51,16 @@ trait ImageFieldCreationTrait {
     ]);
     $field_config->save();
 
-    entity_get_form_display('node', $type_name, 'default')
+    /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $display_repository */
+    $display_repository = \Drupal::service('entity_display.repository');
+    $display_repository->getFormDisplay('node', $type_name)
       ->setComponent($name, [
         'type' => 'image_image',
         'settings' => $widget_settings,
       ])
       ->save();
 
-    entity_get_display('node', $type_name, 'default')
+    $display_repository->getViewDisplay('node', $type_name)
       ->setComponent($name, [
         'type' => 'image',
         'settings' => $formatter_settings,

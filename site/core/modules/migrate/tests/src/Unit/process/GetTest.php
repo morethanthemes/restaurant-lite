@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\migrate\Unit\process;
 
 use Drupal\migrate\Plugin\migrate\process\Get;
@@ -16,11 +18,11 @@ class GetTest extends MigrateProcessTestCase {
    */
   public function testTransformSourceString() {
     $this->row->expects($this->once())
-      ->method('getSourceProperty')
+      ->method('get')
       ->with('test')
-      ->will($this->returnValue('source_value'));
+      ->willReturn('source_value');
     $this->plugin = new Get(['source' => 'test'], '', []);
-    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destinationproperty');
+    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destination_property');
     $this->assertSame('source_value', $value);
   }
 
@@ -34,11 +36,11 @@ class GetTest extends MigrateProcessTestCase {
     ];
     $this->plugin = new Get(['source' => ['test1', 'test2']], '', []);
     $this->row->expects($this->exactly(2))
-      ->method('getSourceProperty')
-      ->will($this->returnCallback(function ($argument) use ($map) {
+      ->method('get')
+      ->willReturnCallback(function ($argument) use ($map) {
         return $map[$argument];
-      }));
-    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destinationproperty');
+      });
+    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destination_property');
     $this->assertSame(['source_value1', 'source_value2'], $value);
   }
 
@@ -47,11 +49,11 @@ class GetTest extends MigrateProcessTestCase {
    */
   public function testTransformSourceStringAt() {
     $this->row->expects($this->once())
-      ->method('getSourceProperty')
-      ->with('@test')
-      ->will($this->returnValue('source_value'));
+      ->method('get')
+      ->with('@@test')
+      ->willReturn('source_value');
     $this->plugin = new Get(['source' => '@@test'], '', []);
-    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destinationproperty');
+    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destination_property');
     $this->assertSame('source_value', $value);
   }
 
@@ -61,17 +63,17 @@ class GetTest extends MigrateProcessTestCase {
   public function testTransformSourceArrayAt() {
     $map = [
       'test1' => 'source_value1',
-      '@test2' => 'source_value2',
-      '@test3' => 'source_value3',
+      '@@test2' => 'source_value2',
+      '@@test3' => 'source_value3',
       'test4' => 'source_value4',
     ];
     $this->plugin = new Get(['source' => ['test1', '@@test2', '@@test3', 'test4']], '', []);
     $this->row->expects($this->exactly(4))
-      ->method('getSourceProperty')
-      ->will($this->returnCallback(function ($argument) use ($map) {
+      ->method('get')
+      ->willReturnCallback(function ($argument) use ($map) {
         return $map[$argument];
-      }));
-    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destinationproperty');
+      });
+    $value = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destination_property');
     $this->assertSame(['source_value1', 'source_value2', 'source_value3', 'source_value4'], $value);
   }
 
@@ -82,11 +84,11 @@ class GetTest extends MigrateProcessTestCase {
    */
   public function testIntegerValues($source, $expected_value) {
     $this->row->expects($this->atMost(2))
-      ->method('getSourceProperty')
+      ->method('get')
       ->willReturnOnConsecutiveCalls('val1', 'val2');
 
     $this->plugin = new Get(['source' => $source], '', []);
-    $return = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destinationproperty');
+    $return = $this->plugin->transform(NULL, $this->migrateExecutable, $this->row, 'destination_property');
     $this->assertSame($expected_value, $return);
   }
 
@@ -113,8 +115,9 @@ class GetTest extends MigrateProcessTestCase {
   }
 
   /**
-   * Tests the Get plugin for syntax errors, e.g. "Invalid tag_line detected" by
-   * creating a prophecy of the class.
+   * Tests the Get plugin for syntax errors by creating a prophecy of the class.
+   *
+   * An example of a syntax error is "Invalid tag_line detected".
    */
   public function testPluginSyntax() {
     $this->assertNotNull($this->prophesize(Get::class));

@@ -3,6 +3,7 @@
 namespace Drupal\file\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\StringTranslation\ByteSizeMarkup;
 
 /**
  * Plugin implementation of the 'file_table' formatter.
@@ -24,9 +25,9 @@ class TableFormatter extends DescriptionAwareFileFormatterBase {
     $elements = [];
 
     if ($files = $this->getEntitiesToView($items, $langcode)) {
-      $header = [t('Attachment'), t('Size')];
+      $header = [$this->t('Attachment'), $this->t('Size')];
       $rows = [];
-      foreach ($files as $delta => $file) {
+      foreach ($files as $file) {
         $item = $file->_referringItem;
         $rows[] = [
           [
@@ -39,7 +40,7 @@ class TableFormatter extends DescriptionAwareFileFormatterBase {
               ],
             ],
           ],
-          ['data' => format_size($file->getSize())],
+          ['data' => $file->getSize() !== NULL ? ByteSizeMarkup::create($file->getSize()) : $this->t('Unknown')],
         ];
       }
 

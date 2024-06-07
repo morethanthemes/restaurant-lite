@@ -6,7 +6,6 @@ use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Cache\Cache;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Simple caching of query results for Views displays.
@@ -34,13 +33,6 @@ class Time extends CachePluginBase {
   protected $dateFormatter;
 
   /**
-   * The current request.
-   *
-   * @var \Symfony\Component\HttpFoundation\Request
-   */
-  protected $request;
-
-  /**
    * Constructs a Time cache plugin object.
    *
    * @param array $configuration
@@ -51,12 +43,9 @@ class Time extends CachePluginBase {
    *   The plugin implementation definition.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter service.
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The current request.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, DateFormatterInterface $date_formatter, Request $request) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, DateFormatterInterface $date_formatter) {
     $this->dateFormatter = $date_formatter;
-    $this->request = $request;
 
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
@@ -69,8 +58,7 @@ class Time extends CachePluginBase {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('date.formatter'),
-      $container->get('request_stack')->getCurrentRequest()
+      $container->get('date.formatter')
     );
   }
 

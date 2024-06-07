@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Serialization;
 
 use Drupal\Component\Serialization\Exception\InvalidDataTypeException;
@@ -16,19 +18,25 @@ use PHPUnit\Framework\TestCase;
 class YamlTest extends TestCase {
 
   /**
-   * @var \PHPUnit_Framework_MockObject_MockObject
+   * @var \PHPUnit\Framework\MockObject\MockObject
    */
   protected $mockParser;
 
-  public function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->mockParser = $this->getMockBuilder('\stdClass')
-      ->setMethods(['encode', 'decode', 'getFileExtension'])
+      ->addMethods(['encode', 'decode', 'getFileExtension'])
       ->getMock();
     YamlParserProxy::setMock($this->mockParser);
   }
 
-  public function tearDown() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function tearDown(): void {
     YamlParserProxy::setMock(NULL);
     parent::tearDown();
   }
@@ -102,13 +110,8 @@ class YamlTest extends TestCase {
    * @see \Drupal\Tests\Component\Serialization\YamlTest::testObjectSupportDisabledPecl()
    */
   public function testObjectSupportDisabledSymfony() {
-    if (method_exists($this, 'setExpectedExceptionRegExp')) {
-      $this->setExpectedExceptionRegExp(InvalidDataTypeException::class, '/^Object support when parsing a YAML file has been disabled/');
-    }
-    else {
-      $this->expectException(InvalidDataTypeException::class);
-      $this->expectExceptionMessageRegExp('/^Object support when parsing a YAML file has been disabled/');
-    }
+    $this->expectException(InvalidDataTypeException::class);
+    $this->expectExceptionMessageMatches('/^Object support when parsing a YAML file has been disabled/');
     $object = new \stdClass();
     $object->foo = 'bar';
     // In core all Yaml encoding is done via Symfony and it does not support
@@ -128,10 +131,10 @@ class YamlTest extends TestCase {
     foreach ($dirs as $dir) {
       $pathname = $dir->getPathname();
       // Exclude core/node_modules.
-      if ($dir->getExtension() == 'yml' && strpos($pathname, '/../../../../../node_modules') === FALSE) {
-        if (strpos($dir->getRealPath(), 'invalid_file') !== FALSE) {
+      if ($dir->getExtension() == 'yml' && !str_contains($pathname, '/../../../../../node_modules')) {
+        if (str_contains($dir->getRealPath(), 'invalid_file')) {
           // There are some intentionally invalid files provided for testing
-          // library API behaviours, ignore them.
+          // library API behaviors, ignore them.
           continue;
         }
         $files[] = [$dir->getRealPath()];

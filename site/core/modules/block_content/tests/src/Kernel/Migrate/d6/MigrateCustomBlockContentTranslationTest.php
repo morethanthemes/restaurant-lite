@@ -6,7 +6,7 @@ use Drupal\block_content\Entity\BlockContent;
 use Drupal\Tests\migrate_drupal\Kernel\d6\MigrateDrupal6TestBase;
 
 /**
- * Tests migration of i18n custom block strings.
+ * Tests migration of i18n content block strings.
  *
  * @group migrate_drupal_6
  */
@@ -15,21 +15,19 @@ class MigrateCustomBlockContentTranslationTest extends MigrateDrupal6TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'block_content',
     'content_translation',
     'language',
-    // Required for translation migrations.
-    'migrate_drupal_multilingual',
   ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
-    $this->installConfig(['block_content']);
     $this->installEntitySchema('block_content');
+    $this->installConfig(['block_content']);
     $this->executeMigrations([
       'language',
       'd6_filter_format',
@@ -41,7 +39,7 @@ class MigrateCustomBlockContentTranslationTest extends MigrateDrupal6TestBase {
   }
 
   /**
-   * Tests the Drupal 6 i18n custom block strings to Drupal 8 migration.
+   * Tests the Drupal 6 i18n content block strings to Drupal 8 migration.
    */
   public function testCustomBlockContentTranslation() {
     /** @var \Drupal\block_content\Entity\BlockContent $block */
@@ -50,7 +48,7 @@ class MigrateCustomBlockContentTranslationTest extends MigrateDrupal6TestBase {
     $this->assertGreaterThanOrEqual(REQUEST_TIME, $block->getChangedTime());
     $this->assertLessThanOrEqual(time(), $block->getChangedTime());
     $this->assertSame('fr', $block->language()->getId());
-    $this->assertSame('<h3>fr - My first custom block body</h3>', $block->body->value);
+    $this->assertSame('<h3>fr - My first content block body</h3>', $block->body->value);
     $this->assertSame('full_html', $block->body->format);
 
     $block = $block->getTranslation('zu');
@@ -58,7 +56,7 @@ class MigrateCustomBlockContentTranslationTest extends MigrateDrupal6TestBase {
     $this->assertGreaterThanOrEqual(REQUEST_TIME, $block->getChangedTime());
     $this->assertLessThanOrEqual(time(), $block->getChangedTime());
     $this->assertSame('zu', $block->language()->getId());
-    $this->assertSame('<h3>zu - My first custom block body</h3>', $block->body->value);
+    $this->assertSame('<h3>zu - My first content block body</h3>', $block->body->value);
     $this->assertSame('full_html', $block->body->format);
 
     $block = BlockContent::load(2)->getTranslation('fr');

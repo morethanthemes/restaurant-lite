@@ -15,14 +15,14 @@ class LayoutBuilderFieldLayoutCompatibilityTest extends LayoutBuilderCompatibili
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'field_layout',
   ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->display
@@ -73,7 +73,7 @@ class LayoutBuilderFieldLayoutCompatibilityTest extends LayoutBuilderCompatibili
     $this->assertNotEmpty($this->cssSelect('.layout--onecol'));
 
     // Removing the layout restores the original rendering of the entity.
-    $field_list->removeSection(0);
+    $field_list->removeAllSections();
     $this->entity->save();
     $this->assertFieldAttributes($this->entity, $expected_fields);
   }

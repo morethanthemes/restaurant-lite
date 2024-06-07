@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Access;
 
 use Drupal\Core\Access\AccessResultForbidden;
@@ -28,7 +30,7 @@ class AccessResultForbiddenTest extends UnitTestCase {
   }
 
   /**
-   * Test setReason()
+   * Tests setReason()
    *
    * @covers ::setReason
    */

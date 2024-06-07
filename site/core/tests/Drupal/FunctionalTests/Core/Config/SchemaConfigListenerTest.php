@@ -6,7 +6,7 @@ use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\Traits\Core\Config\SchemaConfigListenerTestTrait;
 
 /**
- * Tests the functionality of ConfigSchemaChecker in KernelTestBase tests.
+ * Tests the functionality of ConfigSchemaChecker in BrowserTestBase tests.
  *
  * @group config
  */
@@ -17,6 +17,11 @@ class SchemaConfigListenerTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['config_test'];
+  protected static $modules = ['config_test'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
 }

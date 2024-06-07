@@ -66,6 +66,9 @@ use Drupal\Core\Url;
  *   in some cases. See also #attached.
  * - #defaults_loaded: (bool) Set to TRUE during rendering when the defaults
  *   for the element #type have been added to the element.
+ * - #value: (mixed) A value that cannot be edited by the user.
+ * - #has_garbage_value: (bool) Internal only. Set to TRUE to indicate that the
+ *   #value property of an element should not be used or processed.
  * - #id: (string) The HTML ID on the element. This is automatically set for
  *   form elements, but not for all render elements; you can override the
  *   default value or add an ID by setting this property.
@@ -241,6 +244,7 @@ abstract class RenderElement extends PluginBase implements ElementInterface {
    *   - #ajax['event']
    *   - #ajax['prevent']
    *   - #ajax['url']
+   *   - #ajax['httpMethod']
    *   - #ajax['callback']
    *   - #ajax['options']
    *   - #ajax['wrapper']
@@ -267,6 +271,12 @@ abstract class RenderElement extends PluginBase implements ElementInterface {
     // Add a data attribute to disable automatic refocus after ajax call.
     if (!empty($element['#ajax']['disable-refocus'])) {
       $element['#attributes']['data-disable-refocus'] = "true";
+    }
+
+    // Add a data attribute to attempt to focus element that was focused before
+    // executing ajax commands.
+    if ($element['#ajax']['refocus-blur'] ?? FALSE) {
+      $element['#attributes']['data-refocus-blur'] = "true";
     }
 
     // Add a reasonable default event handler if none was specified.
@@ -323,7 +333,18 @@ abstract class RenderElement extends PluginBase implements ElementInterface {
 
     // Attach JavaScript settings to the element.
     if (isset($element['#ajax']['event'])) {
-      $element['#attached']['library'][] = 'core/jquery.form';
+      // By default, focus should return to the element focused prior to the
+      // execution of AJAX commands within event listeners attached to the blur
+      // event. This behavior can be explicitly overridden if needed.
+      if (!isset($element['#ajax']['refocus-blur'])) {
+        // The change event on text input types is triggered on blur.
+        $text_types = ['password', 'textfield', 'number', 'tel', 'textarea', 'machine_name'];
+        if ($element['#ajax']['event'] === 'blur' || ($element['#ajax']['event'] === 'change' && in_array($element['#type'], $text_types))) {
+          $element['#attributes']['data-refocus-blur'] = "true";
+        }
+      }
+
+      $element['#attached']['library'][] = 'core/internal.jquery.form';
       $element['#attached']['library'][] = 'core/drupal.ajax';
 
       $settings = $element['#ajax'];
@@ -337,6 +358,7 @@ abstract class RenderElement extends PluginBase implements ElementInterface {
       // to be substantially different for a JavaScript triggered submission.
       $settings += [
         'url' => NULL,
+        'httpMethod' => 'POST',
         'options' => ['query' => []],
         'dialogType' => 'ajax',
       ];

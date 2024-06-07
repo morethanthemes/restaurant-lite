@@ -4,6 +4,7 @@ namespace Drupal\Core\Condition;
 
 use Drupal\Component\Plugin\CategorizingPluginManagerInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Executable\ExecutableException;
 use Drupal\Core\Executable\ExecutableManagerInterface;
 use Drupal\Core\Executable\ExecutableInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -56,14 +57,6 @@ class ConditionManager extends DefaultPluginManager implements ExecutableManager
    */
   public function createInstance($plugin_id, array $configuration = []) {
     $plugin = $this->getFactory()->createInstance($plugin_id, $configuration);
-
-    // If we receive any context values via config set it into the plugin.
-    if (!empty($configuration['context'])) {
-      foreach ($configuration['context'] as $name => $context) {
-        $plugin->setContextValue($name, $context);
-      }
-    }
-
     return $plugin->setExecutableManager($this);
   }
 
@@ -71,8 +64,11 @@ class ConditionManager extends DefaultPluginManager implements ExecutableManager
    * {@inheritdoc}
    */
   public function execute(ExecutableInterface $condition) {
-    $result = $condition->evaluate();
-    return $condition->isNegated() ? !$result : $result;
+    if ($condition instanceof ConditionInterface) {
+      $result = $condition->evaluate();
+      return $condition->isNegated() ? !$result : $result;
+    }
+    throw new ExecutableException("This manager object can only execute condition plugins");
   }
 
 }

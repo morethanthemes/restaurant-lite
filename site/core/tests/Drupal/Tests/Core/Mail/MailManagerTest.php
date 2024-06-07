@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Mail\MailManagerTest.
- */
+declare(strict_types=1);
 
 namespace Drupal\Tests\Core\Mail;
 
@@ -13,6 +10,8 @@ use Drupal\Core\Render\RendererInterface;
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Mail\MailManager;
 use Drupal\Component\Plugin\Discovery\DiscoveryInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @coversDefaultClass \Drupal\Core\Mail\MailManager
@@ -23,35 +22,35 @@ class MailManagerTest extends UnitTestCase {
   /**
    * The cache backend to use.
    *
-   * @var \Drupal\Core\Cache\CacheBackendInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Cache\CacheBackendInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $cache;
 
   /**
    * The module handler.
    *
-   * @var \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $moduleHandler;
 
   /**
    * The configuration factory.
    *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $configFactory;
 
   /**
    * The plugin discovery.
    *
-   * @var \Drupal\Component\Plugin\Discovery\DiscoveryInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Component\Plugin\Discovery\DiscoveryInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $discovery;
 
   /**
    * The renderer.
    *
-   * @var \Drupal\Core\Render\RendererInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Render\RendererInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $renderer;
 
@@ -61,6 +60,20 @@ class MailManagerTest extends UnitTestCase {
    * @var \Drupal\Tests\Core\Mail\TestMailManager
    */
   protected $mailManager;
+
+  /**
+   * The request stack.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack|\Prophecy\Prophecy\ProphecyInterface
+   */
+  protected $requestStack;
+
+  /**
+   * The current request.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request
+   */
+  protected $request;
 
   /**
    * A list of mail plugin definitions.
@@ -81,18 +94,18 @@ class MailManagerTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     // Prepare the default constructor arguments required by MailManager.
-    $this->cache = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
+    $this->cache = $this->createMock('Drupal\Core\Cache\CacheBackendInterface');
 
-    $this->moduleHandler = $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface');
+    $this->moduleHandler = $this->createMock('Drupal\Core\Extension\ModuleHandlerInterface');
 
     // Mock a Discovery object to replace AnnotationClassDiscovery.
-    $this->discovery = $this->getMock('Drupal\Component\Plugin\Discovery\DiscoveryInterface');
+    $this->discovery = $this->createMock('Drupal\Component\Plugin\Discovery\DiscoveryInterface');
     $this->discovery->expects($this->any())
       ->method('getDefinitions')
-      ->will($this->returnValue($this->definitions));
+      ->willReturn($this->definitions);
   }
 
   /**
@@ -103,21 +116,36 @@ class MailManagerTest extends UnitTestCase {
     $this->configFactory = $this->getConfigFactoryStub([
       'system.mail' => [
         'interface' => $interface,
+        'mailer_dsn' => [
+          'scheme' => 'null',
+          'host' => 'null',
+          'user' => NULL,
+          'password' => NULL,
+          'port' => NULL,
+          'options' => [],
+        ],
       ],
       'system.site' => [
         'mail' => 'test@example.com',
       ],
     ]);
-    $logger_factory = $this->getMock('\Drupal\Core\Logger\LoggerChannelFactoryInterface');
+    $logger_factory = $this->createMock('\Drupal\Core\Logger\LoggerChannelFactoryInterface');
     $string_translation = $this->getStringTranslationStub();
-    $this->renderer = $this->getMock(RendererInterface::class);
+    $this->renderer = $this->createMock(RendererInterface::class);
     // Construct the manager object and override its discovery.
     $this->mailManager = new TestMailManager(new \ArrayObject(), $this->cache, $this->moduleHandler, $this->configFactory, $logger_factory, $string_translation, $this->renderer);
     $this->mailManager->setDiscovery($this->discovery);
 
+    $this->request = new Request();
+
+    $this->requestStack = $this->prophesize(RequestStack::class);
+    $this->requestStack->getCurrentRequest()
+      ->willReturn($this->request);
+
     // @see \Drupal\Core\Plugin\Factory\ContainerFactory::createInstance()
     $container = new ContainerBuilder();
     $container->set('config.factory', $this->configFactory);
+    $container->set('request_stack', $this->requestStack->reveal());
     \Drupal::setContainer($container);
   }
 
@@ -129,7 +157,7 @@ class MailManagerTest extends UnitTestCase {
   public function testGetInstance() {
     $interface = [
       'default' => 'php_mail',
-      'default' => 'test_mail_collector',
+      'example_testkey' => 'test_mail_collector',
     ];
     $this->setUpMailManager($interface);
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core\Entity;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
@@ -34,9 +36,11 @@ class BaseFieldDefinitionTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
+
     // Mock the field type manager and place it in the container.
-    $field_type_manager = $this->getMock('Drupal\Core\Field\FieldTypePluginManagerInterface');
+    $field_type_manager = $this->createMock('Drupal\Core\Field\FieldTypePluginManagerInterface');
 
     $this->fieldType = $this->randomMachineName();
     $this->fieldTypeDefinition = [
@@ -51,19 +55,19 @@ class BaseFieldDefinitionTest extends UnitTestCase {
 
     $field_type_manager->expects($this->any())
       ->method('getDefinitions')
-      ->will($this->returnValue([$this->fieldType => $this->fieldTypeDefinition]));
+      ->willReturn([$this->fieldType => $this->fieldTypeDefinition]);
     $field_type_manager->expects($this->any())
       ->method('getDefinition')
       ->with($this->fieldType)
-      ->will($this->returnValue($this->fieldTypeDefinition));
+      ->willReturn($this->fieldTypeDefinition);
     $field_type_manager->expects($this->any())
       ->method('getDefaultStorageSettings')
       ->with($this->fieldType)
-      ->will($this->returnValue($this->fieldTypeDefinition['storage_settings']));
+      ->willReturn($this->fieldTypeDefinition['storage_settings']);
     $field_type_manager->expects($this->any())
       ->method('getDefaultFieldSettings')
       ->with($this->fieldType)
-      ->will($this->returnValue($this->fieldTypeDefinition['field_settings']));
+      ->willReturn($this->fieldTypeDefinition['field_settings']);
 
     $container = new ContainerBuilder();
     $container->set('plugin.manager.field.field_type', $field_type_manager);
@@ -176,7 +180,7 @@ class BaseFieldDefinitionTest extends UnitTestCase {
       ->getMock();
     $data_definition->expects($this->any())
       ->method('getClass')
-      ->will($this->returnValue('Drupal\Core\Field\FieldItemBase'));
+      ->willReturn('Drupal\Core\Field\FieldItemBase');
     $definition->setItemDefinition($data_definition);
 
     // Set default value only with a literal.
@@ -216,31 +220,31 @@ class BaseFieldDefinitionTest extends UnitTestCase {
     // Set the field item list class to be used to avoid requiring the typed
     // data manager to retrieve it.
     $definition->setClass('Drupal\Core\Field\FieldItemList');
-    $this->assertEquals($expected_default_value, $definition->getInitialValue($entity));
+    $this->assertEquals($expected_default_value, $definition->getInitialValue());
 
     $data_definition = $this->getMockBuilder('Drupal\Core\TypedData\DataDefinition')
       ->disableOriginalConstructor()
       ->getMock();
     $data_definition->expects($this->any())
       ->method('getClass')
-      ->will($this->returnValue('Drupal\Core\Field\FieldItemBase'));
+      ->willReturn('Drupal\Core\Field\FieldItemBase');
     $definition->setItemDefinition($data_definition);
 
     // Set default value only with a literal.
     $definition->setInitialValue($default_value['value']);
-    $this->assertEquals($expected_default_value, $definition->getInitialValue($entity));
+    $this->assertEquals($expected_default_value, $definition->getInitialValue());
 
     // Set default value with an indexed array.
     $definition->setInitialValue($expected_default_value);
-    $this->assertEquals($expected_default_value, $definition->getInitialValue($entity));
+    $this->assertEquals($expected_default_value, $definition->getInitialValue());
 
     // Set default value with an empty array.
     $definition->setInitialValue([]);
-    $this->assertEquals([], $definition->getInitialValue($entity));
+    $this->assertEquals([], $definition->getInitialValue());
 
     // Set default value with NULL.
     $definition->setInitialValue(NULL);
-    $this->assertEquals([], $definition->getInitialValue($entity));
+    $this->assertEquals([], $definition->getInitialValue());
   }
 
   /**
@@ -353,7 +357,7 @@ class BaseFieldDefinitionTest extends UnitTestCase {
    */
   public function testDefaultValueCallback() {
     $definition = BaseFieldDefinition::create($this->fieldType);
-    $callback = get_class($this) . '::mockDefaultValueCallback';
+    $callback = static::class . '::mockDefaultValueCallback';
     // setDefaultValueCallback returns $this.
     $this->assertSame($definition, $definition->setDefaultValueCallback($callback));
   }
@@ -366,8 +370,8 @@ class BaseFieldDefinitionTest extends UnitTestCase {
   public function testInvalidDefaultValueCallback() {
     $definition = BaseFieldDefinition::create($this->fieldType);
     // setDefaultValueCallback returns $this.
-    $this->setExpectedException(\InvalidArgumentException::class);
-    $definition->setDefaultValueCallback([get_class($this), 'mockDefaultValueCallback']);
+    $this->expectException(\InvalidArgumentException::class);
+    $definition->setDefaultValueCallback([static::class, 'mockDefaultValueCallback']);
   }
 
   /**

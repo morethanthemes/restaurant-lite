@@ -15,7 +15,7 @@ class MigrateLanguageNegotiationSettingsTest extends MigrateDrupal7TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['language'];
+  protected static $modules = ['language'];
 
   /**
    * Tests migration of language types variables to language.types.yml.
@@ -29,7 +29,7 @@ class MigrateLanguageNegotiationSettingsTest extends MigrateDrupal7TestBase {
 
     $config = $this->config('language.types');
     $this->assertSame(['language_content', 'language_url', 'language_interface'], $config->get('all'));
-    $this->assertSame(['language_interface'], $config->get('configurable'));
+    $this->assertSame(['language_content', 'language_interface'], $config->get('configurable'));
     $this->assertSame(['enabled' => ['language-interface' => 0]], $config->get('negotiation.language_content'));
     $this->assertSame(['enabled' => ['language-url' => 0, 'language-url-fallback' => 1]], $config->get('negotiation.language_url'));
     $expected_language_interface = [

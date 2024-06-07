@@ -258,8 +258,8 @@ class DeleteMultipleForm extends ConfirmFormBase implements BaseFormIdInterface 
     if ($delete_entities) {
       $storage->delete($delete_entities);
       foreach ($delete_entities as $entity) {
-        $this->logger($entity->getEntityType()->getProvider())->notice('The @entity-type %label has been deleted.', [
-          '@entity-type' => $entity->getEntityType()->getLowercaseLabel(),
+        $this->logger($entity->getEntityType()->getProvider())->info('The @entity-type %label has been deleted.', [
+          '@entity-type' => $entity->getEntityType()->getSingularLabel(),
           '%label' => $entity->label(),
         ]);
       }
@@ -274,8 +274,8 @@ class DeleteMultipleForm extends ConfirmFormBase implements BaseFormIdInterface 
         }
         $entity->save();
         foreach ($translations as $translation) {
-          $this->logger($entity->getEntityType()->getProvider())->notice('The @entity-type %label @language translation has been deleted.', [
-            '@entity-type' => $entity->getEntityType()->getLowercaseLabel(),
+          $this->logger($entity->getEntityType()->getProvider())->info('The @entity-type %label @language translation has been deleted.', [
+            '@entity-type' => $entity->getEntityType()->getSingularLabel(),
             '%label'       => $entity->label(),
             '@language'    => $translation->language()->getName(),
           ]);

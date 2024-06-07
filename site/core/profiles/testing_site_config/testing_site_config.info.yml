@@ -1,0 +1,10 @@
+name: Testing site config
+type: profile
+description: 'Minimal profile for testing with default site config.'
+# version: VERSION
+hidden: true
+
+# Information added by Drupal.org packaging script on 2024-06-06
+version: '10.2.7'
+project: 'drupal'
+datestamp: 1717660126

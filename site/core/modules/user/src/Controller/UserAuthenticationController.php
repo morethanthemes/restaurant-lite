@@ -5,9 +5,9 @@ namespace Drupal\user\Controller;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\Flood\FloodInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\user\UserAuthInterface;
+use Drupal\user\UserFloodControlInterface;
 use Drupal\user\UserInterface;
 use Drupal\user\UserStorageInterface;
 use Psr\Log\LoggerInterface;
@@ -39,11 +39,11 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
   const LOGGED_OUT = 0;
 
   /**
-   * The flood controller.
+   * The user flood control service.
    *
-   * @var \Drupal\Core\Flood\FloodInterface
+   * @var \Drupal\user\UserFloodControl
    */
-  protected $flood;
+  protected $userFloodControl;
 
   /**
    * The user storage.
@@ -97,8 +97,8 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
   /**
    * Constructs a new UserAuthenticationController object.
    *
-   * @param \Drupal\Core\Flood\FloodInterface $flood
-   *   The flood controller.
+   * @param \Drupal\user\UserFloodControlInterface $user_flood_control
+   *   The user flood control service.
    * @param \Drupal\user\UserStorageInterface $user_storage
    *   The user storage.
    * @param \Drupal\Core\Access\CsrfTokenGenerator $csrf_token
@@ -114,8 +114,8 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
    * @param \Psr\Log\LoggerInterface $logger
    *   A logger instance.
    */
-  public function __construct(FloodInterface $flood, UserStorageInterface $user_storage, CsrfTokenGenerator $csrf_token, UserAuthInterface $user_auth, RouteProviderInterface $route_provider, Serializer $serializer, array $serializer_formats, LoggerInterface $logger) {
-    $this->flood = $flood;
+  public function __construct(UserFloodControlInterface $user_flood_control, UserStorageInterface $user_storage, CsrfTokenGenerator $csrf_token, UserAuthInterface $user_auth, RouteProviderInterface $route_provider, Serializer $serializer, array $serializer_formats, LoggerInterface $logger) {
+    $this->userFloodControl = $user_flood_control;
     $this->userStorage = $user_storage;
     $this->csrfToken = $csrf_token;
     $this->userAuth = $user_auth;
@@ -140,7 +140,7 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
     }
 
     return new static(
-      $container->get('flood'),
+      $container->get('user.flood_control'),
       $container->get('entity_type.manager')->getStorage('user'),
       $container->get('csrf_token'),
       $container->get('user.auth'),
@@ -183,7 +183,7 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
     }
 
     if ($uid = $this->userAuth->authenticate($credentials['name'], $credentials['pass'])) {
-      $this->flood->clear('user.http_login', $this->getLoginFloodIdentifier($request, $credentials['name']));
+      $this->userFloodControl->clear('user.http_login', $this->getLoginFloodIdentifier($request, $credentials['name']));
       /** @var \Drupal\user\UserInterface $user */
       $user = $this->userStorage->load($uid);
       $this->userLoginFinalize($user);
@@ -212,10 +212,10 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
 
     $flood_config = $this->config('user.flood');
     if ($identifier = $this->getLoginFloodIdentifier($request, $credentials['name'])) {
-      $this->flood->register('user.http_login', $flood_config->get('user_window'), $identifier);
+      $this->userFloodControl->register('user.http_login', $flood_config->get('user_window'), $identifier);
     }
     // Always register an IP-based failed login event.
-    $this->flood->register('user.failed_login_ip', $flood_config->get('ip_window'));
+    $this->userFloodControl->register('user.failed_login_ip', $flood_config->get('ip_window'));
     throw new BadRequestHttpException('Sorry, unrecognized username or password.');
   }
 
@@ -240,33 +240,42 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
     }
 
     // Load by name if provided.
+    $identifier = '';
     if (isset($credentials['name'])) {
-      $users = $this->userStorage->loadByProperties(['name' => trim($credentials['name'])]);
+      $identifier = $credentials['name'];
+      $users = $this->userStorage->loadByProperties(['name' => trim($identifier)]);
     }
     elseif (isset($credentials['mail'])) {
-      $users = $this->userStorage->loadByProperties(['mail' => trim($credentials['mail'])]);
+      $identifier = $credentials['mail'];
+      $users = $this->userStorage->loadByProperties(['mail' => trim($identifier)]);
     }
 
     /** @var \Drupal\Core\Session\AccountInterface $account */
     $account = reset($users);
     if ($account && $account->id()) {
       if ($this->userIsBlocked($account->getAccountName())) {
-        throw new BadRequestHttpException('The user has not been activated or is blocked.');
+        $this->logger->error('Unable to send password reset email for blocked or not yet activated user %identifier.', [
+          '%identifier' => $identifier,
+        ]);
+        return new Response();
       }
 
       // Send the password reset email.
-      $mail = _user_mail_notify('password_reset', $account, $account->getPreferredLangcode());
+      $mail = _user_mail_notify('password_reset', $account);
       if (empty($mail)) {
         throw new BadRequestHttpException('Unable to send email. Contact the site administrator if the problem persists.');
       }
       else {
-        $this->logger->notice('Password reset instructions mailed to %name at %email.', ['%name' => $account->getAccountName(), '%email' => $account->getEmail()]);
+        $this->logger->info('Password reset instructions mailed to %name at %email.', ['%name' => $account->getAccountName(), '%email' => $account->getEmail()]);
         return new Response();
       }
     }
 
     // Error if no users found with provided name or mail.
-    throw new BadRequestHttpException('Unrecognized username or email address.');
+    $this->logger->error('Unable to send password reset email for unrecognized username or email address %identifier.', [
+      '%identifier' => $identifier,
+    ]);
+    return new Response();
   }
 
   /**
@@ -354,14 +363,14 @@ class UserAuthenticationController extends ControllerBase implements ContainerIn
    */
   protected function floodControl(Request $request, $username) {
     $flood_config = $this->config('user.flood');
-    if (!$this->flood->isAllowed('user.failed_login_ip', $flood_config->get('ip_limit'), $flood_config->get('ip_window'))) {
+    if (!$this->userFloodControl->isAllowed('user.failed_login_ip', $flood_config->get('ip_limit'), $flood_config->get('ip_window'))) {
       throw new AccessDeniedHttpException('Access is blocked because of IP based flood prevention.', NULL, Response::HTTP_TOO_MANY_REQUESTS);
     }
 
     if ($identifier = $this->getLoginFloodIdentifier($request, $username)) {
       // Don't allow login if the limit for this user has been reached.
       // Default is to allow 5 failed attempts every 6 hours.
-      if (!$this->flood->isAllowed('user.http_login', $flood_config->get('user_limit'), $flood_config->get('user_window'), $identifier)) {
+      if (!$this->userFloodControl->isAllowed('user.http_login', $flood_config->get('user_limit'), $flood_config->get('user_window'), $identifier)) {
         if ($flood_config->get('uid_only')) {
           $error_message = sprintf('There have been more than %s failed login attempts for this account. It is temporarily blocked. Try again later or request a new password.', $flood_config->get('user_limit'));
         }

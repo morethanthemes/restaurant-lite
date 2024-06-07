@@ -77,3 +77,71 @@ ajax_test.render_error:
     _controller: '\Drupal\ajax_test\Controller\AjaxTestController::renderError'
   requirements:
     _access: 'TRUE'
+
+ajax_test.message_form:
+  path: '/ajax-test/message'
+  defaults:
+    _title: 'Ajax Message Form'
+    _form: '\Drupal\ajax_test\Form\AjaxTestMessageCommandForm'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.focus_first_form:
+  path: '/ajax-test/focus-first'
+  defaults:
+    _title: 'Ajax Focus First Form'
+    _form: '\Drupal\ajax_test\Form\AjaxTestFocusFirstForm'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.promise:
+  path: '/ajax-test/promise-form'
+  defaults:
+    _title: 'Ajax Form Command Promise'
+    _form: '\Drupal\ajax_test\Form\AjaxTestFormPromise'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.global_events:
+  path: '/ajax-test/global-events'
+  defaults:
+    _controller: '\Drupal\ajax_test\Controller\AjaxTestController::globalEvents'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.global_events_clear_log:
+  path: '/ajax-test/global-events/clear-log'
+  defaults:
+    _controller: '\Drupal\ajax_test\Controller\AjaxTestController::globalEventsClearLog'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.exception_link:
+  path: '/ajax-test/exception-link'
+  defaults:
+    _controller: '\Drupal\ajax_test\Controller\AjaxTestController::exceptionLink'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.throw_exception:
+  path: '/ajax-test/throw-exception'
+  defaults:
+    _controller: '\Drupal\ajax_test\Controller\AjaxTestController::throwException'
+  requirements:
+    _access: 'TRUE'
+
+ajax_test.http_methods:
+  path: '/ajax-test/http-methods'
+  defaults:
+    _controller: Drupal\ajax_test\Controller\AjaxTestController::httpMethods
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+
+ajax_test.http_methods.dialog:
+  path: '/ajax-test/http-methods-dialog'
+  defaults:
+    _controller: Drupal\ajax_test\Controller\AjaxTestController::httpMethodsDialog
+  requirements:
+    _access: 'TRUE'

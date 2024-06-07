@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  *   label = @Translation("User registration"),
  *   serialization_class = "Drupal\user\Entity\User",
  *   uri_paths = {
- *     "https://www.drupal.org/link-relations/create" = "/user/register",
+ *     "create" = "/user/register",
  *   },
  * )
  */
@@ -102,7 +102,7 @@ class UserRegistrationResource extends ResourceBase {
 
     // Only activate new users if visitors are allowed to register and no email
     // verification required.
-    if ($this->userSettings->get('register') == USER_REGISTER_VISITORS && !$this->userSettings->get('verify_mail')) {
+    if ($this->userSettings->get('register') == UserInterface::REGISTER_VISITORS && !$this->userSettings->get('verify_mail')) {
       $account->activate();
     }
     else {
@@ -147,19 +147,19 @@ class UserRegistrationResource extends ResourceBase {
     }
 
     // Verify that the current user can register a user account.
-    if ($this->userSettings->get('register') == USER_REGISTER_ADMINISTRATORS_ONLY) {
+    if ($this->userSettings->get('register') == UserInterface::REGISTER_ADMINISTRATORS_ONLY) {
       throw new AccessDeniedHttpException('You cannot register a new user account.');
     }
 
     if (!$this->userSettings->get('verify_mail')) {
       if (empty($account->getPassword())) {
-        // If no e-mail verification then the user must provide a password.
+        // If no email verification then the user must provide a password.
         throw new UnprocessableEntityHttpException('No password provided.');
       }
     }
     else {
       if (!empty($account->getPassword())) {
-        // If e-mail verification required then a password cannot provided.
+        // If email verification required then a password cannot provided.
         // The password will be set when the user logs in.
         throw new UnprocessableEntityHttpException('A Password cannot be specified. It will be generated on login.');
       }
@@ -174,15 +174,15 @@ class UserRegistrationResource extends ResourceBase {
    */
   protected function sendEmailNotifications(UserInterface $account) {
     $approval_settings = $this->userSettings->get('register');
-    // No e-mail verification is required. Activating the user.
-    if ($approval_settings == USER_REGISTER_VISITORS) {
+    // No email verification is required. Activating the user.
+    if ($approval_settings == UserInterface::REGISTER_VISITORS) {
       if ($this->userSettings->get('verify_mail')) {
         // No administrator approval required.
         _user_mail_notify('register_no_approval_required', $account);
       }
     }
     // Administrator approval required.
-    elseif ($approval_settings == USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) {
+    elseif ($approval_settings == UserInterface::REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) {
       _user_mail_notify('register_pending_approval', $account);
     }
   }

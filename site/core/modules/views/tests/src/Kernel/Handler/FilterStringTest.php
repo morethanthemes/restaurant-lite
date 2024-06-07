@@ -9,10 +9,11 @@ use Drupal\views\Views;
  * Tests the core Drupal\views\Plugin\views\filter\StringFilter handler.
  *
  * @group views
+ * @group #slow
  */
 class FilterStringTest extends ViewsKernelTestBase {
 
-  public static $modules = ['system'];
+  protected static $modules = ['system'];
 
   /**
    * Views used by this test.
@@ -71,7 +72,7 @@ class FilterStringTest extends ViewsKernelTestBase {
   /**
    * Build and return a Page view of the views_test_data table.
    *
-   * @return view
+   * @return \Drupal\views\ViewExecutable
    */
   protected function getBasicPageView() {
     $view = Views::getView('test_view');
@@ -118,7 +119,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -175,7 +175,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -209,7 +208,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'name',
         'relationship' => 'none',
         'operator' => 'contains',
-        'value' => 'ing',
+        'value' => 'iNg',
       ],
     ]);
 
@@ -231,7 +230,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -256,7 +254,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'description',
         'relationship' => 'none',
         'operator' => 'word',
-        'value' => 'actor',
+        'value' => 'aCtor',
       ],
     ]);
 
@@ -341,7 +339,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -386,7 +383,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'description',
         'relationship' => 'none',
         'operator' => 'starts',
-        'value' => 'George',
+        'value' => 'gEorge',
       ],
     ]);
 
@@ -408,13 +405,45 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
     $resultset = [
       [
         'name' => 'George',
+      ],
+    ];
+    $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
+  }
+
+  /**
+   * Tests the string filter with negated 'regular_expression' operator.
+   */
+  public function testFilterStringGroupedNotRegularExpression() {
+    $filters = $this->getGroupedExposedFilters();
+    $view = $this->getBasicPageView();
+
+    // Filter: Name, Operator: not_regular_expression, Value: ^Rin
+    $filters['name']['group_info']['default_group'] = 6;
+    $view->setDisplay('page_1');
+    $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
+    $view->save();
+    $this->container->get('router.builder')->rebuild();
+
+    $this->executeView($view);
+
+    $resultset = [
+      [
+        'name' => 'John',
+      ],
+      [
+        'name' => 'George',
+      ],
+      [
+        'name' => 'Paul',
+      ],
+      [
+        'name' => 'Meredith',
       ],
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
@@ -432,7 +461,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'description',
         'relationship' => 'none',
         'operator' => 'not_starts',
-        'value' => 'George',
+        'value' => 'gEorge',
       ],
     ]);
 
@@ -447,7 +476,7 @@ class FilterStringTest extends ViewsKernelTestBase {
       [
         'name' => 'Paul',
       ],
-      // There is no Meredith returned because his description is empty
+      // There is no Meredith returned because their description is empty
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
   }
@@ -461,7 +490,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -475,7 +503,7 @@ class FilterStringTest extends ViewsKernelTestBase {
       [
         'name' => 'Paul',
       ],
-      // There is no Meredith returned because his description is empty
+      // There is no Meredith returned because their description is empty
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
   }
@@ -492,7 +520,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'description',
         'relationship' => 'none',
         'operator' => 'ends',
-        'value' => 'Beatles.',
+        'value' => 'bEatles.',
       ],
     ]);
 
@@ -517,7 +545,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -544,7 +571,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'description',
         'relationship' => 'none',
         'operator' => 'not_ends',
-        'value' => 'Beatles.',
+        'value' => 'bEatles.',
       ],
     ]);
 
@@ -556,7 +583,7 @@ class FilterStringTest extends ViewsKernelTestBase {
       [
         'name' => 'Paul',
       ],
-      // There is no Meredith returned because his description is empty
+      // There is no Meredith returned because their description is empty
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
   }
@@ -570,7 +597,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -581,7 +607,7 @@ class FilterStringTest extends ViewsKernelTestBase {
       [
         'name' => 'Paul',
       ],
-      // There is no Meredith returned because his description is empty
+      // There is no Meredith returned because their description is empty
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
   }
@@ -598,7 +624,7 @@ class FilterStringTest extends ViewsKernelTestBase {
         'field' => 'description',
         'relationship' => 'none',
         'operator' => 'not',
-        'value' => 'Beatles.',
+        'value' => 'bEatles.',
       ],
     ]);
 
@@ -610,7 +636,7 @@ class FilterStringTest extends ViewsKernelTestBase {
       [
         'name' => 'Paul',
       ],
-      // There is no Meredith returned because his description is empty
+      // There is no Meredith returned because their description is empty
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
   }
@@ -624,7 +650,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
 
@@ -635,7 +660,7 @@ class FilterStringTest extends ViewsKernelTestBase {
       [
         'name' => 'Paul',
       ],
-      // There is no Meredith returned because his description is empty
+      // There is no Meredith returned because their description is empty
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
 
@@ -678,7 +703,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
     $resultset = [
@@ -726,7 +750,6 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
     $resultset = [
@@ -770,12 +793,54 @@ class FilterStringTest extends ViewsKernelTestBase {
     $view->setDisplay('page_1');
     $view->displayHandlers->get('page_1')->overrideOption('filters', $filters);
     $view->save();
-    $this->container->get('router.builder')->rebuild();
 
     $this->executeView($view);
     $resultset = [
       [
         'name' => 'Meredith',
+      ],
+    ];
+    $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
+  }
+
+  /**
+   * Tests the string filter handler with the negated 'regular_expression' operator.
+   */
+  public function testFilterStringNotRegularExpression() {
+    $view = Views::getView('test_view');
+    $view->setDisplay();
+
+    // Filtering by regular expression pattern.
+    $view->displayHandlers->get('default')->overrideOption('filters', [
+      'age' => [
+        'id' => 'name',
+        'table' => 'views_test_data',
+        'field' => 'name',
+        'relationship' => 'none',
+        'operator' => 'not_regular_expression',
+        'value' => [
+          'value' => '^Rin',
+        ],
+      ],
+    ]);
+
+    $this->executeView($view);
+    $resultset = [
+      [
+        'name' => 'John',
+        'age' => 25,
+      ],
+      [
+        'name' => 'George',
+        'age' => 27,
+      ],
+      [
+        'name' => 'Paul',
+        'age' => 26,
+      ],
+      [
+        'name' => 'Meredith',
+        'age' => 30,
       ],
     ];
     $this->assertIdenticalResultset($view, $resultset, $this->columnMap);
@@ -825,6 +890,11 @@ class FilterStringTest extends ViewsKernelTestBase {
               'title' => 'Longer than 7 letters',
               'operator' => 'longerthan',
               'value' => 7,
+            ],
+            6 => [
+              'title' => 'Does not start with Rin',
+              'operator' => 'not_regular_expression',
+              'value' => '^Rin',
             ],
           ],
         ],

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\migrate\Kernel\SqlBaseTest.
- */
-
 namespace Drupal\Tests\migrate\Kernel;
 
 use Drupal\Core\Database\Query\ConditionInterface;
@@ -32,11 +27,11 @@ class SqlBaseTest extends MigrateTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
-    $this->migration = $this->getMock(MigrationInterface::class);
-    $this->migration->method('id')->willReturn('fubar');
+    $this->migration = $this->createMock(MigrationInterface::class);
+    $this->migration->method('id')->willReturn('foo');
   }
 
   /**
@@ -123,9 +118,34 @@ class SqlBaseTest extends MigrateTestBase {
     \Drupal::state()->delete('migrate.fallback_state_key');
     $sql_base->setConfiguration([]);
     Database::renameConnection('migrate', 'fallback_connection');
-    $this->setExpectedException(RequirementsException::class,
-      'No database connection configured for source plugin');
+    $this->expectException(RequirementsException::class);
+    $this->expectExceptionMessage('No database connection configured for source plugin');
     $sql_base->getDatabase();
+  }
+
+  /**
+   * Tests the exception when a connection is defined but not available.
+   */
+  public function testBrokenConnection(): void {
+    if (Database::getConnection()->driver() === 'sqlite') {
+      $this->markTestSkipped('Not compatible with sqlite');
+    }
+
+    $sql_base = new TestSqlBase([], $this->migration);
+    $target = 'test_state_db_target2';
+    $key = 'test_state_migrate_connection2';
+    $database = Database::getConnectionInfo('default')['default'];
+    $database['database'] = 'godot';
+    $config = ['target' => $target, 'key' => $key, 'database' => $database];
+    $database_state_key = 'migrate_sql_base_test2';
+    \Drupal::state()->set($database_state_key, $config);
+    $sql_base->setConfiguration(['database_state_key' => $database_state_key]);
+
+    // Call checkRequirements(): it will call getDatabase() and convert the
+    // exception to a RequirementsException.
+    $this->expectException(RequirementsException::class);
+    $this->expectExceptionMessage('No database connection available for source plugin sql_base');
+    $sql_base->checkRequirements();
   }
 
   /**
@@ -147,7 +167,7 @@ class SqlBaseTest extends MigrateTestBase {
     $source = new TestSqlBase($configuration, $this->migration);
 
     if ($high_water) {
-      $source->getHighWaterStorage()->set($this->migration->id(), $high_water);
+      \Drupal::keyValue('migrate:high_water')->set($this->migration->id(), $high_water);
     }
 
     $statement = $this->createMock(StatementInterface::class);
@@ -156,7 +176,7 @@ class SqlBaseTest extends MigrateTestBase {
     $query->method('execute')->willReturn($statement);
     $query->expects($this->atLeastOnce())->method('orderBy')->with('order', 'ASC');
 
-    $condition_group = $this->getMock(ConditionInterface::class);
+    $condition_group = $this->createMock(ConditionInterface::class);
     $query->method('orConditionGroup')->willReturn($condition_group);
 
     $source->setQuery($query);
@@ -201,7 +221,7 @@ class TestSqlBase extends SqlBase {
    *   (optional) The migration being run.
    */
   public function __construct(array $configuration = [], MigrationInterface $migration = NULL) {
-    parent::__construct($configuration, 'sql_base', [], $migration, \Drupal::state());
+    parent::__construct($configuration, 'sql_base', ['requirements_met' => TRUE], $migration, \Drupal::state());
   }
 
   /**
@@ -225,12 +245,16 @@ class TestSqlBase extends SqlBase {
   /**
    * {@inheritdoc}
    */
-  public function getIds() {}
+  public function getIds() {
+    return [];
+  }
 
   /**
    * {@inheritdoc}
    */
-  public function fields() {}
+  public function fields() {
+    throw new \RuntimeException(__METHOD__ . " not implemented for " . __CLASS__);
+  }
 
   /**
    * {@inheritdoc}
@@ -247,13 +271,6 @@ class TestSqlBase extends SqlBase {
    */
   public function setQuery(SelectInterface $query) {
     $this->query = $query;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getHighWaterStorage() {
-    return parent::getHighWaterStorage();
   }
 
 }

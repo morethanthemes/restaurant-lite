@@ -21,26 +21,20 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class AddValidatorInitializersPass implements CompilerPassInterface
 {
-    private $builderService;
-    private $initializerTag;
-
-    public function __construct($builderService = 'validator.builder', $initializerTag = 'validator.initializer')
-    {
-        $this->builderService = $builderService;
-        $this->initializerTag = $initializerTag;
-    }
-
+    /**
+     * @return void
+     */
     public function process(ContainerBuilder $container)
     {
-        if (!$container->hasDefinition($this->builderService)) {
+        if (!$container->hasDefinition('validator.builder')) {
             return;
         }
 
-        $initializers = array();
-        foreach ($container->findTaggedServiceIds($this->initializerTag, true) as $id => $attributes) {
+        $initializers = [];
+        foreach ($container->findTaggedServiceIds('validator.initializer', true) as $id => $attributes) {
             $initializers[] = new Reference($id);
         }
 
-        $container->getDefinition($this->builderService)->addMethodCall('addObjectInitializers', array($initializers));
+        $container->getDefinition('validator.builder')->addMethodCall('addObjectInitializers', [$initializers]);
     }
 }

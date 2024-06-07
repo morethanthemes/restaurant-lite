@@ -27,7 +27,12 @@ class Rss extends RssPluginBase {
   /**
    * {@inheritdoc}
    */
-  protected $base_field = 'cid';
+  public string $base_field = 'cid';
+
+  /**
+   * The field alias.
+   */
+  public string $field_alias;
 
   /**
    * @var \Drupal\comment\CommentInterface[]
@@ -46,7 +51,7 @@ class Rss extends RssPluginBase {
       $cids[] = $row->cid;
     }
 
-    $this->comments = $this->entityManager->getStorage('comment')->loadMultiple($cids);
+    $this->comments = $this->entityTypeManager->getStorage('comment')->loadMultiple($cids);
   }
 
   /**
@@ -73,13 +78,12 @@ class Rss extends RssPluginBase {
     }
 
     // Load the specified comment and its associated node:
-    /** @var $comment \Drupal\comment\CommentInterface */
+    /** @var \Drupal\comment\CommentInterface $comment */
     $comment = $this->comments[$cid];
     if (empty($comment)) {
       return;
     }
 
-    $comment->link = $comment->url('canonical', ['absolute' => TRUE]);
     $comment->rss_namespaces = [];
     $comment->rss_elements = [
       [
@@ -99,7 +103,7 @@ class Rss extends RssPluginBase {
 
     // The comment gets built and modules add to or modify
     // $comment->rss_elements and $comment->rss_namespaces.
-    $build = $this->entityManager->getViewBuilder('comment')->view($comment, 'rss');
+    $build = $this->entityTypeManager->getViewBuilder('comment')->view($comment, 'rss');
     unset($build['#theme']);
 
     if (!empty($comment->rss_namespaces)) {
@@ -112,7 +116,7 @@ class Rss extends RssPluginBase {
       $item->description = $build;
     }
     $item->title = $comment->label();
-    $item->link = $comment->link;
+    $item->link = $comment->toUrl('canonical', ['absolute' => TRUE])->toString();
     // Provide a reference so that the render call in
     // template_preprocess_views_view_row_rss() can still access it.
     $item->elements = &$comment->rss_elements;

@@ -164,7 +164,7 @@ class TestToolkit extends ImageToolkitBase {
    * @see \Drupal\Tests\system\Functional\Image\ToolkitTestBase::imageTestGetAllCalls()
    */
   protected function logCall($op, $args) {
-    $results = $this->state->get('image_test.results') ?: [];
+    $results = $this->state->get('image_test.results', []);
     $results[$op][] = $args;
     // A call to apply is also logged under its operation name whereby the
     // array of arguments are logged as separate arguments, this because at the
@@ -258,7 +258,7 @@ class TestToolkit extends ImageToolkitBase {
    */
   public function apply($operation, array $arguments = []) {
     $this->logCall('apply', func_get_args());
-    return TRUE;
+    return parent::apply($operation, $arguments);
   }
 
 }

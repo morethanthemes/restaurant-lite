@@ -69,7 +69,7 @@ class NestedArray {
   public static function &getValue(array &$array, array $parents, &$key_exists = NULL) {
     $ref = &$array;
     foreach ($parents as $parent) {
-      if (is_array($ref) && (isset($ref[$parent]) || array_key_exists($parent, $ref))) {
+      if (is_array($ref) && \array_key_exists($parent, $ref)) {
         $ref = &$ref[$parent];
       }
       else {
@@ -194,7 +194,7 @@ class NestedArray {
    *
    * Instead, use this helper function:
    * @code
-   * NestedArray::unset_nested_value($form, $parents, $element);
+   * NestedArray::unsetValue($form, $parents, $element);
    * @endcode
    *
    * However if the number of array parent keys is static, the value should
@@ -219,7 +219,7 @@ class NestedArray {
   public static function unsetValue(array &$array, array $parents, &$key_existed = NULL) {
     $unset_key = array_pop($parents);
     $ref = &self::getValue($array, $parents, $key_existed);
-    if ($key_existed && is_array($ref) && (isset($ref[$unset_key]) || array_key_exists($unset_key, $ref))) {
+    if ($key_existed && is_array($ref) && \array_key_exists($unset_key, $ref)) {
       $key_existed = TRUE;
       unset($ref[$unset_key]);
     }

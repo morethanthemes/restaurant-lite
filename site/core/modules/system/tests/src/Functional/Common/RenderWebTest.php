@@ -8,7 +8,7 @@ use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\system\Functional\Cache\AssertPageCacheContextsAndTagsTrait;
 
 /**
- * Performs integration tests on drupal_render().
+ * Performs integration tests on \Drupal::service('renderer')->render().
  *
  * @group Common
  */
@@ -21,23 +21,28 @@ class RenderWebTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['common_test'];
+  protected static $modules = ['common_test'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * Asserts the cache context for the wrapper format is always present.
    */
   public function testWrapperFormatCacheContext() {
     $this->drupalGet('common-test/type-link-active-class');
-    $this->assertIdentical(0, strpos($this->getSession()->getPage()->getContent(), "<!DOCTYPE html>\n<html"));
-    $this->assertIdentical('text/html; charset=UTF-8', $this->drupalGetHeader('Content-Type'));
-    $this->assertTitle('Test active link class | Drupal');
+    $this->assertStringStartsWith("<!DOCTYPE html>\n<html", $this->getSession()->getPage()->getContent());
+    $this->assertSession()->responseHeaderEquals('Content-Type', 'text/html; charset=UTF-8');
+    $this->assertSession()->titleEquals('Test active link class | Drupal');
     $this->assertCacheContext('url.query_args:' . MainContentViewSubscriber::WRAPPER_FORMAT);
 
     $this->drupalGet('common-test/type-link-active-class', ['query' => [MainContentViewSubscriber::WRAPPER_FORMAT => 'json']]);
-    $this->assertIdentical('application/json', $this->drupalGetHeader('Content-Type'));
+    $this->assertSession()->responseHeaderEquals('Content-Type', 'application/json');
     $json = Json::decode($this->getSession()->getPage()->getContent());
-    $this->assertEqual(['content', 'title'], array_keys($json));
-    $this->assertIdentical('Test active link class', $json['title']);
+    $this->assertEquals(['content', 'title'], array_keys($json));
+    $this->assertSame('Test active link class', $json['title']);
     $this->assertCacheContext('url.query_args:' . MainContentViewSubscriber::WRAPPER_FORMAT);
   }
 

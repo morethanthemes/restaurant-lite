@@ -6,7 +6,8 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\Plugin\MigrateIdMapInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
-use Drupal\Core\Database\Driver\sqlite\Connection;
+use Drupal\sqlite\Driver\Database\sqlite\Connection;
+use Drupal\TestTools\Random;
 
 /**
  * Tests query batching.
@@ -26,7 +27,7 @@ class QueryBatchTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'migrate',
     'migrate_query_batch_test',
   ];
@@ -34,7 +35,7 @@ class QueryBatchTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Create a mock migration. This will be injected into the source plugin
@@ -57,7 +58,8 @@ class QueryBatchTest extends KernelTestBase {
    * Tests a negative batch size throws an exception.
    */
   public function testBatchSizeNegative() {
-    $this->setExpectedException(MigrateException::class, 'batch_size must be greater than or equal to zero');
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage('batch_size must be greater than or equal to zero');
     $plugin = $this->getPlugin(['batch_size' => -1]);
     $plugin->next();
   }
@@ -66,7 +68,8 @@ class QueryBatchTest extends KernelTestBase {
    * Tests a non integer batch size throws an exception.
    */
   public function testBatchSizeNonInteger() {
-    $this->setExpectedException(MigrateException::class, 'batch_size must be greater than or equal to zero');
+    $this->expectException(MigrateException::class);
+    $this->expectExceptionMessage('batch_size must be greater than or equal to zero');
     $plugin = $this->getPlugin(['batch_size' => '1']);
     $plugin->next();
   }
@@ -74,7 +77,7 @@ class QueryBatchTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public function queryDataProvider() {
+  public static function queryDataProvider() {
     // Define the parameters for building the data array. The first element is
     // the number of source data rows, the second is the batch size to set on
     // the plugin configuration.
@@ -98,11 +101,11 @@ class QueryBatchTest extends KernelTestBase {
     $tests = [];
     $data_set = 0;
     foreach ($test_parameters as $data) {
-      list($num_rows, $batch_size) = $data;
+      [$num_rows, $batch_size] = $data;
       for ($i = 0; $i < $num_rows; $i++) {
         $tests[$data_set]['source_data'][$table][] = [
           'id' => $i,
-          'data' => $this->randomString(),
+          'data' => Random::string(),
         ];
       }
       $tests[$data_set]['expected_data'] = $tests[$data_set]['source_data'][$table];
@@ -153,7 +156,6 @@ class QueryBatchTest extends KernelTestBase {
     // reflection hack to set it in the plugin instance.
     $reflector = new \ReflectionObject($plugin);
     $property = $reflector->getProperty('database');
-    $property->setAccessible(TRUE);
 
     $connection = $this->getDatabase($source_data);
     $property->setValue($plugin, $connection);
@@ -180,7 +182,6 @@ class QueryBatchTest extends KernelTestBase {
       $expected_batch_size = $configuration['batch_size'];
     }
     $property = $reflector->getProperty('batchSize');
-    $property->setAccessible(TRUE);
     self::assertSame($expected_batch_size, $property->getValue($plugin));
 
     // Test the batch count.
@@ -191,7 +192,6 @@ class QueryBatchTest extends KernelTestBase {
       }
     }
     $property = $reflector->getProperty('batch');
-    $property->setAccessible(TRUE);
     self::assertSame($expected_batch_count, $property->getValue($plugin));
   }
 
@@ -222,7 +222,7 @@ class QueryBatchTest extends KernelTestBase {
    *   The source data, keyed by table name. Each table is an array containing
    *   the rows in that table.
    *
-   * @return \Drupal\Core\Database\Driver\sqlite\Connection
+   * @return \Drupal\sqlite\Driver\Database\sqlite\Connection
    *   The SQLite database connection.
    */
   protected function getDatabase(array $source_data) {

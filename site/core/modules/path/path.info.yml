@@ -1,13 +1,13 @@
 name: Path
 type: module
-description: 'Allows users to rename URLs.'
+description: 'Allows users to create custom URLs for existing paths on the site.'
 package: Core
 # version: VERSION
-# core: 8.x
-configure: path.admin_overview
+configure: entity.path_alias.collection
+dependencies:
+  - drupal:path_alias
 
-# Information added by Drupal.org packaging script on 2018-12-05
-version: '8.6.4'
-core: '8.x'
+# Information added by Drupal.org packaging script on 2024-06-06
+version: '10.2.7'
 project: 'drupal'
-datestamp: 1544011727
+datestamp: 1717660126

@@ -1,7 +1,8 @@
 {
   "extends": [
-    "airbnb",
-    "plugin:prettier/recommended"
+    "airbnb-base",
+    "plugin:prettier/recommended",
+    "plugin:yml/recommended"
   ],
   "root": true,
   "env": {
@@ -9,17 +10,26 @@
     "es6": true,
     "node": true
   },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
   "globals": {
     "Drupal": true,
     "drupalSettings": true,
     "drupalTranslations": true,
-    "domready": true,
     "jQuery": true,
     "_": true,
-    "matchMedia": true,
+    "Cookies": true,
     "Backbone": true,
     "Modernizr": true,
-    "CKEDITOR": true
+    "loadjs": true,
+    "Shepherd": true,
+    "Sortable": true,
+    "once": true,
+    "CKEditor5": true,
+    "tabbable": true,
+    "slugify": true,
+    "bodyScrollLock" : true
   },
   "rules": {
     "prettier/prettier": "error",
@@ -40,6 +50,7 @@
       "requireReturn": false
     }],
     "no-unused-vars": ["warn"],
-    "operator-linebreak": ["error", "after", { "overrides": { "?": "ignore", ":": "ignore" } }]
+    "operator-linebreak": ["error", "after", { "overrides": { "?": "ignore", ":": "ignore" } }],
+    "yml/indent": ["error", 2]
   }
 }

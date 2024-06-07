@@ -14,7 +14,12 @@ class NodeJsonBasicAuthTest extends NodeResourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['basic_auth'];
+  protected static $modules = ['basic_auth'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * {@inheritdoc}
@@ -30,5 +35,22 @@ class NodeJsonBasicAuthTest extends NodeResourceTestBase {
    * {@inheritdoc}
    */
   protected static $auth = 'basic_auth';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUpAuthorization($method) {
+    parent::setUpAuthorization($method);
+    $this->grantPermissionsToTestedRole(['view camelids revisions']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getExpectedNormalizedEntity() {
+    $entity = parent::getExpectedNormalizedEntity();
+    $entity['revision_log'] = [];
+    return $entity;
+  }
 
 }

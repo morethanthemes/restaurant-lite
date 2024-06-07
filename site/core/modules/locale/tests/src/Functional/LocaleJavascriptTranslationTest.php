@@ -2,9 +2,11 @@
 
 namespace Drupal\Tests\locale\Functional;
 
+use Drupal\Component\Gettext\PoItem;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Component\Render\FormattableMarkup;
+
+// cspell:ignore descripcion mostrar
 
 /**
  * Tests parsing js files for translatable strings.
@@ -18,7 +20,12 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['locale', 'locale_test'];
+  protected static $modules = ['locale', 'locale_test'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   public function testFileParsing() {
 
@@ -26,12 +33,8 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
     // _locale_parse_js_file() finds translatable source strings in all valid
     // JavaScript syntax regardless of the coding style used, especially with
     // respect to optional whitespace, line breaks, etc.
-    // - We test locale_test.es6.js, because that is the one that contains a
+    // - We test locale_test.js, because that is the one that contains a
     //   variety of whitespace styles.
-    // - We also test the transpiled locale_test.js as an extra double-check
-    //   that JavaScript transpilation doesn't change what
-    //   _locale_parse_js_file() finds.
-    $files[] = __DIR__ . '/../../locale_test.es6.js';
     $files[] = __DIR__ . '/../../locale_test.js';
 
     foreach ($files as $filename) {
@@ -51,7 +54,7 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
         $source_strings[$string->source] = $string->context;
       }
 
-      $etx = LOCALE_PLURAL_DELIMITER;
+      $etx = PoItem::DELIMITER;
       // List of all strings that should be in the file.
       $test_strings = [
         'Standard Call t' => '',
@@ -85,21 +88,22 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
         "Context Unquoted plural{$etx}Context Unquoted @count plural" => 'Context string unquoted',
         "Context Single Quoted plural{$etx}Context Single Quoted @count plural" => 'Context string single quoted',
         "Context Double Quoted plural{$etx}Context Double Quoted @count plural" => 'Context string double quoted',
+
+        "No count argument plural - singular{$etx}No count argument plural - plural" => '',
       ];
 
       // Assert that all strings were found properly.
       foreach ($test_strings as $str => $context) {
-        $args = ['%source' => $str, '%context' => $context];
 
         // Make sure that the string was found in the file.
-        $this->assertTrue(isset($source_strings[$str]), new FormattableMarkup('Found source string: %source', $args));
+        $this->assertTrue(isset($source_strings[$str]), "Found source string: $str");
 
         // Make sure that the proper context was matched.
-        $message = $context ? new FormattableMarkup('Context for %source is %context', $args) : new FormattableMarkup('Context for %source is blank', $args);
-        $this->assertTrue(isset($source_strings[$str]) && $source_strings[$str] === $context, $message);
+        $this->assertArrayHasKey($str, $source_strings);
+        $this->assertSame($context, $source_strings[$str]);
       }
 
-      $this->assertEqual(count($source_strings), count($test_strings), 'Found correct number of source strings.');
+      $this->assertSameSize($test_strings, $source_strings, 'Found correct number of source strings.');
     }
   }
 
@@ -108,7 +112,11 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
    */
   public function testLocaleTranslationJsDependencies() {
     // User to add and remove language.
-    $admin_user = $this->drupalCreateUser(['administer languages', 'access administration pages', 'translate interface']);
+    $admin_user = $this->drupalCreateUser([
+      'administer languages',
+      'access administration pages',
+      'translate interface',
+    ]);
 
     // Add custom language.
     $this->drupalLogin($admin_user);
@@ -124,11 +132,13 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
       'label' => $name,
       'direction' => LanguageInterface::DIRECTION_LTR,
     ];
-    $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
+    $this->drupalGet('admin/config/regional/language/add');
+    $this->submitForm($edit, 'Add custom language');
 
     // Set path prefix.
     $edit = ["prefix[$langcode]" => $prefix];
-    $this->drupalPostForm('admin/config/regional/language/detection/url', $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/regional/language/detection/url');
+    $this->submitForm($edit, 'Save configuration');
 
     // This forces locale.admin.js string sources to be imported, which contains
     // the next translation.
@@ -143,17 +153,19 @@ class LocaleJavascriptTranslationTest extends BrowserTestBase {
       ]);
     $string = $strings[0];
 
-    $this->drupalPostForm(NULL, ['string' => 'Show description'], t('Filter'));
-    $edit = ['strings[' . $string->lid . '][translations][0]' => $this->randomString(16)];
-    $this->drupalPostForm(NULL, $edit, t('Save translations'));
+    $this->submitForm(['string' => 'Show description'], 'Filter');
+    $edit = ['strings[' . $string->lid . '][translations][0]' => 'Mostrar descripcion'];
+    $this->submitForm($edit, 'Save translations');
 
     // Calculate the filename of the JS including the translations.
     $js_translation_files = \Drupal::state()->get('locale.translation.javascript');
     $js_filename = $prefix . '_' . $js_translation_files[$prefix] . '.js';
 
     $content = $this->getSession()->getPage()->getContent();
+    $this->assertSession()->responseContains('core/misc/drupal.js');
+    $this->assertSession()->responseContains($js_filename);
     // Assert translations JS is included before drupal.js.
-    $this->assertTrue(strpos($content, $js_filename) < strpos($content, 'core/misc/drupal.js'), 'Translations are included before Drupal.t.');
+    $this->assertLessThan(strpos($content, 'core/misc/drupal.js'), strpos($content, $js_filename));
   }
 
 }

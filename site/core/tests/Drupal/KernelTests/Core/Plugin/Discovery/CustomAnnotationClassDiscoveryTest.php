@@ -12,7 +12,10 @@ use Drupal\Core\Plugin\Discovery\AnnotatedClassDiscovery;
  */
 class CustomAnnotationClassDiscoveryTest extends DiscoveryTestBase {
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
 
     $this->expectedDefinitions = [

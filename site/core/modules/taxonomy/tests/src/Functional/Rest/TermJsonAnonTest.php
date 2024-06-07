@@ -6,6 +6,7 @@ use Drupal\Tests\rest\Functional\AnonResourceTestTrait;
 
 /**
  * @group rest
+ * @group #slow
  */
 class TermJsonAnonTest extends TermResourceTestBase {
 
@@ -20,5 +21,10 @@ class TermJsonAnonTest extends TermResourceTestBase {
    * {@inheritdoc}
    */
   protected static $mimeType = 'application/json';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
 }

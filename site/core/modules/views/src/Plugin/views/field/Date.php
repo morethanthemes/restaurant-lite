@@ -2,6 +2,7 @@
 
 namespace Drupal\views\Plugin\views\field;
 
+use Drupal\Core\Datetime\TimeZoneFormHelper;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ResultRow;
@@ -61,7 +62,7 @@ class Date extends FieldPluginBase {
       $plugin_id,
       $plugin_definition,
       $container->get('date.formatter'),
-      $container->get('entity.manager')->getStorage('date_format')
+      $container->get('entity_type.manager')->getStorage('date_format')
     );
   }
 
@@ -101,13 +102,13 @@ class Date extends FieldPluginBase {
         'inverse time span' => $this->t('Time span (past dates have "-" prepended)'),
         'time span' => $this->t('Time span (with "ago/hence" appended)'),
       ],
-      '#default_value' => isset($this->options['date_format']) ? $this->options['date_format'] : 'small',
+      '#default_value' => $this->options['date_format'] ?? 'small',
     ];
     $form['custom_date_format'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Custom date format'),
-      '#description' => $this->t('If "Custom", see <a href="http://us.php.net/manual/en/function.date.php" target="_blank">the PHP docs</a> for date formats. Otherwise, enter the number of different time units to display, which defaults to 2.'),
-      '#default_value' => isset($this->options['custom_date_format']) ? $this->options['custom_date_format'] : '',
+      '#description' => $this->t('If "Custom", see <a href="https://www.php.net/manual/datetime.format.php#refsect1-datetime.format-parameters" target="_blank">the PHP docs</a> for date formats. Otherwise, enter the number of different time units to display, which defaults to 2.'),
+      '#default_value' => $this->options['custom_date_format'] ?? '',
     ];
     // Setup #states for all possible date_formats on the custom_date_format form element.
     foreach (['custom', 'raw time ago', 'time ago', 'raw time hence', 'time hence', 'raw time span', 'time span', 'raw time span', 'inverse time span', 'time span'] as $custom_date_possible) {
@@ -119,7 +120,7 @@ class Date extends FieldPluginBase {
       '#type' => 'select',
       '#title' => $this->t('Timezone'),
       '#description' => $this->t('Timezone to be used for date output.'),
-      '#options' => ['' => $this->t('- Default site/user timezone -')] + system_time_zones(FALSE, TRUE),
+      '#options' => ['' => $this->t('- Default site/user timezone -')] + TimeZoneFormHelper::getOptionsListByRegion(),
       '#default_value' => $this->options['timezone'],
     ];
     foreach (array_merge(['custom'], array_keys($date_formats)) as $timezone_date_formats) {
@@ -171,12 +172,12 @@ class Date extends FieldPluginBase {
 
         case 'custom':
           if ($custom_format == 'r') {
-            return format_date($value, $format, $custom_format, $timezone, 'en');
+            return $this->dateFormatter->format($value, $format, $custom_format, $timezone, 'en');
           }
-          return format_date($value, $format, $custom_format, $timezone);
+          return $this->dateFormatter->format($value, $format, $custom_format, $timezone);
 
         default:
-          return format_date($value, $format, '', $timezone);
+          return $this->dateFormatter->format($value, $format, '', $timezone);
       }
     }
   }

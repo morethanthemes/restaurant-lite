@@ -30,15 +30,14 @@ class ConditionTestDualUserTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system', 'user', 'condition_test'];
+  protected static $modules = ['system', 'user', 'condition_test'];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
-    $this->installSchema('system', 'sequences');
     $this->installEntitySchema('user');
 
     $this->anonymous = User::create(['uid' => 0]);

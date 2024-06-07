@@ -3,6 +3,7 @@
 namespace Drupal\Tests\file\Functional;
 
 use Drupal\file\Entity\File;
+use Drupal\Tests\content_translation\Traits\ContentTranslationTestTrait;
 
 /**
  * Uploads files to translated nodes.
@@ -11,10 +12,17 @@ use Drupal\file\Entity\File;
  */
 class FileOnTranslatedEntityTest extends FileFieldTestBase {
 
+  use ContentTranslationTestTrait;
+
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['language', 'content_translation'];
+  protected static $modules = ['language', 'content_translation'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
 
   /**
    * The name of the file field used in the test.
@@ -26,7 +34,7 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // This test expects unused managed files to be marked as temporary a file.
@@ -40,7 +48,7 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->drupalCreateContentType(['type' => 'page', 'name' => 'Basic page', 'new_revision' => FALSE]);
 
     // Create a file field on the "Basic page" node type.
-    $this->fieldName = strtolower($this->randomMachineName());
+    $this->fieldName = $this->randomMachineName();
     $this->createFileField($this->fieldName, 'node', 'page');
 
     // Create and log in user.
@@ -59,22 +67,12 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->drupalLogin($admin_user);
 
     // Add a second and third language.
-    $edit = [];
-    $edit['predefined_langcode'] = 'fr';
-    $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add language'));
-
-    $edit = [];
-    $edit['predefined_langcode'] = 'nl';
-    $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add language'));
+    static::createLanguageFromLangcode('fr');
+    static::createLanguageFromLangcode('nl');
 
     // Enable translation for "Basic page" nodes.
-    $edit = [
-      'entity_types[node]' => 1,
-      'settings[node][page][translatable]' => 1,
-      "settings[node][page][fields][$this->fieldName]" => 1,
-    ];
-    $this->drupalPostForm('admin/config/regional/content-language', $edit, t('Save configuration'));
-    \Drupal::entityManager()->clearCachedDefinitions();
+    static::enableContentTranslation('node', 'page');
+    static::setFieldTranslatable('node', 'page', $this->fieldName, TRUE);
   }
 
   /**
@@ -82,7 +80,7 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
    */
   public function testSyncedFiles() {
     // Verify that the file field on the "Basic page" node type is translatable.
-    $definitions = \Drupal::entityManager()->getFieldDefinitions('node', 'page');
+    $definitions = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', 'page');
     $this->assertTrue($definitions[$this->fieldName]->isTranslatable(), 'Node file field is translatable.');
 
     // Create a default language node.
@@ -92,26 +90,28 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $edit = [];
     $name = 'files[' . $this->fieldName . '_0]';
     $edit[$name] = \Drupal::service('file_system')->realpath($this->drupalGetTestFiles('text')[0]->uri);
-    $this->drupalPostForm('node/' . $default_language_node->id() . '/edit', $edit, t('Save'));
+    $this->drupalGet('node/' . $default_language_node->id() . '/edit');
+    $this->submitForm($edit, 'Save');
     $first_fid = $this->getLastFileId();
 
     // Translate the node into French: remove the existing file.
-    $this->drupalPostForm('node/' . $default_language_node->id() . '/translations/add/en/fr', [], t('Remove'));
+    $this->drupalGet('node/' . $default_language_node->id() . '/translations/add/en/fr');
+    $this->submitForm([], 'Remove');
 
     // Upload a different file.
     $edit = [];
     $edit['title[0][value]'] = 'Bill Murray';
     $name = 'files[' . $this->fieldName . '_0]';
     $edit[$name] = \Drupal::service('file_system')->realpath($this->drupalGetTestFiles('text')[1]->uri);
-    $this->drupalPostForm(NULL, $edit, t('Save (this translation)'));
+    $this->submitForm($edit, 'Save (this translation)');
     // This inspects the HTML after the post of the translation, the file
     // should be displayed on the original node.
-    $this->assertRaw('file--mime-text-plain');
+    $this->assertSession()->responseContains('file--mime-text-plain');
     $second_fid = $this->getLastFileId();
 
     \Drupal::entityTypeManager()->getStorage('file')->resetCache();
 
-    /* @var $file \Drupal\file\FileInterface */
+    /** @var \Drupal\file\FileInterface $file */
 
     // Ensure the file status of the first file permanent.
     $file = File::load($first_fid);
@@ -122,14 +122,15 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->assertTrue($file->isPermanent());
 
     // Translate the node into dutch: remove the existing file.
-    $this->drupalPostForm('node/' . $default_language_node->id() . '/translations/add/en/nl', [], t('Remove'));
+    $this->drupalGet('node/' . $default_language_node->id() . '/translations/add/en/nl');
+    $this->submitForm([], 'Remove');
 
     // Upload a different file.
     $edit = [];
     $edit['title[0][value]'] = 'Scarlett Johansson';
     $name = 'files[' . $this->fieldName . '_0]';
     $edit[$name] = \Drupal::service('file_system')->realpath($this->drupalGetTestFiles('text')[2]->uri);
-    $this->drupalPostForm(NULL, $edit, t('Save (this translation)'));
+    $this->submitForm($edit, 'Save (this translation)');
     $third_fid = $this->getLastFileId();
 
     \Drupal::entityTypeManager()->getStorage('file')->resetCache();
@@ -139,7 +140,7 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->assertTrue($file->isPermanent(), 'First file still exists and is permanent.');
     // This inspects the HTML after the post of the translation, the file
     // should be displayed on the original node.
-    $this->assertRaw('file--mime-text-plain');
+    $this->assertSession()->responseContains('file--mime-text-plain');
 
     // Ensure the file status of the second file is permanent.
     $file = File::load($second_fid);
@@ -150,14 +151,15 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->assertTrue($file->isPermanent());
 
     // Edit the second translation: remove the existing file.
-    $this->drupalPostForm('fr/node/' . $default_language_node->id() . '/edit', [], t('Remove'));
+    $this->drupalGet('fr/node/' . $default_language_node->id() . '/edit');
+    $this->submitForm([], 'Remove');
 
     // Upload a different file.
     $edit = [];
     $edit['title[0][value]'] = 'David Bowie';
     $name = 'files[' . $this->fieldName . '_0]';
     $edit[$name] = \Drupal::service('file_system')->realpath($this->drupalGetTestFiles('text')[3]->uri);
-    $this->drupalPostForm(NULL, $edit, t('Save (this translation)'));
+    $this->submitForm($edit, 'Save (this translation)');
     $replaced_second_fid = $this->getLastFileId();
 
     \Drupal::entityTypeManager()->getStorage('file')->resetCache();
@@ -174,7 +176,8 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->assertTrue($file->isPermanent());
 
     // Delete the third translation.
-    $this->drupalPostForm('nl/node/' . $default_language_node->id() . '/delete', [], t('Delete Dutch translation'));
+    $this->drupalGet('nl/node/' . $default_language_node->id() . '/delete');
+    $this->submitForm([], 'Delete Dutch translation');
 
     \Drupal::entityTypeManager()->getStorage('file')->resetCache();
 
@@ -190,7 +193,8 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
     $this->assertTrue($file->isTemporary());
 
     // Delete the all translations.
-    $this->drupalPostForm('node/' . $default_language_node->id() . '/delete', [], t('Delete all translations'));
+    $this->drupalGet('node/' . $default_language_node->id() . '/delete');
+    $this->submitForm([], 'Delete all translations');
 
     \Drupal::entityTypeManager()->getStorage('file')->resetCache();
 
@@ -200,6 +204,42 @@ class FileOnTranslatedEntityTest extends FileFieldTestBase {
 
     $file = File::load($replaced_second_fid);
     $this->assertTrue($file->isTemporary());
+  }
+
+  /**
+   * Tests if file field tracks file usages correctly on translated nodes.
+   */
+  public function testFileUsage() {
+    /** @var \Drupal\file\FileUsage\FileUsageInterface $file_usage */
+    $file_usage = \Drupal::service('file.usage');
+
+    // Enable language selector on the page edit form.
+    $edit = [
+      'language_configuration[language_alterable]' => 1,
+    ];
+    $this->drupalGet('admin/structure/types/manage/page');
+    $this->submitForm($edit, 'Save');
+
+    // Create a node and upload a file.
+    $node = $this->drupalCreateNode(['type' => 'page']);
+    $edit = [
+      'files[' . $this->fieldName . '_0]' => \Drupal::service('file_system')->realpath($this->drupalGetTestFiles('text')[0]->uri),
+    ];
+    $this->drupalGet('node/' . $node->id() . '/edit');
+    $this->submitForm($edit, 'Save');
+
+    // Check if the file usage is correct.
+    $file = File::load($this->getLastFileId());
+    $this->assertEquals($file_usage->listUsage($file), ['file' => ['node' => [$node->id() => '1']]]);
+
+    // Check if the file usage is tracked correctly when changing the original
+    // language of an entity.
+    $edit = [
+      'langcode[0][value]' => 'fr',
+    ];
+    $this->drupalGet('node/' . $node->id() . '/edit');
+    $this->submitForm($edit, 'Save');
+    $this->assertEquals($file_usage->listUsage($file), ['file' => ['node' => [$node->id() => '1']]]);
   }
 
 }

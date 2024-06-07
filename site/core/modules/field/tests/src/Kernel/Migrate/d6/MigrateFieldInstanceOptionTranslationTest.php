@@ -14,18 +14,17 @@ class MigrateFieldInstanceOptionTranslationTest extends MigrateDrupal6TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules =
-    [
-      'config_translation',
-      'language',
-      'locale',
-      'menu_ui',
-    ];
+  protected static $modules = [
+    'config_translation',
+    'language',
+    'locale',
+    'menu_ui',
+  ];
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installConfig(['node']);
     $this->executeMigrations([

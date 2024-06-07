@@ -40,7 +40,9 @@ abstract class SecuredRedirectResponse extends RedirectResponse {
    */
   protected function fromResponse(RedirectResponse $response) {
     $this->setProtocolVersion($response->getProtocolVersion());
-    $this->setCharset($response->getCharset());
+    if ($response->getCharset()) {
+      $this->setCharset($response->getCharset());
+    }
     // Cookies are separate from other headers and have to be copied over
     // directly.
     foreach ($response->headers->getCookies() as $cookie) {
@@ -51,7 +53,7 @@ abstract class SecuredRedirectResponse extends RedirectResponse {
   /**
    * {@inheritdoc}
    */
-  public function setTargetUrl($url) {
+  public function setTargetUrl($url): static {
     if (!$this->isSafe($url)) {
       throw new \InvalidArgumentException(sprintf('It is not safe to redirect to %s', $url));
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Core;
 
 use Drupal\Core\PrivateKey;
@@ -16,7 +18,7 @@ class PrivateKeyTest extends UnitTestCase {
   /**
    * The state mock class.
    *
-   * @var \Drupal\Core\State\StateInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\State\StateInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   protected $state;
 
@@ -37,11 +39,11 @@ class PrivateKeyTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->key = Crypt::randomBytesBase64(55);
 
-    $this->state = $this->getMock('Drupal\Core\State\StateInterface');
+    $this->state = $this->createMock('Drupal\Core\State\StateInterface');
 
     $this->privateKey = new PrivateKey($this->state);
   }
@@ -53,7 +55,7 @@ class PrivateKeyTest extends UnitTestCase {
     $this->state->expects($this->once())
       ->method('get')
       ->with('system.private_key')
-      ->will($this->returnValue($this->key));
+      ->willReturn($this->key);
 
     $this->assertEquals($this->key, $this->privateKey->get());
   }
@@ -62,7 +64,7 @@ class PrivateKeyTest extends UnitTestCase {
    * Tests PrivateKey::get() with no private key from state.
    */
   public function testGetNoState() {
-    $this->assertInternalType('string', $this->privateKey->get());
+    $this->assertIsString($this->privateKey->get());
   }
 
   /**
@@ -74,7 +76,7 @@ class PrivateKeyTest extends UnitTestCase {
     $this->state->expects($this->once())
       ->method('set')
       ->with('system.private_key', $random_name)
-      ->will($this->returnValue(TRUE));
+      ->willReturn(TRUE);
 
     $this->privateKey->set($random_name);
   }

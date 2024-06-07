@@ -27,7 +27,7 @@ class XmlEncoder implements SerializerAwareInterface, EncoderInterface, DecoderI
    *
    * @var array
    */
-  static protected $format = ['xml'];
+  protected static $format = ['xml'];
 
   /**
    * An instance of the Symfony XmlEncoder to perform the actual encoding.
@@ -55,6 +55,7 @@ class XmlEncoder implements SerializerAwareInterface, EncoderInterface, DecoderI
    * Sets the base encoder instance.
    *
    * @param \Symfony\Component\Serializer\Encoder\XmlEncoder $encoder
+   *   The XML encoder.
    */
   public function setBaseEncoder($encoder) {
     $this->baseEncoder = $encoder;
@@ -63,28 +64,28 @@ class XmlEncoder implements SerializerAwareInterface, EncoderInterface, DecoderI
   /**
    * {@inheritdoc}
    */
-  public function encode($data, $format, array $context = []) {
+  public function encode($data, $format, array $context = []): string {
     return $this->getBaseEncoder()->encode($data, $format, $context);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function supportsEncoding($format) {
+  public function supportsEncoding(string $format, array $context = []): bool {
     return in_array($format, static::$format);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function decode($data, $format, array $context = []) {
+  public function decode($data, $format, array $context = []): mixed {
     return $this->getBaseEncoder()->decode($data, $format, $context);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function supportsDecoding($format) {
+  public function supportsDecoding(string $format, array $context = []): bool {
     return in_array($format, static::$format);
   }
 

@@ -3,15 +3,15 @@
 namespace Drupal\Core\Test;
 
 use Drupal\Component\FileSystem\FileSystem;
-use Drupal\Core\Database\ConnectionNotDefinedException;
-use Drupal\Core\Database\Database;
 
 /**
- * Provides helper methods for interacting with the Simpletest database.
+ * Provides helper methods for interacting with the fixture database.
  */
 class TestDatabase {
 
   /**
+   * The test lock ID.
+   *
    * A random number used to ensure that test fixtures are unique to each test
    * method.
    *
@@ -27,37 +27,6 @@ class TestDatabase {
   protected $databasePrefix;
 
   /**
-   * Returns the database connection to the site running Simpletest.
-   *
-   * @return \Drupal\Core\Database\Connection
-   *   The database connection to use for inserting assertions.
-   *
-   * @see \Drupal\simpletest\TestBase::prepareEnvironment()
-   */
-  public static function getConnection() {
-    // Check whether there is a test runner connection.
-    // @see run-tests.sh
-    // @todo Convert Simpletest UI runner to create + use this connection, too.
-    try {
-      $connection = Database::getConnection('default', 'test-runner');
-    }
-    catch (ConnectionNotDefinedException $e) {
-      // Check whether there is a backup of the original default connection.
-      // @see TestBase::prepareEnvironment()
-      try {
-        $connection = Database::getConnection('default', 'simpletest_original_default');
-      }
-      catch (ConnectionNotDefinedException $e) {
-        // If TestBase::prepareEnvironment() or TestBase::restoreEnvironment()
-        // failed, the test-specific database connection does not exist
-        // yet/anymore, so fall back to the default of the (UI) test runner.
-        $connection = Database::getConnection('default', 'default');
-      }
-    }
-    return $connection;
-  }
-
-  /**
    * TestDatabase constructor.
    *
    * @param string|null $db_prefix
@@ -70,7 +39,7 @@ class TestDatabase {
    * @throws \InvalidArgumentException
    *   Thrown when $db_prefix does not match the regular expression.
    */
-  public function __construct($db_prefix = NULL, $create_lock = FALSE) {
+  public function __construct($db_prefix = NULL, bool $create_lock = FALSE) {
     if ($db_prefix === NULL) {
       $this->lockId = $this->getTestLock($create_lock);
       $this->databasePrefix = 'test' . $this->lockId;
@@ -94,7 +63,7 @@ class TestDatabase {
    * @return string
    *   The relative path to the test site directory.
    */
-  public function getTestSitePath() {
+  public function getTestSitePath(): string {
     return 'sites/simpletest/' . $this->lockId;
   }
 
@@ -104,7 +73,7 @@ class TestDatabase {
    * @return string
    *   The test database prefix.
    */
-  public function getDatabasePrefix() {
+  public function getDatabasePrefix(): string {
     return $this->databasePrefix;
   }
 
@@ -117,7 +86,7 @@ class TestDatabase {
    * @return int
    *   The unique lock ID for the test method.
    */
-  protected function getTestLock($create_lock = FALSE) {
+  protected function getTestLock(bool $create_lock = FALSE): int {
     // There is a risk that the generated random number is a duplicate. This
     // would cause different tests to try to use the same database prefix.
     // Therefore, if running with a concurrency of greater than 1, we need to
@@ -143,7 +112,7 @@ class TestDatabase {
    * @return bool
    *   TRUE if successful, FALSE if not.
    */
-  public function releaseLock() {
+  public function releaseLock(): bool {
     return unlink($this->getLockFile($this->lockId));
   }
 
@@ -152,7 +121,7 @@ class TestDatabase {
    *
    * This should only be called once all the test fixtures have been cleaned up.
    */
-  public static function releaseAllTestLocks() {
+  public static function releaseAllTestLocks(): void {
     $tmp = FileSystem::getOsTemporaryDirectory();
     $dir = dir($tmp);
     while (($entry = $dir->read()) !== FALSE) {
@@ -175,8 +144,18 @@ class TestDatabase {
    * @return string
    *   A file path to the symbolic link that prevents the lock ID being re-used.
    */
-  protected function getLockFile($lock_id) {
+  protected function getLockFile(int $lock_id): string {
     return FileSystem::getOsTemporaryDirectory() . '/test_' . $lock_id;
+  }
+
+  /**
+   * Gets the file path of the PHP error log of the test.
+   *
+   * @return string
+   *   The relative path to the test site PHP error log file.
+   */
+  public function getPhpErrorLogPath(): string {
+    return $this->getTestSitePath() . '/error.log';
   }
 
 }

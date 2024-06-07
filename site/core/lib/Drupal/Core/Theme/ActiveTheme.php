@@ -47,12 +47,13 @@ class ActiveTheme {
    */
   protected $owner;
 
+
   /**
-   * An array of base theme active theme objects keyed by name.
+   * An array of base theme extension objects keyed by name.
    *
-   * @var static[]
+   * @var \Drupal\Core\Extension\Extension[]
    */
-  protected $baseThemes;
+  protected $baseThemeExtensions = [];
 
   /**
    * The extension object.
@@ -60,13 +61,6 @@ class ActiveTheme {
    * @var \Drupal\Core\Extension\Extension
    */
   protected $extension;
-
-  /**
-   * The stylesheets which are set to be removed by the theme.
-   *
-   * @var array
-   */
-  protected $styleSheetsRemove;
 
   /**
    * The libraries provided by the theme.
@@ -108,10 +102,9 @@ class ActiveTheme {
       'engine' => 'twig',
       'owner' => 'twig',
       'logo' => '',
-      'stylesheets_remove' => [],
       'libraries' => [],
       'extension' => 'html.twig',
-      'base_themes' => [],
+      'base_theme_extensions' => [],
       'regions' => [],
       'libraries_override' => [],
       'libraries_extend' => [],
@@ -122,10 +115,9 @@ class ActiveTheme {
     $this->path = $values['path'];
     $this->engine = $values['engine'];
     $this->owner = $values['owner'];
-    $this->styleSheetsRemove = $values['stylesheets_remove'];
     $this->libraries = $values['libraries'];
     $this->extension = $values['extension'];
-    $this->baseThemes = $values['base_themes'];
+    $this->baseThemeExtensions = $values['base_theme_extensions'];
     $this->regions = $values['regions'];
     $this->librariesOverride = $values['libraries_override'];
     $this->librariesExtend = $values['libraries_extend'];
@@ -161,7 +153,7 @@ class ActiveTheme {
   /**
    * Returns the path to the theme engine for root themes.
    *
-   * @see \Drupal\Core\Extension\ThemeHandler::rebuildThemeData
+   * @see \Drupal\Core\Extension\ThemeExtensionList::doList()
    *
    * @return mixed
    */
@@ -188,28 +180,15 @@ class ActiveTheme {
   }
 
   /**
-   * Returns the removed stylesheets by the theme.
-   *
-   * @return mixed
-   *
-   * @deprecated in Drupal 8.0.0, will be removed before Drupal 9.0.0.
-   *
-   * @see https://www.drupal.org/node/2497313
-   */
-  public function getStyleSheetsRemove() {
-    return $this->styleSheetsRemove;
-  }
-
-  /**
-   * Returns an array of base theme active theme objects keyed by name.
+   * Returns an array of base theme extension objects keyed by name.
    *
    * The order starts with the base theme of $this and ends with the root of
    * the dependency chain.
    *
-   * @return static[]
+   * @return \Drupal\Core\Extension\Extension[]
    */
-  public function getBaseThemes() {
-    return $this->baseThemes;
+  public function getBaseThemeExtensions() {
+    return $this->baseThemeExtensions;
   }
 
   /**

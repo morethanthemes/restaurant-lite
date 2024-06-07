@@ -19,7 +19,7 @@ class EntityOperationsTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'content_moderation',
     'node',
     'user',
@@ -30,7 +30,7 @@ class EntityOperationsTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('node');
     $this->installSchema('node', 'node_access');
@@ -47,7 +47,7 @@ class EntityOperationsTest extends KernelTestBase {
   protected function createNodeType() {
     $node_type = NodeType::create([
       'type' => 'page',
-      'label' => 'Page',
+      'name' => 'Page',
     ]);
     $node_type->save();
     $workflow = $this->createEditorialWorkflow();

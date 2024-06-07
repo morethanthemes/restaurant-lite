@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\FileCache;
 
 use Drupal\Component\FileCache\FileCache;
@@ -28,7 +30,7 @@ class FileCacheTest extends TestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->fileCache = new FileCache('prefix', 'test', '\Drupal\Tests\Component\FileCache\StaticFileCacheBackend', ['bin' => 'llama']);
@@ -41,11 +43,11 @@ class FileCacheTest extends TestCase {
    */
   public function testGet() {
     // Test a cache miss.
-    $result = $this->fileCache->get(__DIR__ . '/Fixtures/no-llama-42.yml');
+    $result = $this->fileCache->get(__DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'no-llama-42.yml');
     $this->assertNull($result);
 
     // Test a cache hit.
-    $filename = __DIR__ . '/Fixtures/llama-42.txt';
+    $filename = __DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'llama-42.txt';
     $realpath = realpath($filename);
     $cid = 'prefix:test:' . $realpath;
     $data = [
@@ -68,11 +70,11 @@ class FileCacheTest extends TestCase {
    */
   public function testGetMultiple() {
     // Test a cache miss.
-    $result = $this->fileCache->getMultiple([__DIR__ . '/Fixtures/no-llama-42.yml']);
+    $result = $this->fileCache->getMultiple([__DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'no-llama-42.yml']);
     $this->assertEmpty($result);
 
     // Test a cache hit.
-    $filename = __DIR__ . '/Fixtures/llama-42.txt';
+    $filename = __DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'llama-42.txt';
     $realpath = realpath($filename);
     $cid = 'prefix:test:' . $realpath;
     $data = [
@@ -87,7 +89,7 @@ class FileCacheTest extends TestCase {
     $this->assertEquals([$filename => 42], $result);
 
     // Test a static cache hit.
-    $file2 = __DIR__ . '/Fixtures/llama-23.txt';
+    $file2 = __DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'llama-23.txt';
     $this->fileCache->set($file2, 23);
 
     $result = $this->fileCache->getMultiple([$filename, $file2]);
@@ -102,7 +104,7 @@ class FileCacheTest extends TestCase {
    * @covers ::set
    */
   public function testSet() {
-    $filename = __DIR__ . '/Fixtures/llama-23.txt';
+    $filename = __DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'llama-23.txt';
     $realpath = realpath($filename);
     $cid = 'prefix:test:' . $realpath;
     $data = [
@@ -123,7 +125,7 @@ class FileCacheTest extends TestCase {
    * @covers ::delete
    */
   public function testDelete() {
-    $filename = __DIR__ . '/Fixtures/llama-23.txt';
+    $filename = __DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR . 'llama-23.txt';
     $realpath = realpath($filename);
     $cid = 'prefix:test:' . $realpath;
 

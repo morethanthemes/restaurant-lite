@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\views\Unit\Routing;
 
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Tests\UnitTestCase;
 use Drupal\views\Routing\ViewPageController;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Drupal\Core\Routing\RouteObjectInterface;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 
@@ -35,7 +37,12 @@ class ViewPageControllerTest extends UnitTestCase {
     '#view_display_show_admin_links' => NULL,
   ];
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
     $this->pageController = new ViewPageController();
   }
 
@@ -64,7 +71,7 @@ class ViewPageControllerTest extends UnitTestCase {
     $route_match = RouteMatch::createFromRequest($request);
 
     $output = $this->pageController->handle($route_match->getParameter('view_id'), $route_match->getParameter('display_id'), $route_match);
-    $this->assertInternalType('array', $output);
+    $this->assertIsArray($output);
     $this->assertEquals($build, $output);
   }
 
@@ -101,7 +108,7 @@ class ViewPageControllerTest extends UnitTestCase {
   }
 
   /**
-   * Tests the page controller with arguments of a overridden page view.
+   * Tests the page controller with arguments of an overridden page view.
    *
    * Note: This test does not care about upcasting for now.
    */
@@ -131,13 +138,13 @@ class ViewPageControllerTest extends UnitTestCase {
       '#cache' => [
         'keys' => ['view', 'test_page_view', 'display', 'page_1', 'args', 'test-argument'],
       ],
-      ] + $this->defaultRenderArray;
+    ] + $this->defaultRenderArray;
 
     $this->assertEquals($build, $result);
   }
 
   /**
-   * Tests the page controller with arguments of a overridden page view.
+   * Tests the page controller with arguments of an overridden page view.
    *
    * This test care about upcasted values and ensures that the raw variables
    * are pulled in.
@@ -147,8 +154,8 @@ class ViewPageControllerTest extends UnitTestCase {
     $request->attributes->set('view_id', 'test_page_view');
     $request->attributes->set('display_id', 'page_1');
     // Add the argument to the request.
-    $request->attributes->set('test_entity', $this->getMock('Drupal\Core\Entity\EntityInterface'));
-    $raw_variables = new ParameterBag(['test_entity' => 'example_id']);
+    $request->attributes->set('test_entity', $this->createMock('Drupal\Core\Entity\EntityInterface'));
+    $raw_variables = new InputBag(['test_entity' => 'example_id']);
     $request->attributes->set('_raw_variables', $raw_variables);
     $options = [
       '_view_argument_map' => [
@@ -170,7 +177,7 @@ class ViewPageControllerTest extends UnitTestCase {
       '#cache' => [
         'keys' => ['view', 'test_page_view', 'display', 'page_1', 'args', 'example_id'],
       ],
-      ] + $this->defaultRenderArray;
+    ] + $this->defaultRenderArray;
 
     $this->assertEquals($build, $result);
   }
@@ -183,7 +190,7 @@ namespace Drupal\views\Routing;
 
 if (!function_exists('views_add_contextual_links')) {
 
-  function views_add_contextual_links() {
+  function views_add_contextual_links(&$render_element, $location, $display_id, array $view_element = NULL) {
   }
 
 }

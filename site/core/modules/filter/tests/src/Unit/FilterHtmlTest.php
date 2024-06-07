@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\filter\Unit;
 
 use Drupal\Tests\UnitTestCase;
@@ -19,7 +21,7 @@ class FilterHtmlTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $configuration['settings'] = [
       'allowed_html' => '<a href> <p> <em> <strong> <cite> <blockquote> <code class="pretty boring align-*"> <ul alpaca-*="wooly-* strong"> <ol llama-*> <li> <dl> <dt> <dd> <br> <h3 id>',
@@ -37,7 +39,7 @@ class FilterHtmlTest extends UnitTestCase {
    *
    * @param string $html
    *   Input HTML.
-   * @param array $expected
+   * @param string $expected
    *   The expected output string.
    */
   public function testfilterAttributes($html, $expected) {
@@ -56,9 +58,7 @@ class FilterHtmlTest extends UnitTestCase {
       ['<p dir="rtl" />', '<p dir="rtl"></p>'],
       ['<p dir="bogus" />', '<p></p>'],
       ['<p id="first" />', '<p></p>'],
-      // The addition of xml:lang isn't especially desired, but is still valid
-      // HTML5. See https://www.drupal.org/node/1333730.
-      ['<p id="first" lang="en">text</p>', '<p lang="en" xml:lang="en">text</p>'],
+      ['<p id="first" lang="en">text</p>', '<p lang="en">text</p>'],
       ['<p style="display: none;" />', '<p></p>'],
       ['<code class="pretty invalid">foreach ($a as $b) {}</code>', '<code class="pretty">foreach ($a as $b) {}</code>'],
       ['<code class="boring pretty">foreach ($a as $b) {}</code>', '<code class="boring pretty">foreach ($a as $b) {}</code>'],

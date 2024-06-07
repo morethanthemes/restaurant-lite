@@ -19,7 +19,7 @@ abstract class BlockContentTestBase extends BrowserTestBase {
   protected $profile = 'testing';
 
   /**
-   * Admin user
+   * Admin user.
    *
    * @var \Drupal\user\UserInterface
    */
@@ -32,6 +32,9 @@ abstract class BlockContentTestBase extends BrowserTestBase {
    */
   protected $permissions = [
     'administer blocks',
+    'access block library',
+    'administer block types',
+    'administer block content',
   ];
 
   /**
@@ -39,7 +42,7 @@ abstract class BlockContentTestBase extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['block', 'block_content'];
+  protected static $modules = ['block', 'block_content'];
 
   /**
    * Whether or not to auto-create the basic block type during setup.
@@ -51,7 +54,7 @@ abstract class BlockContentTestBase extends BrowserTestBase {
   /**
    * Sets the test up.
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     if ($this->autoCreateBasicBlockType) {
       $this->createBlockContentType('basic', TRUE);
@@ -62,7 +65,7 @@ abstract class BlockContentTestBase extends BrowserTestBase {
   }
 
   /**
-   * Creates a custom block.
+   * Creates a content block.
    *
    * @param bool|string $title
    *   (optional) Title of block. When no value is given uses a random name.
@@ -73,7 +76,7 @@ abstract class BlockContentTestBase extends BrowserTestBase {
    *   (optional) Whether to save the block. Defaults to TRUE.
    *
    * @return \Drupal\block_content\Entity\BlockContent
-   *   Created custom block.
+   *   Created content block.
    */
   protected function createBlockContent($title = FALSE, $bundle = 'basic', $save = TRUE) {
     $title = $title ?: $this->randomMachineName();
@@ -89,22 +92,42 @@ abstract class BlockContentTestBase extends BrowserTestBase {
   }
 
   /**
-   * Creates a custom block type (bundle).
+   * Creates a block type (bundle).
    *
-   * @param string $label
-   *   The block type label.
+   * @param array|string $values
+   *   The value to create the block content type. If $values is an array
+   *   it should be like: ['id' => 'foo', 'label' => 'Foo']. If $values
+   *   is a string, it will be considered that it represents the label.
    * @param bool $create_body
    *   Whether or not to create the body field
    *
    * @return \Drupal\block_content\Entity\BlockContentType
-   *   Created custom block type.
+   *   Created block type.
    */
-  protected function createBlockContentType($label, $create_body = FALSE) {
-    $bundle = BlockContentType::create([
-      'id' => $label,
-      'label' => $label,
-      'revision' => FALSE,
-    ]);
+  protected function createBlockContentType($values, $create_body = FALSE) {
+    if (is_array($values)) {
+      if (!isset($values['id'])) {
+        do {
+          $id = $this->randomMachineName(8);
+        } while (BlockContentType::load($id));
+      }
+      else {
+        $id = $values['id'];
+      }
+      $values += [
+        'id' => $id,
+        'label' => $id,
+        'revision' => FALSE,
+      ];
+      $bundle = BlockContentType::create($values);
+    }
+    else {
+      $bundle = BlockContentType::create([
+        'id' => $values,
+        'label' => $values,
+        'revision' => FALSE,
+      ]);
+    }
     $bundle->save();
     if ($create_body) {
       block_content_add_body_field($bundle->id());

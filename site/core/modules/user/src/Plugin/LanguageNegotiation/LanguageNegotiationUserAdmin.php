@@ -7,11 +7,11 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Routing\AdminContext;
 use Drupal\Core\Routing\StackedRouteMatchInterface;
 use Drupal\language\LanguageNegotiationMethodBase;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
+use Drupal\Core\Routing\RouteObjectInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Routing\Exception\ExceptionInterface;
 use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
 
 /**
@@ -101,7 +101,7 @@ class LanguageNegotiationUserAdmin extends LanguageNegotiationMethodBase impleme
     $langcode = NULL;
 
     // User preference (only for administrators).
-    if ($this->currentUser->hasPermission('access administration pages') && ($preferred_admin_langcode = $this->currentUser->getPreferredAdminLangcode(FALSE)) && $this->isAdminPath($request)) {
+    if (($this->currentUser->hasPermission('access administration pages') || $this->currentUser->hasPermission('view the administration theme')) && ($preferred_admin_langcode = $this->currentUser->getPreferredAdminLangcode(FALSE)) && $this->isAdminPath($request)) {
       $langcode = $preferred_admin_langcode;
     }
 
@@ -137,10 +137,7 @@ class LanguageNegotiationUserAdmin extends LanguageNegotiationMethodBase impleme
           $path = $this->pathProcessorManager->processInbound(urldecode(rtrim($cloned_request->getPathInfo(), '/')), $cloned_request);
           $attributes = $this->router->match($path);
         }
-        catch (ResourceNotFoundException $e) {
-          return FALSE;
-        }
-        catch (AccessDeniedHttpException $e) {
+        catch (ExceptionInterface | HttpException) {
           return FALSE;
         }
         $route_object = $attributes[RouteObjectInterface::ROUTE_OBJECT];

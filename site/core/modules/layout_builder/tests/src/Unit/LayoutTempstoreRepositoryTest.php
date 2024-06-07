@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\layout_builder\Unit;
 
 use Drupal\Core\TempStore\SharedTempStore;
@@ -77,7 +79,8 @@ class LayoutTempstoreRepositoryTest extends UnitTestCase {
 
     $repository = new LayoutTempstoreRepository($tempstore_factory->reveal());
 
-    $this->setExpectedException(\UnexpectedValueException::class, 'The entry with storage type "my_storage_type" and ID "my_storage_id" is invalid');
+    $this->expectException(\UnexpectedValueException::class);
+    $this->expectExceptionMessage('The entry with storage type "my_storage_type" and ID "my_storage_id" is invalid');
     $repository->get($section_storage->reveal());
   }
 

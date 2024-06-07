@@ -4,6 +4,8 @@ namespace Drupal\Tests\menu_link_content\Kernel\Plugin\migrate\source\d6;
 
 use Drupal\Tests\migrate\Kernel\MigrateSqlSourceTestBase;
 
+// cspell:ignore objectid objectindex
+
 /**
  * Tests menu link translation source plugin.
  *
@@ -15,7 +17,7 @@ class MenuLinkTranslationTest extends MigrateSqlSourceTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['menu_link_content', 'migrate_drupal'];
+  protected static $modules = ['menu_link_content', 'migrate_drupal'];
 
   /**
    * {@inheritdoc}

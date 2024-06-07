@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\Component\Uuid;
 
 use Drupal\Component\Uuid\Uuid;
@@ -35,7 +37,7 @@ class UuidTest extends TestCase {
   }
 
   /**
-   * Dataprovider for UUID instance tests.
+   * Data provider for UUID instance tests.
    *
    * @return array
    */
@@ -74,7 +76,7 @@ class UuidTest extends TestCase {
   }
 
   /**
-   * Dataprovider for UUID instance tests.
+   * Data provider for UUID instance tests.
    *
    * @return array
    *   An array of arrays containing

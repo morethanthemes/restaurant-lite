@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\comment\Kernel;
 
+use Drupal\comment\Entity\Comment;
 use Drupal\comment\Entity\CommentType;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
@@ -9,6 +10,7 @@ use Drupal\Core\Entity\Entity\EntityViewMode;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 
 /**
  * Tests integration of comment with other components.
@@ -17,15 +19,24 @@ use Drupal\KernelTests\KernelTestBase;
  */
 class CommentIntegrationTest extends KernelTestBase {
 
-  /**
-   * {@inheritdoc}
-   */
-  public static $modules = ['comment', 'field', 'entity_test', 'user', 'system', 'dblog'];
+  use UserCreationTrait;
 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected static $modules = [
+    'comment',
+    'field',
+    'entity_test',
+    'user',
+    'system',
+    'dblog',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('entity_test');
     $this->installEntitySchema('user');
@@ -36,6 +47,7 @@ class CommentIntegrationTest extends KernelTestBase {
     CommentType::create([
       'id' => 'comment',
       'label' => $this->randomString(),
+      'target_entity_type_id' => 'entity_test',
     ])->save();
   }
 
@@ -46,12 +58,13 @@ class CommentIntegrationTest extends KernelTestBase {
    * @see CommentDefaultFormatter::calculateDependencies()
    */
   public function testViewMode() {
-    $mode = mb_strtolower($this->randomMachineName());
+    $mode = $this->randomMachineName();
     // Create a new comment view mode and a view display entity.
     EntityViewMode::create([
       'id' => "comment.$mode",
       'targetEntityType' => 'comment',
       'settings' => ['comment_type' => 'comment'],
+      'label' => $mode,
     ])->save();
     EntityViewDisplay::create([
       'targetEntityType' => 'comment',
@@ -63,7 +76,7 @@ class CommentIntegrationTest extends KernelTestBase {
     FieldStorageConfig::create([
       'entity_type' => 'entity_test',
       'type' => 'comment',
-      'field_name' => $field_name = mb_strtolower($this->randomMachineName()),
+      'field_name' => $field_name = $this->randomMachineName(),
       'settings' => [
         'comment_type' => 'comment',
       ],
@@ -106,14 +119,13 @@ class CommentIntegrationTest extends KernelTestBase {
       '@display' => EntityViewMode::load("comment.$mode")->label(),
       '@mode' => $mode,
     ];
-    $logged = (bool) Database::getConnection()->select('watchdog')
-      ->fields('watchdog', ['wid'])
+    $logged = Database::getConnection()->select('watchdog')
+      ->fields('watchdog', ['variables'])
       ->condition('type', 'system')
       ->condition('message', "View display '@id': Comment field formatter '@name' was disabled because it is using the comment view display '@display' (@mode) that was just disabled.")
-      ->condition('variables', serialize($arguments))
       ->execute()
       ->fetchField();
-    $this->assertTrue($logged);
+    $this->assertEquals(serialize($arguments), $logged);
 
     // Re-enable the comment view display.
     EntityViewDisplay::load($comment_display_id)->setStatus(TRUE)->save();
@@ -132,6 +144,23 @@ class CommentIntegrationTest extends KernelTestBase {
     // Check that the field formatter has been disabled on host view display.
     $this->assertNull($host_display->getComponent($field_name));
     $this->assertTrue($host_display->get('hidden')[$field_name]);
+  }
+
+  /**
+   * Tests the default owner of comment entities.
+   */
+  public function testCommentDefaultOwner() {
+    $comment = Comment::create([
+      'comment_type' => 'comment',
+    ]);
+    $this->assertEquals(0, $comment->getOwnerId());
+
+    $user = $this->createUser();
+    $this->container->get('current_user')->setAccount($user);
+    $comment = Comment::create([
+      'comment_type' => 'comment',
+    ]);
+    $this->assertEquals($user->id(), $comment->getOwnerId());
   }
 
 }

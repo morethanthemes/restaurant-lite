@@ -2,9 +2,12 @@
 
 namespace Drupal\filter;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\filter\Plugin\Filter\FilterNull;
+use Drupal\user\Entity\Role;
+use Drupal\user\RoleInterface;
 
 /**
  * Provides a base form for a filter format.
@@ -45,7 +48,7 @@ abstract class FilterFormatFormBase extends EntityForm {
     $form['roles'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Roles'),
-      '#options' => array_map('\Drupal\Component\Utility\Html::escape', user_role_names()),
+      '#options' => array_map(fn(RoleInterface $role) => Html::escape($role->label()), Role::loadMultiple()),
       '#disabled' => $is_fallback,
       '#weight' => -10,
     ];
@@ -58,7 +61,7 @@ abstract class FilterFormatFormBase extends EntityForm {
     }
 
     // Create filter plugin instances for all available filters, including both
-    // enabled/configured ones as well as new and not yet unconfigured ones.
+    // enabled/configured ones as well as new and not yet configured ones.
     $filters = $format->filters();
     foreach ($filters as $filter_id => $filter) {
       // When a filter is missing, it is replaced by the null filter. Remove it
@@ -88,9 +91,9 @@ abstract class FilterFormatFormBase extends EntityForm {
       '#title' => $this->t('Filter processing order'),
       '#tabledrag' => [
         [
-         'action' => 'order',
-         'relationship' => 'sibling',
-         'group' => 'filter-order-weight',
+          'action' => 'order',
+          'relationship' => 'sibling',
+          'group' => 'filter-order-weight',
         ],
       ],
       '#tree' => FALSE,
@@ -219,8 +222,6 @@ abstract class FilterFormatFormBase extends EntityForm {
         user_role_change_permissions($rid, [$permission => $enabled]);
       }
     }
-
-    $form_state->setRedirect('filter.admin_overview');
 
     return $this->entity;
   }

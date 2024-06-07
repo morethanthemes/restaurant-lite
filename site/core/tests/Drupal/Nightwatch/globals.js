@@ -1,11 +1,9 @@
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs';
-import mkdirp from 'mkdirp';
-import chromedriver from 'chromedriver';
-import nightwatchSettings from './nightwatch.conf';
+const path = require('path');
+const fs = require('fs');
+const mkdirp = require('mkdirp');
+const nightwatchSettings = require('./nightwatch.conf');
 
-const commandAsWebserver = command => {
+const commandAsWebserver = (command) => {
   if (process.env.DRUPAL_TEST_WEBSERVER_USER) {
     return `sudo -u ${process.env.DRUPAL_TEST_WEBSERVER_USER} ${command}`;
   }
@@ -13,18 +11,6 @@ const commandAsWebserver = command => {
 };
 
 module.exports = {
-  before: done => {
-    if (JSON.parse(process.env.DRUPAL_TEST_CHROMEDRIVER_AUTOSTART)) {
-      chromedriver.start();
-    }
-    done();
-  },
-  after: done => {
-    if (JSON.parse(process.env.DRUPAL_TEST_CHROMEDRIVER_AUTOSTART)) {
-      chromedriver.stop();
-    }
-    done();
-  },
   afterEach: (browser, done) => {
     // Writes the console log - used by the "logAndEnd" command.
     if (
@@ -35,9 +21,7 @@ module.exports = {
     ) {
       const resultPath = path.join(
         __dirname,
-        `../../../${nightwatchSettings.output_folder}/consoleLogs/${
-          browser.currentTest.module
-        }`,
+        `../../../${nightwatchSettings.output_folder}/consoleLogs/${browser.currentTest.module}`,
       );
       const status =
         browser.currentTest.results.errors > 0 ||
@@ -50,7 +34,7 @@ module.exports = {
         browser.currentTest.name || browser.currentTest.module
       ).replace(/[\s/]+/g, '-');
       browser
-        .getLog('browser', logEntries => {
+        .getLog('browser', (logEntries) => {
           const browserLog = JSON.stringify(logEntries, null, '  ');
           fs.writeFileSync(
             `${resultPath}/${testName}_${status}_${now}_console.json`,

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\workflows\Unit;
 
 use Drupal\Tests\UnitTestCase;
@@ -67,7 +69,8 @@ class StateTest extends UnitTestCase {
    * @covers ::getTransitionTo
    */
   public function testGetTransitionToException() {
-    $this->setExpectedException(\InvalidArgumentException::class, "Can not transition to 'published' state");
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage("Can not transition to 'published' state");
     $workflow_type = new TestType([], '', []);
     $workflow_type->addState('draft', 'Draft');
     $state = $workflow_type->getState('draft');

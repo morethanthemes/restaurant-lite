@@ -24,9 +24,12 @@ class ConfigUninstallViaCliImportTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['system', 'config'];
+  protected static $modules = ['system', 'config'];
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
     if (PHP_SAPI !== 'cli') {
       $this->markTestSkipped('This test has to be run from the CLI');
@@ -38,8 +41,7 @@ class ConfigUninstallViaCliImportTest extends KernelTestBase {
     // Set up the ConfigImporter object for testing.
     $storage_comparer = new StorageComparer(
       $this->container->get('config.storage.sync'),
-      $this->container->get('config.storage'),
-      $this->container->get('config.manager')
+      $this->container->get('config.storage')
     );
     $this->configImporter = new ConfigImporter(
       $storage_comparer->createChangelist(),
@@ -50,7 +52,9 @@ class ConfigUninstallViaCliImportTest extends KernelTestBase {
       $this->container->get('module_handler'),
       $this->container->get('module_installer'),
       $this->container->get('theme_handler'),
-      $this->container->get('string_translation')
+      $this->container->get('string_translation'),
+      $this->container->get('extension.list.module'),
+      $this->container->get('extension.list.theme')
     );
   }
 
